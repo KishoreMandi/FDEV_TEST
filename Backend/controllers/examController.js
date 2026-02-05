@@ -1,9 +1,10 @@
 import Exam from "../models/Exam.js";
+import Result from "../models/Result.js";
 
 /* ================= CREATE EXAM (ADMIN) ================= */
 export const createExam = async (req, res) => {
   try {
-    const { title, duration, negativeMarking } = req.body;
+    const { title, duration, negativeMarking, isPublished, startTime, endTime, attemptLimit } = req.body;
 
     if (!title || !duration) {
       return res.status(400).json({ message: "All fields required" });
@@ -12,7 +13,11 @@ export const createExam = async (req, res) => {
     const exam = await Exam.create({
       title,
       duration: Number(duration),
-      negativeMarking: Number(negativeMarking), // 👈 important
+      negativeMarking: Number(negativeMarking),
+      isPublished: isPublished || false,
+      startTime: startTime || null,
+      endTime: endTime || null,
+      attemptLimit: attemptLimit ? Number(attemptLimit) : 1,
       createdBy: req.user.id,
     });
 
@@ -22,10 +27,18 @@ export const createExam = async (req, res) => {
   }
 };
 
-/* ================= GET ALL EXAMS (STUDENT) ================= */
+/* ================= GET ALL EXAMS (STUDENT/ADMIN) ================= */
 export const getAllExams = async (req, res) => {
   try {
-    const exams = await Exam.find().select("-createdBy");
+    const { role } = req.user;
+    let query = {};
+    
+    // If student, only show published exams
+    if (role === 'student') {
+      query.isPublished = true;
+    }
+
+    const exams = await Exam.find(query).select("-createdBy");
     res.json(exams);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -38,7 +51,7 @@ export const getAllExams = async (req, res) => {
 export const updateExam = async (req, res) => {
   try {
     const { examId } = req.params;
-    const { title, duration, negativeMarking } = req.body;
+    const { title, duration, negativeMarking, isPublished, startTime, endTime, attemptLimit } = req.body;
 
     const exam = await Exam.findByIdAndUpdate(
       examId,
@@ -46,6 +59,10 @@ export const updateExam = async (req, res) => {
         title,
         duration: Number(duration),
         negativeMarking: Number(negativeMarking),
+        isPublished,
+        startTime,
+        endTime,
+        attemptLimit: Number(attemptLimit),
       },
       { new: true }
     );
@@ -80,20 +97,44 @@ export const startExam = async (req, res) => {
   const { examId } = req.params;
   const studentId = req.user.id;
 
-  const existing = await Result.findOne({
-    examId,
-    studentId,
-    status: "submitted",
-  });
+  try {
+    const exam = await Exam.findById(examId);
+    if (!exam) {
+      return res.status(404).json({ message: "Exam not found" });
+    }
 
-  if (existing) {
-    return res.status(403).json({
-      message: "You have already attempted this exam",
+    // 1. Check if published
+    if (!exam.isPublished) {
+      return res.status(403).json({ message: "Exam is not published yet" });
+    }
+
+    // 2. Check Time Window
+    const now = new Date();
+    if (exam.startTime && now < new Date(exam.startTime)) {
+      return res.status(403).json({ message: "Exam has not started yet" });
+    }
+    if (exam.endTime && now > new Date(exam.endTime)) {
+      return res.status(403).json({ message: "Exam has ended" });
+    }
+
+    // 3. Check Attempt Limits
+    const attempts = await Result.countDocuments({
+      examId,
+      studentId,
+      status: "submitted",
     });
-  }
 
-  // allow start
-  res.json({ message: "Exam allowed" });
+    if (attempts >= (exam.attemptLimit || 1)) {
+      return res.status(403).json({
+        message: `Maximum attempts (${exam.attemptLimit || 1}) reached`,
+      });
+    }
+
+    // allow start
+    res.json({ message: "Exam allowed" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 export const examData = async(req,res)=>{

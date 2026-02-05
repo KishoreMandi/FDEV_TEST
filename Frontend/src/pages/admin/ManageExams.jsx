@@ -18,9 +18,46 @@ const ManageExams = () => {
     setExams(res.data);
   };
 
+  const formatDateTimeLocal = (isoString) => {
+    if (!isoString) return "";
+    const date = new Date(isoString);
+    const offset = date.getTimezoneOffset() * 60000;
+    const localDate = new Date(date.getTime() - offset);
+    return localDate.toISOString().slice(0, 16);
+  };
+
+  const handleEditClick = (exam) => {
+    setEditing({
+      ...exam,
+      startTime: exam.startTime ? formatDateTimeLocal(exam.startTime) : "",
+      endTime: exam.endTime ? formatDateTimeLocal(exam.endTime) : "",
+    });
+  };
+
+  const handleDateChange = (field, value) => {
+    const newState = { ...editing, [field]: value };
+    
+    if (newState.startTime && newState.endTime) {
+      const start = new Date(newState.startTime);
+      const end = new Date(newState.endTime);
+      const diffMs = end - start;
+      const diffMins = Math.floor(diffMs / 60000);
+      
+      if (diffMins > 0) {
+        newState.duration = diffMins;
+      }
+    }
+    setEditing(newState);
+  };
+
   const handleUpdate = async () => {
     try {
-      await updateExam(editing._id, editing);
+      const payload = {
+        ...editing,
+        startTime: editing.startTime ? new Date(editing.startTime).toISOString() : null,
+        endTime: editing.endTime ? new Date(editing.endTime).toISOString() : null,
+      };
+      await updateExam(editing._id, payload);
       toast.success("Exam updated");
       setEditing(null);
       loadExams();
@@ -86,7 +123,7 @@ const ManageExams = () => {
           <td className="p-3">
             <div className="flex justify-center gap-2">
               <button
-                onClick={() => setEditing(exam)}
+                onClick={() => handleEditClick(exam)}
                 className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
               >
                 Edit
@@ -147,6 +184,49 @@ const ManageExams = () => {
                     })
                   }
                 />
+
+                <input
+                  type="number"
+                  min="1"
+                  placeholder="Attempt Limit"
+                  className="w-full p-2 border mb-2"
+                  value={editing.attemptLimit || 1}
+                  onChange={(e) =>
+                    setEditing({ ...editing, attemptLimit: e.target.value })
+                  }
+                />
+
+                <div className="mb-2">
+                    <label className="text-xs text-gray-500">Start Time</label>
+                    <input
+                    type="datetime-local"
+                    className="w-full p-2 border"
+                    value={editing.startTime}
+                    onChange={(e) => handleDateChange("startTime", e.target.value)}
+                    />
+                </div>
+
+                <div className="mb-2">
+                    <label className="text-xs text-gray-500">End Time</label>
+                    <input
+                    type="datetime-local"
+                    className="w-full p-2 border"
+                    value={editing.endTime}
+                    onChange={(e) => handleDateChange("endTime", e.target.value)}
+                    />
+                </div>
+
+                <div className="flex items-center gap-2 mb-4">
+                  <input
+                    type="checkbox"
+                    id="edit-published"
+                    checked={editing.isPublished || false}
+                    onChange={(e) =>
+                      setEditing({ ...editing, isPublished: e.target.checked })
+                    }
+                  />
+                  <label htmlFor="edit-published">Published</label>
+                </div>
 
                 <div className="flex justify-end gap-2">
                   <button

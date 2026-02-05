@@ -22,7 +22,7 @@ const AdminSidebar = () => {
   return (
     <div className="h-screen w-64 bg-[#0f172a] text-white fixed">
       <h1 className="text-xl font-bold p-6 border-b border-gray-700">
-        Exam Admin
+        {user?.role === "trainer" ? "Exam Trainer" : "Exam Admin"}
       </h1>
 
       <nav className="p-4 space-y-2">

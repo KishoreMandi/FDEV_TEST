@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 
 import AdminSidebar from "../../components/AdminSidebar";
@@ -9,7 +9,26 @@ const CreateExam = () => {
   const [title, setTitle] = useState("");
   const [duration, setDuration] = useState("");
   const [negativeMarking, setNegativeMarking] = useState("0");
+  const [isPublished, setIsPublished] = useState(false);
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [attemptLimit, setAttemptLimit] = useState(1);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (startTime && endTime) {
+      const start = new Date(startTime);
+      const end = new Date(endTime);
+      const diffMs = end - start;
+      const diffMins = Math.floor(diffMs / 60000);
+      
+      if (diffMins > 0) {
+        setDuration(diffMins);
+      } else {
+        setDuration(""); // Reset if invalid or negative
+      }
+    }
+  }, [startTime, endTime]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,7 +44,11 @@ const CreateExam = () => {
       await axios.post("/exams", {
         title,
         duration,
-        negativeMarking, // sent as string, backend converts to Number
+        negativeMarking,
+        isPublished,
+        startTime: startTime ? new Date(startTime).toISOString() : null,
+        endTime: endTime ? new Date(endTime).toISOString() : null,
+        attemptLimit,
       });
 
       toast.success("Exam created successfully");
@@ -33,7 +56,12 @@ const CreateExam = () => {
       setTitle("");
       setDuration("");
       setNegativeMarking("0");
+      setIsPublished(false);
+      setStartTime("");
+      setEndTime("");
+      setAttemptLimit(1);
     } catch {
+
       toast.error("Failed to create exam");
     } finally {
       setLoading(false);
@@ -81,6 +109,47 @@ const CreateExam = () => {
               value={negativeMarking}
               onChange={(e) => setNegativeMarking(e.target.value)}
             />
+
+            <input
+              type="number"
+              min="1"
+              placeholder="Attempt Limit"
+              className="w-full p-3 border rounded"
+              value={attemptLimit}
+              onChange={(e) => setAttemptLimit(e.target.value)}
+            />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
+                <input
+                  type="datetime-local"
+                  className="w-full p-3 border rounded"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
+                <input
+                  type="datetime-local"
+                  className="w-full p-3 border rounded"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="isPublished"
+                checked={isPublished}
+                onChange={(e) => setIsPublished(e.target.checked)}
+                className="w-5 h-5"
+              />
+              <label htmlFor="isPublished" className="font-medium">Publish Exam Immediately</label>
+            </div>
 
             <p className="text-sm text-gray-500">
               Example: 0.25 means ¼ mark deducted for each wrong answer

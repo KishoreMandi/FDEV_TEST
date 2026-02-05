@@ -14,6 +14,20 @@ const examSchema = new mongoose.Schema(
       type: Number, // supports float like 0.25
       default: 0,
     },
+    isPublished: {
+      type: Boolean,
+      default: false,
+    },
+    startTime: {
+      type: Date,
+    },
+    endTime: {
+      type: Date,
+    },
+    attemptLimit: {
+      type: Number,
+      default: 1,
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
