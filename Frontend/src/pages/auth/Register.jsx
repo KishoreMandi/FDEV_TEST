@@ -70,8 +70,8 @@ const Register = () => {
               className="w-full p-3 rounded-full border"
               onChange={handleChange}
             >
-              <option value="student">Student</option>
-              <option value="admin">Admin</option>
+              <option value="student">Student / Employee</option>
+              <option value="trainer">Trainer</option>
             </select>
 
             <button

@@ -19,8 +19,22 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["admin", "student"],
+      enum: ["admin", "trainer", "employee", "student"],
       default: "student",
+    },
+    department: {
+      type: String,
+      trim: true,
+      default: "General",
+    },
+    status: {
+      type: String,
+      enum: ["active", "suspended", "banned"],
+      default: "active",
+    },
+    isApproved: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }

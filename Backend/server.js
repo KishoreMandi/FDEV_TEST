@@ -9,6 +9,10 @@ import resultRoutes from "./routes/resultRoutes.js";
 import leaderboardRoutes from "./routes/leaderboardRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import multer from "multer";
+import { bulkImportUsers } from "./controllers/adminController.js";
+import authMiddleware from "./middleware/authMiddleware.js";
+import adminMiddleware from "./middleware/adminMiddleware.js";
 dotenv.config()
 
 
@@ -25,7 +29,6 @@ app.use("/api/results", resultRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/admin", adminRoutes);
-
 
 app.get("/", (req, res) => {
   res.json({

@@ -17,17 +17,24 @@ export const registerUser = async (req, res) => {
     // hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Determine approval status
+    // Admin is auto-approved, others need approval
+    const isApproved = role === "admin";
+
     // create user
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
       role,
+      isApproved,
     });
 
     res.status(201).json({
       success: true,
-      message: "User registered successfully",
+      message: isApproved 
+        ? "User registered successfully" 
+        : "Registration successful! Please wait for admin approval.",
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -50,6 +57,16 @@ export const loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(400).json({ message: "Invalid credentials" });
+    }
+
+    // check approval status
+    if (!user.isApproved) {
+      return res.status(403).json({ message: "Account pending approval. Please contact admin." });
+    }
+
+    // check account status (suspended/banned)
+    if (user.status !== "active") {
+      return res.status(403).json({ message: `Account is ${user.status}. Please contact admin.` });
     }
 
     // generate token

@@ -17,9 +17,14 @@ const Login = () => {
       login(res.data.user, res.data.token);
 
       toast.success("Welcome back!");
-      navigate(res.data.user.role === "admin"? "/admin/dashboard" : "/student/dashboard");
-    } catch {
-      toast.error("Invalid credentials");
+      const role = res.data.user.role;
+      if (role === "admin" || role === "trainer") {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/student/dashboard");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Invalid credentials");
     }
   };
 

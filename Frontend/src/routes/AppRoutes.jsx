@@ -63,7 +63,7 @@ const AppRoutes = () => {
       <Route
         path="/admin/dashboard"
         element={
-          <ProtectedRoute role="admin">
+          <ProtectedRoute role={["admin", "trainer"]}>
             <AdminDashboard />
           </ProtectedRoute>
         }
@@ -72,7 +72,7 @@ const AppRoutes = () => {
       <Route
         path="/admin/create-exam"
         element={
-          <ProtectedRoute role="admin">
+          <ProtectedRoute role={["admin", "trainer"]}>
             <CreateExam />
           </ProtectedRoute>
         }
@@ -81,7 +81,7 @@ const AppRoutes = () => {
       <Route
         path="/admin/add-questions"
         element={
-          <ProtectedRoute role="admin">
+          <ProtectedRoute role={["admin", "trainer"]}>
             <AddQuestions />
           </ProtectedRoute>
         }
@@ -90,7 +90,7 @@ const AppRoutes = () => {
       <Route
         path="/admin/results"
         element={
-          <ProtectedRoute role="admin">
+          <ProtectedRoute role={["admin", "trainer"]}>
             <Results />
           </ProtectedRoute>
         }
@@ -99,7 +99,7 @@ const AppRoutes = () => {
       <Route
   path="/admin/manage-exams"
   element={
-    <ProtectedRoute role="admin">
+    <ProtectedRoute role={["admin", "trainer"]}>
       <ManageExams />
     </ProtectedRoute>
   }

@@ -11,6 +11,7 @@ import {
 
 import authMiddleware from "../middleware/authMiddleware.js";
 import adminMiddleware from "../middleware/adminMiddleware.js";
+import trainerMiddleware from "../middleware/trainerMiddleware.js";
 
 const router = express.Router();
 
@@ -18,8 +19,8 @@ const router = express.Router();
 router.post("/submit", authMiddleware, submitExam);
 router.get("/my/:examId", authMiddleware, getMyResult);
 
-// admin
-router.get("/all", authMiddleware, adminMiddleware, getAllResults);
+// admin & trainer
+router.get("/all", authMiddleware, trainerMiddleware, getAllResults);
 
 router.patch(
   "/autosave",
@@ -39,11 +40,11 @@ router.get(
   getStudentExamStatus
 );
 
-// admin - results by exam
+// admin & trainer - results by exam
 router.get(
   "/admin/:examId",
   authMiddleware,
-  adminMiddleware,
+  trainerMiddleware,
   getResultsByExam
 );
 export default router;
