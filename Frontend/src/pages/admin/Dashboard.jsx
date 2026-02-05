@@ -5,7 +5,7 @@ import AdminSidebar from "../../components/AdminSidebar";
 import AdminHeader from "../../components/AdminHeader";
 import StatCard from "../../components/StatCard";
 import CsvUploader from "../../components/CsvUploader";
-import { getAdminStats, getUsers, approveUser, updateUserStatus } from "../../api/adminApi";
+import { getAdminStats, getUsers, approveUser, rejectUser, updateUserStatus } from "../../api/adminApi";
 import { useAuth } from "../../context/AuthContext";
 
 const Dashboard = () => {
@@ -49,6 +49,19 @@ const Dashboard = () => {
       fetchStats();
     } catch {
       toast.error("Failed to approve");
+    }
+  };
+
+  const handleReject = async (id) => {
+    if (window.confirm("Are you sure you want to reject and remove this user?")) {
+      try {
+        await rejectUser(id);
+        toast.success("User rejected and removed");
+        fetchUsers();
+        fetchStats();
+      } catch {
+        toast.error("Failed to reject user");
+      }
     }
   };
 
@@ -126,12 +139,18 @@ const Dashboard = () => {
                       <td className="p-4">{u.name}</td>
                       <td className="p-4">{u.email}</td>
                       <td className="p-4 capitalize">{u.role}</td>
-                      <td className="p-4">
+                      <td className="p-4 flex gap-2">
                         <button
                           onClick={() => handleApprove(u._id)}
                           className="bg-green-600 text-white px-4 py-1 rounded hover:bg-green-700 transition"
                         >
                           Approve
+                        </button>
+                        <button
+                          onClick={() => handleReject(u._id)}
+                          className="bg-red-600 text-white px-4 py-1 rounded hover:bg-red-700 transition"
+                        >
+                          Reject
                         </button>
                       </td>
                     </tr>

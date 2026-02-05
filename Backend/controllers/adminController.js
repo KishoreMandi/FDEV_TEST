@@ -64,6 +64,21 @@ export const approveUser = async (req, res) => {
   }
 };
 
+export const rejectUser = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const user = await User.findByIdAndDelete(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({ message: "User rejected and removed successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // ================= USER GOVERNANCE =================
 
 // Update User Role

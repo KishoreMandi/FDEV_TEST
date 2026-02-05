@@ -9,6 +9,9 @@ export const getUsers = () =>
 export const approveUser = (userId) =>
   axios.put("/admin/approve-user", { userId });
 
+export const rejectUser = (userId) =>
+  axios.post("/admin/reject-user", { userId });
+
 export const updateUserStatus = (userId, status) =>
   axios.put("/admin/users/status", { userId, status });
 

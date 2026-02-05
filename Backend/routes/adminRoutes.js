@@ -4,6 +4,7 @@ import {
   getAdminStats, 
   getUsers, 
   approveUser,
+  rejectUser,
   bulkImportUsers,
   updateUserRole,
   updateUserStatus,
@@ -19,6 +20,7 @@ const upload = multer({ dest: "uploads/" });
 router.get("/stats", authMiddleware, trainerMiddleware, getAdminStats);
 router.get("/users", authMiddleware, adminMiddleware, getUsers);
 router.put("/approve-user", authMiddleware, adminMiddleware, approveUser);
+router.post("/reject-user", authMiddleware, adminMiddleware, rejectUser);
 
 // User Governance Routes
 router.post("/users/import", authMiddleware, adminMiddleware, upload.single("file"), bulkImportUsers);
