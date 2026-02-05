@@ -28,6 +28,12 @@ const examSchema = new mongoose.Schema(
       type: Number,
       default: 1,
     },
+    proctoring: {
+      webcam: { type: Boolean, default: false },
+      fullScreen: { type: Boolean, default: false },
+      tabSwitch: { type: Boolean, default: false },
+      tabSwitchLimit: { type: Number, default: 3 },
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

@@ -13,6 +13,12 @@ const CreateExam = () => {
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [attemptLimit, setAttemptLimit] = useState(1);
+  const [proctoring, setProctoring] = useState({
+    webcam: false,
+    fullScreen: false,
+    tabSwitch: false,
+    tabSwitchLimit: 3,
+  });
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -49,6 +55,7 @@ const CreateExam = () => {
         startTime: startTime ? new Date(startTime).toISOString() : null,
         endTime: endTime ? new Date(endTime).toISOString() : null,
         attemptLimit,
+        proctoring,
       });
 
       toast.success("Exam created successfully");
@@ -60,6 +67,12 @@ const CreateExam = () => {
       setStartTime("");
       setEndTime("");
       setAttemptLimit(1);
+      setProctoring({
+        webcam: false,
+        fullScreen: false,
+        tabSwitch: false,
+        tabSwitchLimit: 3,
+      });
     } catch {
 
       toast.error("Failed to create exam");
@@ -137,6 +150,52 @@ const CreateExam = () => {
                   value={endTime}
                   onChange={(e) => setEndTime(e.target.value)}
                 />
+              </div>
+            </div>
+
+            {/* PROCTORING SETTINGS */}
+            <div className="border p-4 rounded bg-gray-50">
+              <h3 className="font-semibold mb-2">Proctoring & Monitoring</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={proctoring.webcam}
+                    onChange={(e) => setProctoring({ ...proctoring, webcam: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <span>Webcam Capture</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={proctoring.fullScreen}
+                    onChange={(e) => setProctoring({ ...proctoring, fullScreen: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <span>Force Fullscreen</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={proctoring.tabSwitch}
+                    onChange={(e) => setProctoring({ ...proctoring, tabSwitch: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <span>Tab Switch Detection</span>
+                </label>
+                {proctoring.tabSwitch && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">Max Violations:</span>
+                    <input
+                      type="number"
+                      min="1"
+                      className="w-16 p-1 border rounded text-sm"
+                      value={proctoring.tabSwitchLimit}
+                      onChange={(e) => setProctoring({ ...proctoring, tabSwitchLimit: Number(e.target.value) })}
+                    />
+                  </div>
+                )}
               </div>
             </div>
 

@@ -4,7 +4,7 @@ import Result from "../models/Result.js";
 /* ================= CREATE EXAM (ADMIN) ================= */
 export const createExam = async (req, res) => {
   try {
-    const { title, duration, negativeMarking, isPublished, startTime, endTime, attemptLimit } = req.body;
+    const { title, duration, negativeMarking, isPublished, startTime, endTime, attemptLimit, proctoring } = req.body;
 
     if (!title || !duration) {
       return res.status(400).json({ message: "All fields required" });
@@ -18,6 +18,7 @@ export const createExam = async (req, res) => {
       startTime: startTime || null,
       endTime: endTime || null,
       attemptLimit: attemptLimit ? Number(attemptLimit) : 1,
+      proctoring: proctoring || {},
       createdBy: req.user.id,
     });
 
@@ -51,7 +52,7 @@ export const getAllExams = async (req, res) => {
 export const updateExam = async (req, res) => {
   try {
     const { examId } = req.params;
-    const { title, duration, negativeMarking, isPublished, startTime, endTime, attemptLimit } = req.body;
+    const { title, duration, negativeMarking, isPublished, startTime, endTime, attemptLimit, proctoring } = req.body;
 
     const exam = await Exam.findByIdAndUpdate(
       examId,
@@ -63,6 +64,7 @@ export const updateExam = async (req, res) => {
         startTime,
         endTime,
         attemptLimit: Number(attemptLimit),
+        proctoring,
       },
       { new: true }
     );

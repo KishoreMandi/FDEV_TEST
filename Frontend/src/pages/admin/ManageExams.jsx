@@ -31,6 +31,12 @@ const ManageExams = () => {
       ...exam,
       startTime: exam.startTime ? formatDateTimeLocal(exam.startTime) : "",
       endTime: exam.endTime ? formatDateTimeLocal(exam.endTime) : "",
+      proctoring: exam.proctoring || {
+        webcam: false,
+        fullScreen: false,
+        tabSwitch: false,
+        tabSwitchLimit: 3,
+      },
     });
   };
 
@@ -56,6 +62,7 @@ const ManageExams = () => {
         ...editing,
         startTime: editing.startTime ? new Date(editing.startTime).toISOString() : null,
         endTime: editing.endTime ? new Date(editing.endTime).toISOString() : null,
+        proctoring: editing.proctoring,
       };
       await updateExam(editing._id, payload);
       toast.success("Exam updated");
@@ -199,21 +206,75 @@ const ManageExams = () => {
                 <div className="mb-2">
                     <label className="text-xs text-gray-500">Start Time</label>
                     <input
-                    type="datetime-local"
-                    className="w-full p-2 border"
-                    value={editing.startTime}
-                    onChange={(e) => handleDateChange("startTime", e.target.value)}
+                      type="datetime-local"
+                      className="w-full p-2 border"
+                      value={editing.startTime}
+                      onChange={(e) => handleDateChange("startTime", e.target.value)}
                     />
                 </div>
 
-                <div className="mb-2">
+                <div className="mb-4">
                     <label className="text-xs text-gray-500">End Time</label>
                     <input
-                    type="datetime-local"
-                    className="w-full p-2 border"
-                    value={editing.endTime}
-                    onChange={(e) => handleDateChange("endTime", e.target.value)}
+                      type="datetime-local"
+                      className="w-full p-2 border"
+                      value={editing.endTime}
+                      onChange={(e) => handleDateChange("endTime", e.target.value)}
                     />
+                </div>
+
+                {/* PROCTORING */}
+                <div className="border p-3 rounded bg-gray-50 mb-4 text-sm">
+                  <h4 className="font-bold mb-2">Proctoring</h4>
+                  <div className="space-y-2">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={editing.proctoring?.webcam}
+                        onChange={(e) => setEditing({
+                          ...editing,
+                          proctoring: { ...editing.proctoring, webcam: e.target.checked }
+                        })}
+                      />
+                      Webcam
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={editing.proctoring?.fullScreen}
+                        onChange={(e) => setEditing({
+                          ...editing,
+                          proctoring: { ...editing.proctoring, fullScreen: e.target.checked }
+                        })}
+                      />
+                      Fullscreen
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={editing.proctoring?.tabSwitch}
+                        onChange={(e) => setEditing({
+                          ...editing,
+                          proctoring: { ...editing.proctoring, tabSwitch: e.target.checked }
+                        })}
+                      />
+                      Tab Switch Detection
+                    </label>
+                    {editing.proctoring?.tabSwitch && (
+                      <div className="flex items-center gap-2 ml-6">
+                        <span>Max Violations:</span>
+                        <input
+                          type="number"
+                          className="w-12 p-1 border"
+                          value={editing.proctoring?.tabSwitchLimit}
+                          onChange={(e) => setEditing({
+                            ...editing,
+                            proctoring: { ...editing.proctoring, tabSwitchLimit: Number(e.target.value) }
+                          })}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-2 mb-4">

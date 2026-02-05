@@ -11,6 +11,13 @@ const resultSchema = new mongoose.Schema(
       ref: "Exam",
     },
     answers: Array,
+    activityLogs: [
+      {
+        type: { type: String }, // 'tab_switch', 'fullscreen_exit', 'copy_paste'
+        timestamp: { type: Date, default: Date.now },
+        message: String,
+      }
+    ],
 
     score: Number,
     correct: Number,

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "../../api/axiosInstance";
@@ -23,6 +23,16 @@ const Exam = () => {
 
   // ✅ NEW: store exam data (only for duration)
   const [exam, setExam] = useState(null);
+
+  // PROCTORING STATE
+  const [tabSwitches, setTabSwitches] = useState(0);
+  const [isFullScreen, setIsFullScreen] = useState(true);
+  const logsRef = useRef([]);
+  const videoRef = useRef(null);
+
+  const addLog = (type, message) => {
+    logsRef.current.push({ type, message, timestamp: new Date() });
+  };
 
   /* ================= LOAD QUESTIONS + RESUME ================= */
   useEffect(() => {
@@ -61,6 +71,85 @@ const Exam = () => {
   }, [examId]);
 
 
+  /* ================= PROCTORING LOGIC ================= */
+  useEffect(() => {
+    if (!exam) return;
+
+    // 1. WEBCAM
+    if (exam.proctoring?.webcam) {
+      navigator.mediaDevices
+        .getUserMedia({ video: true })
+        .then((stream) => {
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+        })
+        .catch(() => {
+          toast.error("Webcam access required!");
+          addLog("webcam_error", "Failed to access webcam");
+        });
+    }
+
+    // 2. FULLSCREEN
+    if (exam.proctoring?.fullScreen) {
+      const handleFullScreenChange = () => {
+        const isFull = !!document.fullscreenElement;
+        setIsFullScreen(isFull);
+        if (!isFull) {
+            addLog("fullscreen_exit", "Exited fullscreen");
+        }
+      };
+      document.addEventListener("fullscreenchange", handleFullScreenChange);
+      
+      return () => document.removeEventListener("fullscreenchange", handleFullScreenChange);
+    }
+  }, [exam]);
+
+  // 3. TAB SWITCH
+  useEffect(() => {
+      if (!exam?.proctoring?.tabSwitch) return;
+
+      const handleVisibilityChange = () => {
+        if (document.hidden) {
+          const newCount = tabSwitches + 1;
+          setTabSwitches(newCount);
+          addLog("tab_switch", `Tab switched. Violation ${newCount}`);
+          
+          const limit = exam.proctoring.tabSwitchLimit || 3;
+          if (newCount >= limit) {
+             toast.error("Max violations reached. Submitting...");
+             finalSubmit();
+          } else {
+             toast.error(`Warning: Tab switch detected! (${newCount}/${limit})`);
+          }
+        }
+      };
+
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+      return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [exam, tabSwitches]);
+
+  // 4. COPY-PASTE BLOCK
+  useEffect(() => {
+      const handlePrevent = (e) => {
+          e.preventDefault();
+          toast.error("Action not allowed!");
+          addLog("copy_paste", "Attempted copy/paste/contextmenu");
+      };
+
+      document.addEventListener("contextmenu", handlePrevent);
+      document.addEventListener("copy", handlePrevent);
+      document.addEventListener("paste", handlePrevent);
+      document.addEventListener("cut", handlePrevent);
+
+      return () => {
+          document.removeEventListener("contextmenu", handlePrevent);
+          document.removeEventListener("copy", handlePrevent);
+          document.removeEventListener("paste", handlePrevent);
+          document.removeEventListener("cut", handlePrevent);
+      };
+  }, []);
+
   /* ================= AUTO SAVE ANSWERS ================= */
   useEffect(() => {
     if (questions.length === 0) return;
@@ -76,6 +165,7 @@ const Exam = () => {
             selectedOption: option,
           })
         ),
+        activityLogs: logsRef.current,
       });
     }, 5000);
 
@@ -101,6 +191,7 @@ const Exam = () => {
             selectedOption: option,
           })
         ),
+        activityLogs: logsRef.current,
       });
 
       toast.success("Exam submitted successfully");
@@ -127,8 +218,39 @@ const Exam = () => {
 
 
   /* ================= UI ================= */
+  const enterFullScreen = () => {
+      document.documentElement.requestFullscreen().catch(console.error);
+  };
+
+  if (exam?.proctoring?.fullScreen && !isFullScreen) {
+      return (
+          <div className="fixed inset-0 bg-gray-900 flex flex-col items-center justify-center z-50 text-white">
+              <h2 className="text-2xl font-bold mb-4">Fullscreen Required</h2>
+              <p className="mb-6">You must be in fullscreen mode to take this exam.</p>
+              <button 
+                  onClick={enterFullScreen}
+                  className="px-6 py-3 bg-blue-600 rounded font-bold hover:bg-blue-700"
+              >
+                  Enter Fullscreen
+              </button>
+          </div>
+      );
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 p-4">
+      {/* WEBCAM FEED */}
+      {exam?.proctoring?.webcam && (
+          <div className="fixed bottom-4 right-4 w-48 h-36 bg-black border-2 border-white shadow-lg z-50 rounded overflow-hidden">
+              <video 
+                  ref={videoRef} 
+                  autoPlay 
+                  muted 
+                  className="w-full h-full object-cover"
+              />
+          </div>
+      )}
+
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h1 className="font-bold text-lg">Online Examination</h1>
