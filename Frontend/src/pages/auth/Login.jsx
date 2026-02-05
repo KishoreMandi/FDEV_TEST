@@ -18,8 +18,10 @@ const Login = () => {
 
       toast.success("Welcome back!");
       const role = res.data.user.role;
-      if (role === "admin" || role === "trainer") {
+      if (role === "admin") {
         navigate("/admin/dashboard");
+      } else if (role === "trainer") {
+        navigate("/trainer/dashboard");
       } else {
         navigate("/student/dashboard");
       }

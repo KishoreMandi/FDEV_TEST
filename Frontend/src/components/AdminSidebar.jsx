@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import {
   LayoutDashboard,
   FilePlus,
@@ -8,6 +9,7 @@ import {
 } from "lucide-react";
 
 const AdminSidebar = () => {
+  const { user } = useAuth();
   const baseClass =
     "flex items-center gap-3 p-3 rounded-lg transition-all duration-200";
 
@@ -25,7 +27,7 @@ const AdminSidebar = () => {
 
       <nav className="p-4 space-y-2">
         <NavLink
-          to="/admin/dashboard"
+          to={user?.role === "trainer" ? "/trainer/dashboard" : "/admin/dashboard"}
           className={({ isActive }) =>
             `${baseClass} ${isActive ? activeClass : inactiveClass}`
           }
@@ -35,7 +37,7 @@ const AdminSidebar = () => {
         </NavLink>
 
         <NavLink
-          to="/admin/create-exam"
+          to={user?.role === "trainer" ? "/trainer/create-exam" : "/admin/create-exam"}
           className={({ isActive }) =>
             `${baseClass} ${isActive ? activeClass : inactiveClass}`
           }
@@ -45,7 +47,7 @@ const AdminSidebar = () => {
         </NavLink>
 
         <NavLink
-          to="/admin/add-questions"
+          to={user?.role === "trainer" ? "/trainer/add-questions" : "/admin/add-questions"}
           className={({ isActive }) =>
             `${baseClass} ${isActive ? activeClass : inactiveClass}`
           }
@@ -55,7 +57,7 @@ const AdminSidebar = () => {
         </NavLink>
 
         <NavLink
-          to="/admin/manage-exams"
+          to={user?.role === "trainer" ? "/trainer/manage-exams" : "/admin/manage-exams"}
           className={({ isActive }) =>
             `${baseClass} ${isActive ? activeClass : inactiveClass}`
           }
@@ -65,7 +67,7 @@ const AdminSidebar = () => {
         </NavLink>
 
         <NavLink
-          to="/admin/results"
+          to={user?.role === "trainer" ? "/trainer/results" : "/admin/results"}
           className={({ isActive }) =>
             `${baseClass} ${isActive ? activeClass : inactiveClass}`
           }
