@@ -5,3 +5,5 @@ export const loginUser = (data) =>
 
 export const registerUser = (data) =>
   axios.post("/auth/register", data);
+
+

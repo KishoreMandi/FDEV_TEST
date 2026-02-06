@@ -2,11 +2,13 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../models/User.js";
 
+
+
 /* ================= REGISTER ================= */
 
 export const registerUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role, department } = req.body;
 
     // check existing user
     const existingUser = await User.findOne({ email });
@@ -28,6 +30,7 @@ export const registerUser = async (req, res) => {
       password: hashedPassword,
       role,
       isApproved,
+      ...(role === "student" && { department }), // Conditionally add department
     });
 
     res.status(201).json({
