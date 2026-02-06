@@ -1,9 +1,23 @@
 import Question from "../models/Question.js";
 
+import Exam from "../models/Exam.js";
+
 /* ================= ADD QUESTION (ADMIN) ================= */
 export const addQuestion = async (req, res) => {
   try {
     const { examId, question, options, correctOption } = req.body;
+
+    // Check if exam is published
+    const exam = await Exam.findById(examId);
+    if (!exam) {
+      return res.status(404).json({ message: "Exam not found" });
+    }
+
+    if (exam.isPublished) {
+      return res.status(400).json({
+        message: "Your exam is already published, unable to add questions",
+      });
+    }
 
     const newQuestion = await Question.create({
       examId,
@@ -16,6 +30,57 @@ export const addQuestion = async (req, res) => {
       success: true,
       newQuestion,
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/* ================= GET QUESTIONS BY EXAM (ADMIN) ================= */
+export const getAdminQuestionsByExam = async (req, res) => {
+  try {
+    const questions = await Question.find({
+      examId: req.params.examId,
+    }); // Return everything including correctOption
+
+    res.json(questions);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/* ================= UPDATE QUESTION ================= */
+export const updateQuestion = async (req, res) => {
+  try {
+    const { questionId } = req.params;
+    const { question, options, correctOption } = req.body;
+
+    const updatedQuestion = await Question.findByIdAndUpdate(
+      questionId,
+      { question, options, correctOption },
+      { new: true }
+    );
+
+    if (!updatedQuestion) {
+      return res.status(404).json({ message: "Question not found" });
+    }
+
+    res.json({ success: true, updatedQuestion });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/* ================= DELETE QUESTION ================= */
+export const deleteQuestion = async (req, res) => {
+  try {
+    const { questionId } = req.params;
+    const deletedQuestion = await Question.findByIdAndDelete(questionId);
+
+    if (!deletedQuestion) {
+      return res.status(404).json({ message: "Question not found" });
+    }
+
+    res.json({ success: true, message: "Question deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

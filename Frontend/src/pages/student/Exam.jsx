@@ -29,7 +29,7 @@ const Exam = () => {
   // PROCTORING STATE
   const [tabSwitches, setTabSwitches] = useState(0);
   const [deviceViolations, setDeviceViolations] = useState(0); // Track device issues
-  const [isFullScreen, setIsFullScreen] = useState(true);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const logsRef = useRef([]);
   const videoRef = useRef(null);
   const mediaStreamRef = useRef(null); // Store stream for monitoring
@@ -39,6 +39,32 @@ const Exam = () => {
   const addLog = (type, message) => {
     logsRef.current.push({ type, message, timestamp: new Date() });
   };
+
+  /* ================= PREVENT NAVIGATION ================= */
+  useEffect(() => {
+    // 1. Push state to prevent back navigation
+    window.history.pushState(null, document.title, window.location.href);
+
+    const handlePopState = (event) => {
+      window.history.pushState(null, document.title, window.location.href);
+      toast.error("Navigation is disabled during the exam!");
+    };
+
+    // 2. Prevent Refresh/Close
+    const handleBeforeUnload = (e) => {
+       e.preventDefault(); 
+       e.returnValue = "Are you sure you want to leave? Your exam will be submitted.";
+       return e.returnValue;
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
 
   /* ================= LOAD QUESTIONS + RESUME ================= */
   useEffect(() => {
@@ -187,6 +213,14 @@ const Exam = () => {
       }
     };
   }, [exam]);
+
+  // Re-attach stream when video element mounts (e.g. after entering fullscreen)
+  useEffect(() => {
+    if (videoRef.current && mediaStreamRef.current) {
+      videoRef.current.srcObject = mediaStreamRef.current;
+      videoRef.current.play().catch(e => console.error("Play error:", e));
+    }
+  }, [isFullScreen, exam]);
 
   // 3. DEVICE MONITORING (Video/Mic + Black Screen Detection)
   useEffect(() => {
@@ -374,6 +408,11 @@ const Exam = () => {
     try {
       // Stop Camera/Mic immediately
       stopMediaStream();
+      
+      // Exit Fullscreen
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(err => console.error(err));
+      }
 
       await submitExam({
         examId,

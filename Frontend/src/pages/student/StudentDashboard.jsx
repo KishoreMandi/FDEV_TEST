@@ -12,10 +12,15 @@ const Dashboard = () => {
   const [attempted, setAttempted] = useState([]);
   const [showCheckModal, setShowCheckModal] = useState(false);
   const [selectedExamId, setSelectedExamId] = useState(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
   const navigate = useNavigate();
 
   useEffect(() => {
     loadData();
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
   }, []);
 
   const loadData = async () => {
@@ -119,7 +124,7 @@ const Dashboard = () => {
   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
     {exams.map((exam) => {
       const isCompleted = attempted.includes(exam._id);
-      const now = new Date();
+      const now = currentTime;
       const start = exam.startTime ? new Date(exam.startTime) : null;
       const end = exam.endTime ? new Date(exam.endTime) : null;
       
