@@ -1,13 +1,17 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, Clock, CheckCircle, Lock } from "lucide-react";
+import { BookOpen, Clock, CheckCircle, Lock, Calendar } from "lucide-react";
+import toast from "react-hot-toast";
 import LogoutButton from "../../components/LogoutButton";
+import SystemCheckModal from "../../components/SystemCheckModal";
 import { getExams } from "../../api/examApi";
 import { getStudentExamStatus } from "../../api/resultApi";
 
 const Dashboard = () => {
   const [exams, setExams] = useState([]);
   const [attempted, setAttempted] = useState([]);
+  const [showCheckModal, setShowCheckModal] = useState(false);
+  const [selectedExamId, setSelectedExamId] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -22,11 +26,43 @@ const Dashboard = () => {
     setAttempted(statusRes.data.attemptedExamIds);
   };
 
+  const handleStartExamClick = (exam) => {
+    const now = new Date();
+    const start = exam.startTime ? new Date(exam.startTime) : null;
+    const end = exam.endTime ? new Date(exam.endTime) : null;
+
+    if (start && now < start) {
+      toast.error(`Exam starts at ${start.toLocaleString()}`);
+      return;
+    }
+
+    if (end && now > end) {
+      toast.error("Exam has ended");
+      return;
+    }
+
+    setSelectedExamId(exam._id);
+    setShowCheckModal(true);
+  };
+
+  const handleSystemCheckPass = () => {
+    setShowCheckModal(false);
+    if (selectedExamId) {
+      navigate(`/student/exam/${selectedExamId}`);
+    }
+  };
+
   const completedCount = attempted.length;
   const pendingCount = exams.length - completedCount;
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
+      <SystemCheckModal 
+        open={showCheckModal}
+        onClose={() => setShowCheckModal(false)}
+        onConfirm={handleSystemCheckPass}
+      />
+      
       <div className="max-w-7xl mx-auto">
 
         {/* HEADER */}
@@ -83,6 +119,27 @@ const Dashboard = () => {
   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
     {exams.map((exam) => {
       const isCompleted = attempted.includes(exam._id);
+      const now = new Date();
+      const start = exam.startTime ? new Date(exam.startTime) : null;
+      const end = exam.endTime ? new Date(exam.endTime) : null;
+      
+      let statusText = "Available";
+      let statusColor = "text-blue-600";
+      let isActionable = true;
+
+      if (isCompleted) {
+         statusText = "Completed";
+         statusColor = "text-green-600";
+         isActionable = false;
+      } else if (start && now < start) {
+         statusText = `Starts: ${start.toLocaleString()}`;
+         statusColor = "text-orange-600";
+         isActionable = false;
+      } else if (end && now > end) {
+         statusText = "Expired";
+         statusColor = "text-red-600";
+         isActionable = false;
+      }
 
       return (
         <div
@@ -93,19 +150,22 @@ const Dashboard = () => {
             {exam.title}
           </h3>
 
-          <div className="text-sm text-gray-500 flex items-center gap-2 mb-4">
+          <div className="text-sm text-gray-500 flex items-center gap-2 mb-2">
             <Clock size={16} />
             {exam.duration} minutes
           </div>
 
+          {start && (
+             <div className="text-xs text-gray-500 flex items-center gap-2 mb-4">
+                <Calendar size={14} />
+                {start.toLocaleString()}
+             </div>
+          )}
+
           <span
-            className={`inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full mb-4 w-fit ${
-              isCompleted
-                ? "bg-green-100 text-green-700"
-                : "bg-blue-100 text-blue-700"
-            }`}
+            className={`inline-flex items-center gap-1 text-xs font-semibold px-3 py-1 rounded-full mb-4 w-fit bg-gray-100 ${statusColor}`}
           >
-            {isCompleted ? "Completed" : "Pending"}
+            {statusText}
           </span>
 
           {isCompleted ? (
@@ -119,12 +179,24 @@ const Dashboard = () => {
             </button>
           ) : (
             <button
-              onClick={() =>
-                navigate(`/student/exam/${exam._id}`)
-              }
-              className="mt-auto bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold transition"
+              disabled={!isActionable && !start} 
+              // We allow clicking "Starts: ..." to see the toast, or we can disable it. 
+              // User asked for "give me the mesage like exam start in mention that time also"
+              // The toast handles the click feedback, but visual disabled state helps too.
+              // Let's keep it clickable if future/expired so they get the toast explanation, 
+              // unless it's strictly better to disable. 
+              // I'll make it look disabled if not actionable, but keep click handler for toast if needed, 
+              // OR just rely on the card text.
+              // Actually, standard UX: if it says "Starts: ...", user might click.
+              // I'll style it differently.
+              onClick={() => handleStartExamClick(exam)}
+              className={`mt-auto py-2 rounded-lg font-semibold transition ${
+                  !isActionable && statusText !== "Available" 
+                  ? "bg-gray-300 text-gray-600 cursor-not-allowed" 
+                  : "bg-blue-600 hover:bg-blue-700 text-white"
+              }`}
             >
-              Start Exam
+              {start && now < start ? "Scheduled" : "Start Exam"}
             </button>
           )}
         </div>

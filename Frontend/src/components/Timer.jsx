@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 
-const Timer = ({ duration, onTimeUp }) => {
-  const [timeLeft, setTimeLeft] = useState(duration * 60);
+const Timer = ({ initialSeconds, onTimeUp }) => {
+  const [timeLeft, setTimeLeft] = useState(initialSeconds);
+
+  useEffect(() => {
+    // Sync local state if prop changes drastically (optional, but good for resume)
+    setTimeLeft(initialSeconds);
+  }, [initialSeconds]);
 
   useEffect(() => {
     const interval = setInterval(() => {

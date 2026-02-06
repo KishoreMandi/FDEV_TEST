@@ -11,6 +11,12 @@ const resultSchema = new mongoose.Schema(
       ref: "Exam",
     },
     answers: Array,
+    markedForReview: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Question",
+      },
+    ],
     activityLogs: [
       {
         type: { type: String }, // 'tab_switch', 'fullscreen_exit', 'copy_paste'

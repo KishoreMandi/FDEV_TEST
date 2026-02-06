@@ -57,6 +57,25 @@ const ManageExams = () => {
   };
 
   const handleUpdate = async () => {
+    const now = new Date();
+    const start = editing.startTime ? new Date(editing.startTime) : null;
+    const end = editing.endTime ? new Date(editing.endTime) : null;
+
+    if (start && start < now) {
+      toast.error("Start Time cannot be in the past.");
+      return;
+    }
+
+    if (end && end < now) {
+      toast.error("End Time cannot be in the past.");
+      return;
+    }
+
+    if (start && end && start >= end) {
+      toast.error("End Time must be after Start Time.");
+      return;
+    }
+
     try {
       const payload = {
         ...editing,

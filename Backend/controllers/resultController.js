@@ -121,12 +121,12 @@ export const getAllResults = async (req, res) => {
 
 export const autoSaveAnswers = async (req, res) => {
   try {
-    const { examId, answers, activityLogs } = req.body;
+    const { examId, answers, activityLogs, markedForReview } = req.body;
     const studentId = req.user.id;
 
     const attempt = await Result.findOneAndUpdate(
       { examId, studentId, status: "in-progress" },
-      { answers, activityLogs },
+      { answers, activityLogs, markedForReview },
       { upsert: true, new: true }
     );
 
@@ -146,7 +146,6 @@ export const getSavedAttempt = async (req, res) => {
   const attempt = await Result.findOne({
     examId,
     studentId: req.user.id,
-    status: "in-progress",
   });
 
   res.json(attempt || null);
