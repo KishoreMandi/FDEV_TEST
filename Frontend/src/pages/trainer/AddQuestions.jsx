@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { Folder, ArrowLeft, Download } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 import AdminSidebar from "../../components/AdminSidebar";
 import AdminHeader from "../../components/AdminHeader";
@@ -87,6 +90,52 @@ const AddQuestions = () => {
     }
   };
 
+  const handleDownloadQuestions = () => {
+    if (questionsList.length === 0) {
+      toast.error("No questions to download");
+      return;
+    }
+
+    const examTitle = exams.find(e => e._id === examId)?.title || "Exam";
+    const doc = new jsPDF();
+
+    // Add Title
+    doc.setFontSize(18);
+    doc.text(`${examTitle} - Questions`, 14, 22);
+
+    // Prepare Table Data
+    const tableData = questionsList.map((q, index) => [
+      index + 1,
+      q.question,
+      q.options[0],
+      q.options[1],
+      q.options[2],
+      q.options[3],
+      q.options[q.correctOption] // Correct Answer Text
+    ]);
+
+    // Generate Table
+    autoTable(doc, {
+      startY: 30,
+      head: [["#", "Question", "Option A", "Option B", "Option C", "Option D", "Correct"]],
+      body: tableData,
+      theme: "grid",
+      headStyles: { fillColor: [41, 128, 185] }, // Blue header
+      styles: { fontSize: 10, cellPadding: 3 },
+      columnStyles: {
+        0: { cellWidth: 10 }, // #
+        1: { cellWidth: 50 }, // Question
+        2: { cellWidth: 25 }, // Opt A
+        3: { cellWidth: 25 }, // Opt B
+        4: { cellWidth: 25 }, // Opt C
+        5: { cellWidth: 25 }, // Opt D
+        6: { cellWidth: 25 }, // Correct
+      },
+    });
+
+    doc.save(`${examTitle}_Questions.pdf`);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -124,7 +173,7 @@ const AddQuestions = () => {
       setCorrectOption(null);
       fetchQuestions();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to save question");
+       toast.error(error.response?.data?.message || "Failed to save question");
     }
   };
 
@@ -135,135 +184,189 @@ const AddQuestions = () => {
       <div className="ml-64 w-full min-h-screen bg-gray-100">
         <AdminHeader />
 
-        <div className="p-6 max-w-3xl">
-          <h2 className="text-xl font-bold mb-4">
-            {editingId ? "Edit Question" : "Add Question"}
-          </h2>
-
-          {isPublished && (
-            <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4" role="alert">
-              <p className="font-bold">Notice</p>
-              <p>Your exam is already published. You cannot add, edit, or delete questions.</p>
-            </div>
-          )}
-
-          <form
-            onSubmit={handleSubmit}
-            className={`bg-white p-6 rounded-xl shadow space-y-4 mb-8 ${isPublished ? "opacity-50 pointer-events-none" : ""}`}
-          >
-            {/* Select Exam */}
-            <select
-              className="w-full p-3 border rounded"
-              value={examId}
-              onChange={(e) => setExamId(e.target.value)}
-              required
-              disabled={!!editingId}
-            >
-              <option value="">Select Exam</option>
-              {exams.map((exam) => (
-                <option key={exam._id} value={exam._id}>
-                  {exam.title}
-                </option>
-              ))}
-            </select>
-
-            {/* Question */}
-            <textarea
-              placeholder="Enter question"
-              className="w-full p-3 border rounded"
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              required
-            />
-
-            {/* Options */}
-            {options.map((opt, index) => (
-              <div key={index} className="flex items-center gap-3">
-                <input
-                  type="radio"
-                  checked={correctOption === index}
-                  onChange={() => setCorrectOption(index)}
-                />
-                <input
-                  placeholder={`Option ${index + 1}`}
-                  className="w-full p-2 border rounded"
-                  value={opt}
-                  onChange={(e) =>
-                    handleOptionChange(e.target.value, index)
-                  }
-                  required
-                />
-              </div>
-            ))}
-
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-              >
-                {editingId ? "Update Question" : "Add Question"}
-              </button>
-
-              {editingId && (
-                <button
-                  type="button"
-                  onClick={handleCancelEdit}
-                  className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                >
-                  Cancel
-                </button>
-              )}
-            </div>
-          </form>
-
-          {/* Questions List */}
-          {examId && (
-            <div className="space-y-4">
-              <h3 className="text-lg font-bold">
-                Questions ({questionsList.length})
-              </h3>
-              {questionsList.map((q, i) => (
-                <div key={q._id} className="bg-white p-4 rounded-xl shadow">
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-semibold text-lg">
-                      Q{i + 1}: {q.question}
-                    </h4>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleEdit(q)}
-                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(q._id)}
-                        className="text-red-600 hover:text-red-800 text-sm font-medium"
-                      >
-                        Delete
-                      </button>
+        <div className="p-6 max-w-5xl mx-auto">
+          {!examId ? (
+            // Folder View
+            <div>
+              <h2 className="text-2xl font-bold mb-6 text-gray-800">Select Exam Folder</h2>
+              {exams.length === 0 ? (
+                <p className="text-gray-500">No exams found. Please create an exam first.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {exams.map((exam) => (
+                    <div 
+                      key={exam._id} 
+                      onClick={() => setExamId(exam._id)}
+                      className="bg-white p-6 rounded-xl shadow-md hover:shadow-lg transition-shadow cursor-pointer flex flex-col items-center justify-center border border-gray-200 group"
+                    >
+                      <Folder size={64} className="text-blue-500 mb-4 group-hover:scale-110 transition-transform" />
+                      <h3 className="text-lg font-semibold text-gray-800 text-center">{exam.title}</h3>
+                      <p className="text-sm text-gray-500 mt-2">Click to manage questions</p>
                     </div>
-                  </div>
-                  <ul className="pl-4 space-y-1">
-                    {q.options.map((opt, idx) => (
-                      <li
-                        key={idx}
-                        className={`${
-                          q.correctOption === idx
-                            ? "text-green-600 font-medium"
-                            : "text-gray-600"
-                        }`}
-                      >
-                        {idx + 1}. {opt} {q.correctOption === idx && "(Correct)"}
-                      </li>
-                    ))}
-                  </ul>
+                  ))}
                 </div>
-              ))}
-              {questionsList.length === 0 && (
-                <p className="text-gray-500 text-center py-4">
-                  No questions added yet for this exam.
-                </p>
               )}
+            </div>
+          ) : (
+            // Question Management View
+            <div>
+              <div className="flex items-center justify-between mb-6">
+                <button 
+                  onClick={() => setExamId("")}
+                  className="flex items-center text-gray-600 hover:text-blue-600 transition-colors"
+                >
+                  <ArrowLeft size={20} className="mr-2" />
+                  Back to Exams
+                </button>
+                <div className="flex items-center gap-4">
+                  <h2 className="text-2xl font-bold text-gray-800">
+                    {exams.find(e => e._id === examId)?.title} - Questions
+                  </h2>
+                  <button
+                    onClick={handleDownloadQuestions}
+                    className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+                    title="Download Questions"
+                  >
+                    <Download size={18} />
+                    Download
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Form Section */}
+                <div className="lg:col-span-1">
+                  <div className={`bg-white p-6 rounded-xl shadow sticky top-6 ${isPublished ? "opacity-75" : ""}`}>
+                    <h3 className="text-xl font-bold mb-4 border-b pb-2">
+                      {editingId ? "Edit Question" : "Add New Question"}
+                    </h3>
+                    
+                    {isPublished && (
+                      <div className="bg-yellow-50 border-l-4 border-yellow-500 text-yellow-700 p-3 mb-4 text-sm" role="alert">
+                        <p className="font-bold">Exam Published</p>
+                        <p>Questions cannot be modified.</p>
+                      </div>
+                    )}
+
+                    <form onSubmit={handleSubmit} className={`space-y-4 ${isPublished ? "pointer-events-none" : ""}`}>
+                      {/* Question */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Question Text</label>
+                        <textarea
+                          placeholder="Enter your question here..."
+                          className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                          rows="3"
+                          value={question}
+                          onChange={(e) => setQuestion(e.target.value)}
+                          required
+                        />
+                      </div>
+
+                      {/* Options */}
+                      <div className="space-y-3">
+                        <label className="block text-sm font-medium text-gray-700">Options (Select Correct)</label>
+                        {options.map((opt, index) => (
+                          <div key={index} className="flex items-center gap-3">
+                            <input
+                              type="radio"
+                              name="correctOption"
+                              checked={correctOption === index}
+                              onChange={() => setCorrectOption(index)}
+                              className="w-4 h-4 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                            />
+                            <input
+                              placeholder={`Option ${index + 1}`}
+                              className={`w-full p-2 border rounded-lg outline-none transition-all ${correctOption === index ? "border-blue-500 ring-1 ring-blue-500 bg-blue-50" : "border-gray-300 focus:border-blue-400"}`}
+                              value={opt}
+                              onChange={(e) => handleOptionChange(e.target.value, index)}
+                              required
+                            />
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="flex gap-2 pt-2">
+                        <button
+                          type="submit"
+                          className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
+                        >
+                          {editingId ? "Update" : "Add Question"}
+                        </button>
+
+                        {editingId && (
+                          <button
+                            type="button"
+                            onClick={handleCancelEdit}
+                            className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                        )}
+                      </div>
+                    </form>
+                  </div>
+                </div>
+
+                {/* List Section */}
+                <div className="lg:col-span-2 space-y-4">
+                   <div className="flex justify-between items-center mb-2">
+                      <h3 className="text-lg font-bold text-gray-700">
+                        Existing Questions ({questionsList.length})
+                      </h3>
+                   </div>
+                  
+                  {questionsList.length === 0 ? (
+                    <div className="bg-white p-8 rounded-xl shadow text-center text-gray-500">
+                      <p>No questions added yet for this exam.</p>
+                      <p className="text-sm mt-1">Use the form on the left to add one.</p>
+                    </div>
+                  ) : (
+                    questionsList.map((q, i) => (
+                      <div key={q._id} className="bg-white p-5 rounded-xl shadow border border-gray-100 hover:shadow-md transition-shadow">
+                        <div className="flex justify-between items-start mb-3">
+                          <h4 className="font-semibold text-lg text-gray-800 pr-4">
+                            <span className="text-blue-600 mr-2">Q{i + 1}.</span>{q.question}
+                          </h4>
+                          <div className="flex gap-2 shrink-0">
+                            <button
+                              onClick={() => handleEdit(q)}
+                              className="text-blue-600 hover:text-blue-800 text-sm font-medium px-2 py-1 rounded hover:bg-blue-50 transition-colors"
+                              disabled={isPublished}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              onClick={() => handleDelete(q._id)}
+                              className="text-red-600 hover:text-red-800 text-sm font-medium px-2 py-1 rounded hover:bg-red-50 transition-colors"
+                              disabled={isPublished}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                        <ul className="pl-2 space-y-2">
+                          {q.options.map((opt, idx) => (
+                            <li
+                              key={idx}
+                              className={`flex items-center px-3 py-2 rounded-lg text-sm ${
+                                q.correctOption === idx
+                                  ? "bg-green-50 text-green-700 border border-green-200 font-medium"
+                                  : "bg-gray-50 text-gray-600 border border-transparent"
+                              }`}
+                            >
+                              <span className={`w-6 h-6 flex items-center justify-center rounded-full mr-3 text-xs ${q.correctOption === idx ? "bg-green-200 text-green-800" : "bg-gray-200 text-gray-600"}`}>
+                                {String.fromCharCode(65 + idx)}
+                              </span>
+                              {opt}
+                              {q.correctOption === idx && <span className="ml-auto text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full">Correct</span>}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
             </div>
           )}
         </div>
