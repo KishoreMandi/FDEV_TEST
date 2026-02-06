@@ -35,6 +35,7 @@ const ManageExams = () => {
         webcam: false,
         fullScreen: false,
         tabSwitch: false,
+        screenRecording: false,
         tabSwitchLimit: 3,
       },
     });
@@ -268,6 +269,17 @@ const ManageExams = () => {
                         })}
                       />
                       Fullscreen
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={editing.proctoring?.screenRecording}
+                        onChange={(e) => setEditing({
+                          ...editing,
+                          proctoring: { ...editing.proctoring, screenRecording: e.target.checked }
+                        })}
+                      />
+                      Screen Recording
                     </label>
                     <label className="flex items-center gap-2">
                       <input

@@ -15,6 +15,8 @@ const Results = () => {
     getExams().then((res) => setExams(res.data));
   }, []);
 
+  const BASE_URL = "http://localhost:5000";
+
   useEffect(() => {
     if (!examId) return;
 
@@ -54,6 +56,7 @@ const Results = () => {
                   <th className="p-3 text-left">Student</th>
                   <th className="p-3 text-left">Score</th>
                   <th className="p-3 text-left">Status</th>
+                  <th className="p-3 text-left">Recordings</th>
                 </tr>
               </thead>
 
@@ -72,6 +75,28 @@ const Results = () => {
                       >
                         {r.status}
                       </span>
+                    </td>
+                    <td className="p-3 space-x-2">
+                      {r.webcamRecording && (
+                        <a 
+                          href={`${BASE_URL}/${r.webcamRecording}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-600 underline text-xs"
+                        >
+                          Webcam
+                        </a>
+                      )}
+                      {r.screenRecording && (
+                        <a 
+                          href={`${BASE_URL}/${r.screenRecording}`} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-purple-600 underline text-xs"
+                        >
+                          Screen
+                        </a>
+                      )}
                     </td>
                   </tr>
                 ))}

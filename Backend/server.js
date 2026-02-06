@@ -14,12 +14,21 @@ import multer from "multer";
 import { bulkImportUsers } from "./controllers/adminController.js";
 import authMiddleware from "./middleware/authMiddleware.js";
 import adminMiddleware from "./middleware/adminMiddleware.js";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 dotenv.config()
 
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// Serve static files from uploads directory
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 connectDB();
 

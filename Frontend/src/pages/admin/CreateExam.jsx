@@ -78,6 +78,7 @@ const CreateExam = () => {
         webcam: false,
         fullScreen: false,
         tabSwitch: false,
+        screenRecording: false,
         tabSwitchLimit: 3,
       });
     } catch (error) {
@@ -181,6 +182,15 @@ const CreateExam = () => {
                     className="w-4 h-4"
                   />
                   <span>Force Fullscreen</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={proctoring.screenRecording}
+                    onChange={(e) => setProctoring({ ...proctoring, screenRecording: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <span>Screen Recording</span>
                 </label>
                 <label className="flex items-center gap-2">
                   <input
