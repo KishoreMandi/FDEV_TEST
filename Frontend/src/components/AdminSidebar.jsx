@@ -6,6 +6,7 @@ import {
   HelpCircle,
   BarChart3,
   ClipboardList,
+  PieChart,
 } from "lucide-react";
 
 const AdminSidebar = () => {
@@ -74,6 +75,16 @@ const AdminSidebar = () => {
         >
           <BarChart3 size={20} />
           <span>Results</span>
+        </NavLink>
+
+        <NavLink
+          to={user?.role === "trainer" ? "/trainer/reports" : "/admin/reports"}
+          className={({ isActive }) =>
+            `${baseClass} ${isActive ? activeClass : inactiveClass}`
+          }
+        >
+          <PieChart size={20} />
+          <span>Reports</span>
         </NavLink>
       </nav>
     </div>

@@ -11,6 +11,7 @@ import AddQuestions from "../pages/admin/AddQuestions";
 import TrainerAddQuestions from "../pages/trainer/AddQuestions";
 import Results from "../pages/admin/Results";
 import TrainerResults from "../pages/trainer/Results";
+import Reports from "../pages/admin/Reports";
 
 import StudentDashboard from "../pages/student/StudentDashboard";
 import Exam from "../pages/student/Exam";
@@ -70,6 +71,15 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute role="admin">
             <AdminDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/reports"
+        element={
+          <ProtectedRoute role="admin">
+            <Reports />
           </ProtectedRoute>
         }
       />
@@ -138,6 +148,15 @@ const AppRoutes = () => {
       />
 
       <Route
+        path="/trainer/reports"
+        element={
+          <ProtectedRoute role="trainer">
+            <Reports />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/admin/manage-exams"
         element={
           <ProtectedRoute role="admin">
@@ -154,6 +173,8 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+
+      <Route path="*" element={<div className="p-10 text-center text-red-500 font-bold">404 - Page Not Found (Debug: {window.location.pathname})</div>} />
 
     </Routes>
   );
