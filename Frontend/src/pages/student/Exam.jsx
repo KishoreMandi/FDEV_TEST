@@ -42,6 +42,7 @@ const Exam = () => {
   const webcamChunksRef = useRef([]);
   const screenChunksRef = useRef([]);
   const screenStreamRef = useRef(null);
+  const audioContextRef = useRef(null); // Store AudioContext to close it later
   const [hasScreenShare, setHasScreenShare] = useState(false);
 
   const addLog = (type, message) => {
@@ -172,8 +173,15 @@ const Exam = () => {
     if (screenStreamRef.current) {
       screenStreamRef.current.getTracks().forEach((track) => {
         track.stop();
+        track.enabled = false;
       });
       screenStreamRef.current = null;
+    }
+
+    // 4. Close AudioContext
+    if (audioContextRef.current) {
+        audioContextRef.current.close().catch(e => console.error("Error closing AudioContext:", e));
+        audioContextRef.current = null;
     }
   };
 
@@ -551,21 +559,65 @@ const Exam = () => {
 
   const enableScreenShare = async () => {
       try {
-          const stream = await navigator.mediaDevices.getDisplayMedia({ 
+          const screenStream = await navigator.mediaDevices.getDisplayMedia({ 
               video: { cursor: "always" }, 
               audio: true 
           });
-          screenStreamRef.current = stream;
-          setHasScreenShare(true);
-          
-          // Check for audio track (System Audio)
-          const audioTracks = stream.getAudioTracks();
-          if (audioTracks.length > 0) {
-              console.log("System audio track detected in screen share.");
-          } else {
-              console.warn("No system audio track found. User might not have shared audio.");
+
+          let finalStream = screenStream;
+          const audioTracks = [];
+
+          // 1. Get System Audio (if shared)
+          const systemAudioTrack = screenStream.getAudioTracks()[0];
+          if (systemAudioTrack) {
+              audioTracks.push(systemAudioTrack);
           }
 
+          // 2. Get Mic Audio (from webcam stream)
+          if (mediaStreamRef.current) {
+             const micTrack = mediaStreamRef.current.getAudioTracks()[0];
+             if (micTrack) {
+                audioTracks.push(micTrack);
+             }
+          }
+
+          // 3. Mix Audio if multiple sources exist
+          if (audioTracks.length > 0) {
+              const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+              audioContextRef.current = audioContext; // Store ref
+              const destination = audioContext.createMediaStreamDestination();
+
+              if (systemAudioTrack) {
+                  const systemSource = audioContext.createMediaStreamSource(new MediaStream([systemAudioTrack]));
+                  systemSource.connect(destination);
+              }
+
+              if (audioTracks.length > 1 || (audioTracks.length === 1 && !systemAudioTrack)) {
+                   // If we have mic track (either alone or with system)
+                   const micTrack = audioTracks.find(t => t !== systemAudioTrack);
+                   if (micTrack) {
+                       const micSource = audioContext.createMediaStreamSource(new MediaStream([micTrack]));
+                       micSource.connect(destination);
+                   }
+              }
+
+              const mixedAudioTrack = destination.stream.getAudioTracks()[0];
+              finalStream = new MediaStream([
+                  screenStream.getVideoTracks()[0], 
+                  mixedAudioTrack
+              ]);
+          }
+
+          // Ensure we stop ALL tracks (Original System Audio + Mixed Audio + Video)
+          // We create a "master" stream for cleanup purposes that contains all tracks we touched
+          const tracksToCleanup = [...finalStream.getTracks()];
+          if (systemAudioTrack && !tracksToCleanup.includes(systemAudioTrack)) {
+             tracksToCleanup.push(systemAudioTrack);
+          }
+          
+          screenStreamRef.current = new MediaStream(tracksToCleanup);
+          setHasScreenShare(true);
+          
           const mimeTypes = [
               "video/webm;codecs=vp9,opus",
               "video/webm;codecs=vp8,opus",
@@ -574,7 +626,7 @@ const Exam = () => {
           const selectedMimeType = mimeTypes.find(type => MediaRecorder.isTypeSupported(type));
 
           if (selectedMimeType) {
-             const recorder = new MediaRecorder(stream, { 
+             const recorder = new MediaRecorder(finalStream, { 
                  mimeType: selectedMimeType,
                  audioBitsPerSecond: 128000,
                  videoBitsPerSecond: 2500000
@@ -586,7 +638,8 @@ const Exam = () => {
              screenRecorderRef.current = recorder;
           }
           
-          stream.getVideoTracks()[0].onended = () => {
+          // Listen for stop on the original screen stream video track
+          screenStream.getVideoTracks()[0].onended = () => {
               toast.error("Screen sharing stopped! Exam will be submitted.");
               if (finalSubmitRef.current) finalSubmitRef.current();
           };
