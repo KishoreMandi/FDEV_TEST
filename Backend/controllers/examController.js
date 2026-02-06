@@ -46,7 +46,9 @@ export const getAllExams = async (req, res) => {
       query.isPublished = true;
     }
 
-    const exams = await Exam.find(query).select("-createdBy");
+    const exams = await Exam.find(query)
+      .sort({ createdAt: -1 })
+      .select("-createdBy");
     res.json(exams);
   } catch (error) {
     res.status(500).json({ message: error.message });

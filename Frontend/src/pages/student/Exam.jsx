@@ -36,6 +36,14 @@ const Exam = () => {
   const finalSubmitRef = useRef(null); // Ref for finalSubmit to avoid stale closures in intervals
   const canvasRef = useRef(document.createElement("canvas")); // Off-screen canvas for analysis
 
+  // RECORDING REFS
+  const webcamRecorderRef = useRef(null);
+  const screenRecorderRef = useRef(null);
+  const webcamChunksRef = useRef([]);
+  const screenChunksRef = useRef([]);
+  const screenStreamRef = useRef(null);
+  const [hasScreenShare, setHasScreenShare] = useState(false);
+
   const addLog = (type, message) => {
     logsRef.current.push({ type, message, timestamp: new Date() });
   };
@@ -159,6 +167,14 @@ const Exam = () => {
       }
       videoRef.current.srcObject = null;
     }
+
+    // 3. Stop Screen Stream
+    if (screenStreamRef.current) {
+      screenStreamRef.current.getTracks().forEach((track) => {
+        track.stop();
+      });
+      screenStreamRef.current = null;
+    }
   };
 
   /* ================= PROCTORING LOGIC ================= */
@@ -182,6 +198,27 @@ const Exam = () => {
           if (videoRef.current) {
             videoRef.current.srcObject = stream;
             videoRef.current.play().catch(() => {});
+          }
+
+          // START RECORDING
+          const mimeTypes = [
+              "video/webm;codecs=vp9,opus",
+              "video/webm;codecs=vp8,opus",
+              "video/webm"
+          ];
+          const selectedMimeType = mimeTypes.find(type => MediaRecorder.isTypeSupported(type));
+
+          if (selectedMimeType) {
+             const recorder = new MediaRecorder(stream, { 
+                 mimeType: selectedMimeType,
+                 audioBitsPerSecond: 128000,
+                 videoBitsPerSecond: 1000000 // Webcam needs less bandwidth
+             });
+             recorder.ondataavailable = (e) => {
+                if (e.data.size > 0) webcamChunksRef.current.push(e.data);
+             };
+             recorder.start(1000); 
+             webcamRecorderRef.current = recorder;
           }
         })
         .catch(() => {
@@ -250,7 +287,7 @@ const Exam = () => {
       if (!issue && videoEl && videoEl.readyState === 4) { // 4 = HAVE_ENOUGH_DATA
          try {
            const canvas = canvasRef.current;
-           const ctx = canvas.getContext('2d');
+           const ctx = canvas.getContext('2d', { willReadFrequently: true });
            canvas.width = 100; // Low res for performance
            canvas.height = 100;
            
@@ -403,10 +440,64 @@ const Exam = () => {
     setCurrent((p) => p + 1);
   };
 
+  /* ================= RECORDING HELPERS ================= */
+  const stopRecorder = (recorder, chunksRef) => {
+    return new Promise((resolve) => {
+      if (!recorder || recorder.state === "inactive") {
+        resolve(new Blob(chunksRef.current, { type: "video/webm" }));
+        return;
+      }
+      recorder.onstop = () => {
+        const blob = new Blob(chunksRef.current, { type: "video/webm" });
+        resolve(blob);
+      };
+      recorder.stop();
+    });
+  };
+
+  const uploadRecordings = async () => {
+    try {
+      const formData = new FormData();
+      formData.append("examId", examId);
+
+      // Stop & Collect Webcam
+      if (webcamRecorderRef.current) {
+        const webcamBlob = await stopRecorder(webcamRecorderRef.current, webcamChunksRef);
+        if (webcamBlob.size > 0) {
+          formData.append("webcam", webcamBlob, "webcam.webm");
+        }
+      }
+
+      // Stop & Collect Screen
+      if (screenRecorderRef.current) {
+        const screenBlob = await stopRecorder(screenRecorderRef.current, screenChunksRef);
+        if (screenBlob.size > 0) {
+           formData.append("screen", screenBlob, "screen.webm");
+        }
+      }
+      
+      if (formData.has("webcam") || formData.has("screen")) {
+          const toastId = toast.loading("Uploading exam recordings...");
+          await axios.post("/results/upload-recording", formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
+          toast.dismiss(toastId);
+      }
+
+    } catch (error) {
+      console.error("Upload error:", error);
+      // Don't block submission on upload fail, but warn
+      toast.error("Recording upload failed.");
+    }
+  };
+
   /* ================= FINAL SUBMIT ================= */
   const finalSubmit = async () => {
     try {
-      // Stop Camera/Mic immediately
+      // 1. Upload Recordings
+      await uploadRecordings();
+
+      // 2. Stop Camera/Mic/Screen
       stopMediaStream();
       
       // Exit Fullscreen
@@ -458,6 +549,68 @@ const Exam = () => {
       document.documentElement.requestFullscreen().catch(console.error);
   };
 
+  const enableScreenShare = async () => {
+      try {
+          const stream = await navigator.mediaDevices.getDisplayMedia({ 
+              video: { cursor: "always" }, 
+              audio: true 
+          });
+          screenStreamRef.current = stream;
+          setHasScreenShare(true);
+          
+          // Check for audio track (System Audio)
+          const audioTracks = stream.getAudioTracks();
+          if (audioTracks.length > 0) {
+              console.log("System audio track detected in screen share.");
+          } else {
+              console.warn("No system audio track found. User might not have shared audio.");
+          }
+
+          const mimeTypes = [
+              "video/webm;codecs=vp9,opus",
+              "video/webm;codecs=vp8,opus",
+              "video/webm"
+          ];
+          const selectedMimeType = mimeTypes.find(type => MediaRecorder.isTypeSupported(type));
+
+          if (selectedMimeType) {
+             const recorder = new MediaRecorder(stream, { 
+                 mimeType: selectedMimeType,
+                 audioBitsPerSecond: 128000,
+                 videoBitsPerSecond: 2500000
+             });
+             recorder.ondataavailable = (e) => {
+                if (e.data.size > 0) screenChunksRef.current.push(e.data);
+             };
+             recorder.start(1000);
+             screenRecorderRef.current = recorder;
+          }
+          
+          stream.getVideoTracks()[0].onended = () => {
+              toast.error("Screen sharing stopped! Exam will be submitted.");
+              if (finalSubmitRef.current) finalSubmitRef.current();
+          };
+      } catch (err) {
+          console.error(err);
+          toast.error("Screen sharing is required!");
+      }
+  };
+
+  if (exam?.proctoring?.screenRecording && !hasScreenShare) {
+      return (
+          <div className="fixed inset-0 bg-gray-900 flex flex-col items-center justify-center z-50 text-white">
+              <h2 className="text-2xl font-bold mb-4">Screen Share Required</h2>
+              <p className="mb-6">This exam requires screen recording. Please enable screen sharing to proceed.</p>
+              <button 
+                  onClick={enableScreenShare}
+                  className="px-6 py-3 bg-blue-600 rounded font-bold hover:bg-blue-700"
+              >
+                  Enable Screen Share
+              </button>
+          </div>
+      );
+  }
+
   if (exam?.proctoring?.fullScreen && !isFullScreen) {
       return (
           <div className="fixed inset-0 bg-gray-900 flex flex-col items-center justify-center z-50 text-white">
@@ -477,7 +630,7 @@ const Exam = () => {
     <div className="min-h-screen bg-gray-100 p-4">
       {/* WEBCAM FEED */}
       {exam?.proctoring?.webcam && (
-          <div className="fixed bottom-4 right-4 w-48 h-36 bg-black border-2 border-white shadow-lg z-50 rounded overflow-hidden">
+          <div className="fixed bottom-24 right-4 w-48 h-36 bg-black border-2 border-white shadow-lg z-50 rounded overflow-hidden">
               <video 
                   ref={videoRef} 
                   autoPlay 

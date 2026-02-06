@@ -32,6 +32,7 @@ const examSchema = new mongoose.Schema(
       webcam: { type: Boolean, default: false },
       fullScreen: { type: Boolean, default: false },
       tabSwitch: { type: Boolean, default: false },
+      screenRecording: { type: Boolean, default: false }, // New field
       tabSwitchLimit: { type: Number, default: 3 },
     },
     createdBy: {

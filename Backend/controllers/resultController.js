@@ -118,11 +118,71 @@ export const getAllResults = async (req, res) => {
   }
 };
 
+/* ================= UPLOAD RECORDING ================= */
+export const uploadRecording = async (req, res) => {
+  try {
+    const { examId } = req.body;
+    const studentId = req.user.id;
+
+    if (!req.files || (!req.files.screen && !req.files.webcam)) {
+      return res.status(400).json({ message: "No files uploaded" });
+    }
+
+    // Try to find in-progress result first
+    let result = await Result.findOne({
+      examId,
+      studentId,
+      status: "in-progress",
+    });
+
+    // If not found, check for recently submitted (in case of race condition or late upload)
+    if (!result) {
+      result = await Result.findOne({
+        examId,
+        studentId,
+        status: "submitted",
+      }).sort({ submittedAt: -1 });
+    }
+
+    if (!result) {
+      return res.status(404).json({ message: "No exam attempt found" });
+    }
+
+    if (req.files.screen) {
+      result.screenRecording = req.files.screen[0].path.replace(/\\/g, "/");
+    }
+    if (req.files.webcam) {
+      result.webcamRecording = req.files.webcam[0].path.replace(/\\/g, "/");
+    }
+
+    await result.save();
+
+    res.json({ success: true, message: "Recordings uploaded successfully" });
+  } catch (error) {
+    console.error("UPLOAD ERROR:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
 
 export const autoSaveAnswers = async (req, res) => {
   try {
     const { examId, answers, activityLogs, markedForReview } = req.body;
     const studentId = req.user.id;
+
+    // 1. Check if exam is already submitted (prevent ghost upserts)
+    const alreadySubmitted = await Result.findOne({
+      examId,
+      studentId,
+      status: "submitted",
+    });
+
+    if (alreadySubmitted) {
+      return res.json({
+        success: true,
+        message: "Exam already submitted. Auto-save ignored.",
+      });
+    }
 
     const attempt = await Result.findOneAndUpdate(
       { examId, studentId, status: "in-progress" },

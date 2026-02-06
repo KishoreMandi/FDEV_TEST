@@ -6,17 +6,39 @@ import {
   autoSaveAnswers,
   getSavedAttempt,
   getStudentExamStatus,
-  getResultsByExam
+  getResultsByExam,
+  uploadRecording
 } from "../controllers/resultController.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
 import adminMiddleware from "../middleware/adminMiddleware.js";
 import trainerMiddleware from "../middleware/trainerMiddleware.js";
+import multer from "multer";
+import path from "path";
 
 const router = express.Router();
 
+// Multer Config
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/");
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
+  },
+});
+
+const upload = multer({ storage: storage });
+
 // student
 router.post("/submit", authMiddleware, submitExam);
+router.post(
+  "/upload-recording",
+  authMiddleware,
+  upload.fields([{ name: "screen" }, { name: "webcam" }]),
+  uploadRecording
+);
 router.get("/my/:examId", authMiddleware, getMyResult);
 
 // admin & trainer
