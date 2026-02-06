@@ -1,5 +1,6 @@
 import Exam from "../models/Exam.js";
 import Result from "../models/Result.js";
+import Question from "../models/Question.js";
 
 /* ================= CREATE EXAM (ADMIN) ================= */
 export const createExam = async (req, res) => {
@@ -8,6 +9,12 @@ export const createExam = async (req, res) => {
 
     if (!title || !duration) {
       return res.status(400).json({ message: "All fields required" });
+    }
+
+    if (isPublished) {
+      return res.status(400).json({
+        message: "You cannot publish the exam immediately because it has no questions. Please create the exam first, then add questions.",
+      });
     }
 
     const exam = await Exam.create({
@@ -53,6 +60,15 @@ export const updateExam = async (req, res) => {
   try {
     const { examId } = req.params;
     const { title, duration, negativeMarking, isPublished, startTime, endTime, attemptLimit, proctoring } = req.body;
+
+    if (isPublished) {
+      const questionCount = await Question.countDocuments({ examId });
+      if (questionCount === 0) {
+        return res.status(400).json({
+          message: "Cannot publish exam with 0 questions. Please add questions first.",
+        });
+      }
+    }
 
     const exam = await Exam.findByIdAndUpdate(
       examId,

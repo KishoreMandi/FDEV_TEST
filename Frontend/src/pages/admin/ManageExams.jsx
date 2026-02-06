@@ -87,8 +87,9 @@ const ManageExams = () => {
       toast.success("Exam updated");
       setEditing(null);
       loadExams();
-    } catch {
-      toast.error("Update failed");
+    } catch (error) {
+      const message = error.response?.data?.message || "Update failed";
+      toast.error(message);
     }
   };
 

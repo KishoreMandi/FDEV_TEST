@@ -44,6 +44,13 @@ const CreateExam = () => {
       return;
     }
 
+    if (isPublished) {
+      toast.error(
+        "You cannot publish the exam immediately because it has no questions. Please create the exam first, then add questions."
+      );
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -73,9 +80,9 @@ const CreateExam = () => {
         tabSwitch: false,
         tabSwitchLimit: 3,
       });
-    } catch {
-
-      toast.error("Failed to create exam");
+    } catch (error) {
+      const message = error.response?.data?.message || "Failed to create exam";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
