@@ -28,6 +28,28 @@ export const addDepartment = async (req, res) => {
   }
 };
 
+/* ================= UPDATE DEPARTMENT (ADMIN) ================= */
+export const updateDepartment = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description, status } = req.body;
+
+    const department = await Department.findByIdAndUpdate(
+      id,
+      { name, description, status },
+      { new: true, runValidators: true }
+    );
+
+    if (!department) {
+      return res.status(404).json({ message: "Department not found" });
+    }
+
+    res.json(department);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 /* ================= DELETE DEPARTMENT (ADMIN) ================= */
 export const deleteDepartment = async (req, res) => {
   try {

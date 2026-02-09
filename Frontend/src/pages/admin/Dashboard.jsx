@@ -182,6 +182,7 @@ const Dashboard = () => {
                     <th className="p-4 font-medium text-gray-600">Name</th>
                     <th className="p-4 font-medium text-gray-600">Email</th>
                     <th className="p-4 font-medium text-gray-600">Role</th>
+                    <th className="p-4 font-medium text-gray-600">Department</th>
                     <th className="p-4 font-medium text-gray-600">Action</th>
                   </tr>
                 </thead>
@@ -191,6 +192,7 @@ const Dashboard = () => {
                       <td className="p-4">{u.name}</td>
                       <td className="p-4">{u.email}</td>
                       <td className="p-4 capitalize">{u.role}</td>
+                      <td className="p-4 capitalize">{u.department || "-"}</td>
                       <td className="p-4 flex gap-2">
                         <button
                           onClick={() => handleApprove(u._id)}
