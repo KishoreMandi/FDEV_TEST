@@ -216,20 +216,7 @@ const CreateExam = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="isPublished"
-                checked={isPublished}
-                onChange={(e) => setIsPublished(e.target.checked)}
-                className="w-5 h-5"
-              />
-              <label htmlFor="isPublished" className="font-medium">Publish Exam Immediately</label>
-            </div>
 
-            <p className="text-sm text-gray-500">
-              Example: 0.25 means ¼ mark deducted for each wrong answer
-            </p>
 
             <button
               disabled={loading}
