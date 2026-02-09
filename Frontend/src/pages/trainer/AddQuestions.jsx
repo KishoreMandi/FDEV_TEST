@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import toast from "react-hot-toast";
 import { Folder, ArrowLeft, Download } from "lucide-react";
 import jsPDF from "jspdf";
@@ -19,6 +19,10 @@ const AddQuestions = () => {
   const [options, setOptions] = useState(["", "", "", ""]);
   const [correctOption, setCorrectOption] = useState(null);
   const [isPublished, setIsPublished] = useState(false);
+
+  // Undo history for smart paste
+  const undoRef = useRef(null);
+  const isSmartPasting = useRef(false);
 
   useEffect(() => {
     getExams().then((res) => setExams(res.data));
@@ -51,6 +55,8 @@ const AddQuestions = () => {
   };
 
   const handleOptionChange = (value, index) => {
+    // Clear undo history if user manually edits options
+    undoRef.current = null;
     const updated = [...options];
     updated[index] = value;
     setOptions(updated);
@@ -134,6 +140,71 @@ const AddQuestions = () => {
     });
 
     doc.save(`${examTitle}_Questions.pdf`);
+  };
+
+  const handlePaste = (e) => {
+    const pastedData = e.clipboardData.getData("text");
+    if (!pastedData) return;
+
+    const lines = pastedData.split(/\r?\n/).map(line => line.trim()).filter(line => line.length > 0);
+
+    if (lines.length >= 5) {
+      const last4 = lines.slice(-4);
+      const optionRegex = /^([A-Da-d1-4])[\.\)\-]\s+(.*)$/;
+      
+      const cleanedOptions = last4.map(opt => {
+        const match = opt.match(optionRegex);
+        return match ? match[2] : opt;
+      });
+
+      e.preventDefault();
+      
+      // Save current state for undo
+      undoRef.current = {
+        question: question, // Current question text before paste
+        options: [...options] // Current options before paste
+      };
+      
+      isSmartPasting.current = true;
+
+      const questionBody = lines.slice(0, lines.length - 4).join("\n");
+      
+      // Use execCommand to preserve browser undo history for the text field
+      setOptions(cleanedOptions);
+
+      // Select all text in the textarea to ensure we replace content like a normal paste/set
+      e.target.select();
+      document.execCommand('insertText', false, questionBody);
+      
+      toast.success("Question and options auto-populated!");
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    // Custom Undo for Smart Paste (Ctrl+Z)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+      if (undoRef.current) {
+        e.preventDefault(); // Prevent native undo since we are handling it manually
+        
+        setQuestion(undoRef.current.question);
+        setOptions(undoRef.current.options);
+        
+        undoRef.current = null; // Clear undo history after using it
+        toast.success("Undid smart paste");
+      }
+    }
+  };
+
+  const handleQuestionChange = (e) => {
+    setQuestion(e.target.value);
+    
+    // If this change was triggered by our smart paste, reset the flag but keep undo history
+    if (isSmartPasting.current) {
+      isSmartPasting.current = false;
+    } else {
+      // If user manually types/changes text, clear the smart paste undo history
+      undoRef.current = null;
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -253,11 +324,13 @@ const AddQuestions = () => {
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Question Text</label>
                         <textarea
-                          placeholder="Enter your question here..."
+                          placeholder="Enter your question here... (Paste question + 4 options to auto-fill)"
                           className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                           rows="3"
                           value={question}
-                          onChange={(e) => setQuestion(e.target.value)}
+                          onChange={handleQuestionChange}
+                          onPaste={handlePaste}
+                          onKeyDown={handleKeyDown}
                           required
                         />
                       </div>
