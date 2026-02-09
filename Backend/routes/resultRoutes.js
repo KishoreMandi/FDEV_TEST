@@ -7,6 +7,7 @@ import {
   getSavedAttempt,
   getStudentExamStatus,
   getResultsByExam,
+  getResultById,
   uploadRecording
 } from "../controllers/resultController.js";
 
@@ -69,4 +70,12 @@ router.get(
   trainerMiddleware,
   getResultsByExam
 );
+
+router.get(
+  "/:id",
+  authMiddleware,
+  trainerMiddleware,
+  getResultById
+);
+
 export default router;

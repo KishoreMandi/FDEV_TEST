@@ -41,7 +41,16 @@ export const submitExam = async (req, res) => {
       const question = await Question.findById(ans.questionId);
       if (!question) continue;
 
-      if (question.correctOption === ans.selectedOption) {
+      const selectedOpt = Number(ans.selectedOption);
+      const isValidAttempt =
+        ans.selectedOption !== null &&
+        ans.selectedOption !== undefined &&
+        ans.selectedOption !== "" &&
+        !isNaN(selectedOpt);
+
+      if (!isValidAttempt) continue;
+
+      if (question.correctOption === selectedOpt) {
         score += 1;
         correct++;
       } else {
@@ -231,7 +240,32 @@ export const getResultsByExam = async (req, res) => {
 
   const results = await Result.find({ examId })
     .populate("studentId", "name email")
+    .populate({
+      path: "answers.questionId",
+      // Remove select to fetch all fields to avoid missing data issues
+    })
     .sort({ score: -1 });
 
   res.json(results);
+};
+
+/* ================= GET SINGLE RESULT BY ID ================= */
+export const getResultById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await Result.findById(id)
+      .populate("studentId", "name email")
+      .populate({
+        path: "answers.questionId",
+        // No select restriction, get everything
+      });
+
+    if (!result) {
+      return res.status(404).json({ message: "Result not found" });
+    }
+
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };

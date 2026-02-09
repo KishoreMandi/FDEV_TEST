@@ -10,7 +10,12 @@ const resultSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Exam",
     },
-    answers: Array,
+    answers: [
+      {
+        questionId: { type: mongoose.Schema.Types.ObjectId, ref: "Question" },
+        selectedOption: String
+      }
+    ],
     markedForReview: [
       {
         type: mongoose.Schema.Types.ObjectId,
