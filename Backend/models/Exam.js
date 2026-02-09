@@ -35,6 +35,12 @@ const examSchema = new mongoose.Schema(
       screenRecording: { type: Boolean, default: false }, // New field
       tabSwitchLimit: { type: Number, default: 3 },
     },
+    assignedTo: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

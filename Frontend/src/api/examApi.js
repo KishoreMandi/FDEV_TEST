@@ -2,6 +2,8 @@ import axios from "./axiosInstance";
 
 export const getExams = () => axios.get("/exams");
 
+export const getExamById = (examId) => axios.get(`/exams/${examId}`);
+
 export const getQuestions = (examId) =>
   axios.get(`/questions/${examId}`);
 

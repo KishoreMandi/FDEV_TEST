@@ -18,6 +18,7 @@ import Exam from "../pages/student/Exam";
 import Result from "../pages/student/Result";
 import StudentLeaderboard from "../pages/student/Leaderboard";
 import ManageExams from "../pages/admin/ManageExams";
+import EditExam from "../pages/admin/EditExam";
 import TrainerManageExams from "../pages/trainer/ManageExams";
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -161,6 +162,15 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute role="admin">
             <ManageExams />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/edit-exam/:id"
+        element={
+          <ProtectedRoute role="admin">
+            <EditExam />
           </ProtectedRoute>
         }
       />

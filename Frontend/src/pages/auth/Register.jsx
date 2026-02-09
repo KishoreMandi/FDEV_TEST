@@ -6,6 +6,7 @@ import { registerUser } from "../../api/authApi";
 const Register = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [employeeId, setEmployeeId] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("student"); // Default role
   const [department, setDepartment] = useState(""); // New state for department
@@ -14,7 +15,7 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const userData = { name, email, password, role };
+      const userData = { name, email, employeeId, password, role };
       if (role === "student") {
         userData.department = department;
       }
@@ -54,6 +55,14 @@ const Register = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
+            />
+
+            <input
+              type="text"
+              placeholder="Employee ID / Student ID"
+              className="w-full p-3 rounded-full border focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={employeeId}
+              onChange={(e) => setEmployeeId(e.target.value)}
             />
 
             <input

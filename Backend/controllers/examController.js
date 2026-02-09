@@ -1,11 +1,12 @@
 import Exam from "../models/Exam.js";
 import Result from "../models/Result.js";
 import Question from "../models/Question.js";
+import mongoose from "mongoose";
 
 /* ================= CREATE EXAM (ADMIN) ================= */
 export const createExam = async (req, res) => {
   try {
-    const { title, duration, negativeMarking, isPublished, startTime, endTime, attemptLimit, proctoring } = req.body;
+    const { title, duration, negativeMarking, isPublished, startTime, endTime, attemptLimit, proctoring, assignedTo } = req.body;
 
     if (!title || !duration) {
       return res.status(400).json({ message: "All fields required" });
@@ -26,6 +27,7 @@ export const createExam = async (req, res) => {
       endTime: endTime || null,
       attemptLimit: attemptLimit ? Number(attemptLimit) : 1,
       proctoring: proctoring || {},
+      assignedTo: assignedTo || [],
       createdBy: req.user.id,
     });
 
@@ -44,6 +46,11 @@ export const getAllExams = async (req, res) => {
     // If student, only show published exams
     if (role === 'student') {
       query.isPublished = true;
+      query.$or = [
+        { assignedTo: { $exists: false } },
+        { assignedTo: { $size: 0 } },
+        { assignedTo: new mongoose.Types.ObjectId(req.user.id) }
+      ];
     }
 
     const exams = await Exam.find(query)
@@ -61,7 +68,7 @@ export const getAllExams = async (req, res) => {
 export const updateExam = async (req, res) => {
   try {
     const { examId } = req.params;
-    const { title, duration, negativeMarking, isPublished, startTime, endTime, attemptLimit, proctoring } = req.body;
+    const { title, duration, negativeMarking, isPublished, startTime, endTime, attemptLimit, proctoring, assignedTo } = req.body;
 
     if (isPublished) {
       const questionCount = await Question.countDocuments({ examId });
@@ -83,6 +90,7 @@ export const updateExam = async (req, res) => {
         endTime,
         attemptLimit: Number(attemptLimit),
         proctoring,
+        assignedTo,
       },
       { new: true }
     );

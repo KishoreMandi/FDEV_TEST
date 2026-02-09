@@ -81,9 +81,12 @@ const Dashboard = () => {
   };
 
   const filteredUsers = allUsers.filter(u => 
-    (u.name?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-    (u.email?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-    (u.department?.toLowerCase() || "").includes(searchTerm.toLowerCase())
+    u.role !== 'admin' && (
+      (u.name?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (u.email?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (u.employeeId?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+      (u.department?.toLowerCase() || "").includes(searchTerm.toLowerCase())
+    )
   );
 
   if (!stats) {
@@ -180,6 +183,7 @@ const Dashboard = () => {
                 <thead>
                   <tr className="bg-gray-100 border-b">
                     <th className="p-4 font-medium text-gray-600">Name</th>
+                    <th className="p-4 font-medium text-gray-600">ID</th>
                     <th className="p-4 font-medium text-gray-600">Email</th>
                     <th className="p-4 font-medium text-gray-600">Role</th>
                     <th className="p-4 font-medium text-gray-600">Dept</th>
@@ -192,6 +196,7 @@ const Dashboard = () => {
                     filteredUsers.map((u) => (
                       <tr key={u._id} className="border-b hover:bg-gray-50">
                         <td className="p-4">{u.name}</td>
+                        <td className="p-4 text-sm text-gray-500">{u.employeeId || "-"}</td>
                         <td className="p-4">{u.email}</td>
                         <td className="p-4 capitalize">{u.role}</td>
                         <td className="p-4 capitalize">{u.department || "-"}</td>

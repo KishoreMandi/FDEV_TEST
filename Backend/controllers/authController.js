@@ -8,12 +8,26 @@ import User from "../models/User.js";
 
 export const registerUser = async (req, res) => {
   try {
-    const { name, email, password, role, department } = req.body;
+    const { name, email, password, role, department, employeeId } = req.body;
 
     // check existing user
     const existingUser = await User.findOne({ email });
+    let existingEmployeeId = null;
+
+    if (employeeId) {
+      existingEmployeeId = await User.findOne({ employeeId });
+    }
+
+    if (existingUser && existingEmployeeId) {
+      return res.status(400).json({ message: "Email and Employee ID already registered" });
+    }
+
     if (existingUser) {
-      return res.status(400).json({ message: "User already exists" });
+      return res.status(400).json({ message: "Email already registered" });
+    }
+
+    if (existingEmployeeId) {
+      return res.status(400).json({ message: "Employee ID already registered" });
     }
 
     // hash password
@@ -27,6 +41,7 @@ export const registerUser = async (req, res) => {
     const user = await User.create({
       name,
       email,
+      employeeId,
       password: hashedPassword,
       role,
       isApproved,
