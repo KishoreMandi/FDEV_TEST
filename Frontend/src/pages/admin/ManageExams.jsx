@@ -79,7 +79,7 @@ const ManageExams = () => {
                           onClick={() => navigate(`/admin/edit-exam/${exam._id}`)}
                           className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
                         >
-                          Edit
+                          Click here to publish exam
                         </button>
 
                         <button
