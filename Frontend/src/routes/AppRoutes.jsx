@@ -10,6 +10,7 @@ import TrainerCreateExam from "../pages/trainer/CreateExam";
 import AddQuestions from "../pages/admin/AddQuestions";
 import TrainerAddQuestions from "../pages/trainer/AddQuestions";
 import Results from "../pages/admin/Results";
+import ResultAnalysis from "../pages/admin/ResultAnalysis";
 import TrainerResults from "../pages/trainer/Results";
 import Reports from "../pages/admin/Reports";
 
@@ -150,10 +151,28 @@ const AppRoutes = () => {
       />
 
       <Route
+        path="/admin/result-analysis/:resultId"
+        element={
+          <ProtectedRoute role="admin">
+            <ResultAnalysis />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/trainer/results"
         element={
           <ProtectedRoute role="trainer">
             <TrainerResults />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/trainer/result-analysis/:resultId"
+        element={
+          <ProtectedRoute role="trainer">
+            <ResultAnalysis />
           </ProtectedRoute>
         }
       />

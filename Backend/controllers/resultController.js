@@ -239,7 +239,7 @@ export const getResultsByExam = async (req, res) => {
   const { examId } = req.params;
 
   const results = await Result.find({ examId })
-    .populate("studentId", "name email")
+    .populate("studentId", "name email employeeId")
     .populate({
       path: "answers.questionId",
       // Remove select to fetch all fields to avoid missing data issues
@@ -254,7 +254,7 @@ export const getResultById = async (req, res) => {
   try {
     const { id } = req.params;
     const result = await Result.findById(id)
-      .populate("studentId", "name email")
+      .populate("studentId", "name email employeeId")
       .populate({
         path: "answers.questionId",
         // No select restriction, get everything

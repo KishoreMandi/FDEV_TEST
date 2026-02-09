@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { Eye } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import AdminSidebar from "../../components/AdminSidebar";
 import AdminHeader from "../../components/AdminHeader";
@@ -10,6 +12,7 @@ const Results = () => {
   const [exams, setExams] = useState([]);
   const [examId, setExamId] = useState("");
   const [results, setResults] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     getExams().then((res) => setExams(res.data));
@@ -60,7 +63,12 @@ const Results = () => {
               <tbody>
                 {results.map((r) => (
                   <tr key={r._id} className="border-t">
-                    <td className="p-3">{r.studentId.name}</td>
+                    <td className="p-3">
+                      <div>{r.studentId.name}</div>
+                      {r.studentId.employeeId && (
+                        <div className="text-xs text-gray-500">ID: {r.studentId.employeeId}</div>
+                      )}
+                    </td>
                     <td className="p-3">{r.score ?? "-"}</td>
                     <td className="p-3">
                       <span
@@ -72,6 +80,15 @@ const Results = () => {
                       >
                         {r.status}
                       </span>
+                    </td>
+                    <td className="p-3">
+                      <button
+                        onClick={() => navigate(`/trainer/result-analysis/${r._id}`)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
+                      >
+                        <Eye size={16} />
+                        Analysis
+                      </button>
                     </td>
                   </tr>
                 ))}
