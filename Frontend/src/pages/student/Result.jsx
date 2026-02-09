@@ -23,121 +23,42 @@ const Result = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-      <div className="max-w-4xl mx-auto">
-
-        {/* HEADER */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-800">
-            Exam Result
-          </h1>
-          <p className="text-gray-500">
-            Here is your performance summary
-          </p>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6 flex items-center justify-center">
+      <div className="max-w-2xl w-full">
 
         {/* MAIN CARD */}
-        <div className="bg-white rounded-2xl shadow-lg p-8">
-
-          {/* SCORE */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
-            <div>
-              <p className="text-sm text-gray-500">Your Score</p>
-              <h2 className="text-5xl font-bold text-blue-600">
-                {data.score}
-              </h2>
-            </div>
-
-            {/* ACCURACY BAR */}
-            <div className="w-full md:w-1/2">
-              <div className="flex justify-between mb-1">
-                <span className="text-sm text-gray-600">
-                  Accuracy
-                </span>
-                <span className="text-sm font-semibold">
-                  {data.accuracy}%
-                </span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-3">
-                <div
-                  className="bg-green-500 h-3 rounded-full transition-all"
-                  style={{ width: `${data.accuracy}%` }}
-                />
-              </div>
+        <div className="bg-white rounded-2xl shadow-lg p-10 text-center">
+          
+          <div className="mb-6 flex justify-center">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center">
+              <svg 
+                className="w-10 h-10 text-green-600" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              </svg>
             </div>
           </div>
 
-          {/* STATS GRID */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            <StatCard
-              title="Correct"
-              value={data.correct}
-              color="green"
-            />
-            <StatCard
-              title="Wrong"
-              value={data.wrong}
-              color="red"
-            />
-            <StatCard
-              title="Unattempted"
-              value={data.unattempted}
-              color="gray"
-            />
-          </div>
+          <h1 className="text-3xl font-bold text-gray-800 mb-4">
+            Exam Completed
+          </h1>
+          
+          <p className="text-gray-600 text-lg mb-8 leading-relaxed">
+            Your test is complete. Please wait for the HR to announce the result via email.
+          </p>
 
-          {/* TIME */}
-          <div className="flex items-center justify-between border-t pt-4 text-gray-600">
-            <span>Time Spent</span>
-            <span className="font-medium">{data.timeSpent}</span>
-          </div>
+          <button
+            onClick={() => navigate("/student/dashboard")}
+            className="w-full md:w-auto px-8 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition shadow-md"
+          >
+            Back to Dashboard
+          </button>
 
-          {/* ACTIONS */}
-          <div className="mt-8 flex flex-col md:flex-row gap-4">
-            <button
-              onClick={() =>
-                navigate(`/student/leaderboard/${examId}`)
-              }
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-lg font-semibold transition"
-            >
-              View Leaderboard
-            </button>
-
-            <button
-              onClick={() =>
-                navigate("/student/dashboard")
-              }
-              className="flex-1 border border-gray-300 hover:bg-gray-100 py-3 rounded-lg font-semibold transition"
-            >
-              Back to Dashboard
-            </button>
-          </div>
         </div>
       </div>
-    </div>
-  );
-};
-
-/* 🔹 Reusable Stat Card */
-const StatCard = ({ title, value, color }) => {
-  const colors = {
-    green: "bg-green-100 text-green-700",
-    red: "bg-red-100 text-red-700",
-    gray: "bg-gray-100 text-gray-700",
-  };
-
-  return (
-    <div className="rounded-xl p-6 bg-white shadow flex flex-col items-center">
-      <div
-        className={`w-12 h-12 flex items-center justify-center rounded-full mb-3 ${colors[color]}`}
-      >
-        <span className="text-xl font-bold">
-          {value}
-        </span>
-      </div>
-      <p className="text-gray-600 font-medium">
-        {title}
-      </p>
     </div>
   );
 };

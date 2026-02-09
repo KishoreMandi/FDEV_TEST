@@ -180,7 +180,7 @@ const Dashboard = () => {
               }
               className="mt-auto bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 rounded-lg font-semibold transition"
             >
-              View Result
+              View Status
             </button>
           ) : (
             <button
