@@ -20,3 +20,9 @@ export const updateUserRole = (userId, role) =>
 
 export const updateUserDepartment = (userId, department) =>
   axios.put("/admin/users/department", { userId, department });
+
+export const updateUserDetails = (userData) =>
+  axios.put("/admin/users/details", userData);
+
+export const deleteUser = (userId) =>
+  axios.delete("/admin/users/delete", { data: { userId } });

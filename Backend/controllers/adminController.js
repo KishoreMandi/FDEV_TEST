@@ -139,6 +139,74 @@ export const updateUserDepartment = async (req, res) => {
   }
 };
 
+// Update User Details (Generic)
+export const updateUserDetails = async (req, res) => {
+  try {
+    const { userId, name, email, role, department, employeeId } = req.body;
+    
+    // Trim inputs
+    const trimmedEmail = email ? email.trim().toLowerCase() : undefined;
+    const trimmedEmployeeId = employeeId ? employeeId.trim() : undefined;
+    const trimmedDepartment = department ? department.trim() : undefined;
+    const trimmedName = name ? name.trim() : undefined;
+
+    // Check for duplicate email
+    if (trimmedEmail) {
+      const existingEmail = await User.findOne({ email: trimmedEmail, _id: { $ne: userId } });
+      if (existingEmail) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+    }
+
+    // Check for duplicate employeeId
+    if (trimmedEmployeeId) {
+       const existingId = await User.findOne({ employeeId: trimmedEmployeeId, _id: { $ne: userId } });
+       if (existingId) {
+         return res.status(400).json({ message: "Employee ID already exists" });
+       }
+    }
+
+    const updates = {};
+    if (trimmedName) updates.name = trimmedName;
+    if (trimmedEmail) updates.email = trimmedEmail;
+    if (role) updates.role = role;
+    if (trimmedDepartment) updates.department = trimmedDepartment;
+    
+    // Allow updating employeeId (or unsetting it if empty string is sent)
+    if (employeeId !== undefined) {
+      updates.employeeId = trimmedEmployeeId || null;
+    }
+
+    const user = await User.findByIdAndUpdate(userId, updates, { new: true });
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json({ message: "User updated successfully", user });
+  } catch (error) {
+    // Check for MongoDB duplicate key error (code 11000) or message content
+    if (error.code === 11000 || error.message.includes("E11000") || error.message.includes("duplicate key")) {
+      return res.status(400).json({ message: "Duplicate key error: Email or ID already exists" });
+    }
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Delete User
+export const deleteUser = async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const user = await User.findByIdAndDelete(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json({ message: "User deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // Bulk Import Users via CSV
 export const bulkImportUsers = async (req, res) => {
   if (!req.file) {

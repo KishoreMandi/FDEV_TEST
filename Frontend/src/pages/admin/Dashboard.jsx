@@ -5,7 +5,7 @@ import AdminSidebar from "../../components/AdminSidebar";
 import AdminHeader from "../../components/AdminHeader";
 import StatCard from "../../components/StatCard";
 import CsvUploader from "../../components/CsvUploader";
-import { getAdminStats, getUsers, approveUser, rejectUser, updateUserStatus } from "../../api/adminApi";
+import { getAdminStats, getUsers, approveUser, rejectUser, updateUserStatus, deleteUser, updateUserDetails } from "../../api/adminApi";
 import { useAuth } from "../../context/AuthContext";
 
 const Dashboard = () => {
@@ -13,6 +13,8 @@ const Dashboard = () => {
   const [allUsers, setAllUsers] = useState([]);
   const [pendingUsers, setPendingUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [editingUser, setEditingUser] = useState(null);
+  const [editForm, setEditForm] = useState({ name: "", email: "", role: "", department: "", employeeId: "" });
   const { user } = useAuth();
 
   const fetchStats = async () => {
@@ -78,6 +80,53 @@ const Dashboard = () => {
   const handleUploadSuccess = () => {
     fetchStats();
     fetchUsers();
+  };
+
+  const handleDeleteUser = async (id) => {
+    if (window.confirm("Are you sure you want to permanently delete this user?")) {
+      try {
+        await deleteUser(id);
+        toast.success("User deleted successfully");
+        fetchUsers();
+        fetchStats();
+      } catch {
+        toast.error("Failed to delete user");
+      }
+    }
+  };
+
+  const handleEditClick = (user) => {
+    setEditingUser(user);
+    setEditForm({
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      department: user.department || "",
+      employeeId: user.employeeId || ""
+    });
+  };
+
+  const handleEditChange = (e) => {
+    setEditForm({ ...editForm, [e.target.name]: e.target.value });
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const trimmedForm = {
+        ...editForm,
+        name: editForm.name.trim(),
+        email: editForm.email.trim(),
+        department: editForm.department.trim(),
+        employeeId: editForm.employeeId.trim(),
+      };
+      await updateUserDetails({ userId: editingUser._id, ...trimmedForm });
+      toast.success("User updated successfully");
+      setEditingUser(null);
+      fetchUsers();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Failed to update user");
+    }
   };
 
   const filteredUsers = allUsers.filter(u => 
@@ -241,6 +290,18 @@ const Dashboard = () => {
                               Unban
                             </button>
                           )}
+                          <button
+                            onClick={() => handleEditClick(u)}
+                            className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(u._id)}
+                            className="bg-red-800 text-white px-3 py-1 rounded text-sm hover:bg-red-900"
+                          >
+                            Delete
+                          </button>
                         </td>
                       </tr>
                     ))
@@ -273,6 +334,85 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* EDIT USER MODAL */}
+      {editingUser && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
+            <h3 className="text-xl font-bold mb-4">Edit User</h3>
+            <form onSubmit={handleEditSubmit}>
+              <div className="mb-3">
+                <label className="block text-sm font-medium">Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={editForm.name}
+                  onChange={handleEditChange}
+                  className="w-full p-2 border rounded"
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <label className="block text-sm font-medium">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={editForm.email}
+                  onChange={handleEditChange}
+                  className="w-full p-2 border rounded"
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <label className="block text-sm font-medium">ID</label>
+                <input
+                  type="text"
+                  name="employeeId"
+                  value={editForm.employeeId}
+                  onChange={handleEditChange}
+                  className="w-full p-2 border rounded"
+                />
+              </div>
+              <div className="mb-3">
+                <label className="block text-sm font-medium">Role</label>
+                <select
+                  name="role"
+                  value={editForm.role}
+                  onChange={handleEditChange}
+                  className="w-full p-2 border rounded"
+                >
+                  <option value="student">Student</option>
+                </select>
+              </div>
+              <div className="mb-3">
+                <label className="block text-sm font-medium">Department</label>
+                <input
+                  type="text"
+                  name="department"
+                  value={editForm.department}
+                  onChange={handleEditChange}
+                  className="w-full p-2 border rounded"
+                />
+              </div>
+              <div className="flex justify-end gap-2 mt-4">
+                <button
+                  type="button"
+                  onClick={() => setEditingUser(null)}
+                  className="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

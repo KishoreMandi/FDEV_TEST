@@ -8,7 +8,9 @@ import {
   bulkImportUsers,
   updateUserRole,
   updateUserStatus,
-  updateUserDepartment
+  updateUserDepartment,
+  updateUserDetails,
+  deleteUser
 } from "../controllers/adminController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import adminMiddleware from "../middleware/adminMiddleware.js";
@@ -27,8 +29,10 @@ router.post("/users/import", authMiddleware, adminMiddleware, upload.single("fil
 router.put("/users/role", authMiddleware, adminMiddleware, updateUserRole);
 router.put("/users/status", authMiddleware, adminMiddleware, updateUserStatus);
 router.put("/users/department", authMiddleware, adminMiddleware, updateUserDepartment);
+router.put("/users/details", authMiddleware, adminMiddleware, updateUserDetails);
+router.delete("/users/delete", authMiddleware, adminMiddleware, deleteUser);
 
-console.log("Admin routes initialized: /stats, /users, /approve-user, /users/import, /users/role, /users/status, /users/department");
+console.log("Admin routes initialized: /stats, /users, /approve-user, /users/import, /users/role, /users/status, /users/department, /users/details, /users/delete");
 
 router.post("/test", (req, res) => {
   res.json({ ok: true, message: "admin POST test route working" });
