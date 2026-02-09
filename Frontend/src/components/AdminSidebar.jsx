@@ -7,6 +7,7 @@ import {
   BarChart3,
   ClipboardList,
   PieChart,
+  Building,
 } from "lucide-react";
 
 const AdminSidebar = () => {
@@ -86,6 +87,18 @@ const AdminSidebar = () => {
           <PieChart size={20} />
           <span>Reports</span>
         </NavLink>
+
+        {user?.role === "admin" && (
+          <NavLink
+            to="/admin/departments"
+            className={({ isActive }) =>
+              `${baseClass} ${isActive ? activeClass : inactiveClass}`
+            }
+          >
+            <Building size={20} />
+            <span>Departments</span>
+          </NavLink>
+        )}
       </nav>
     </div>
   );

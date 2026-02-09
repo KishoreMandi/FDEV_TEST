@@ -10,8 +10,10 @@ import leaderboardRoutes from "./routes/leaderboardRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
+import departmentRoutes from "./routes/departmentRoutes.js";
 import multer from "multer";
 import { bulkImportUsers } from "./controllers/adminController.js";
+import { seedDepartments } from "./controllers/departmentController.js"; // Import seed function
 import authMiddleware from "./middleware/authMiddleware.js";
 import adminMiddleware from "./middleware/adminMiddleware.js";
 import path from "path";
@@ -30,7 +32,9 @@ app.use(express.json());
 // Serve static files from uploads directory
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-connectDB();
+connectDB().then(() => {
+  seedDepartments(); // Run seed after DB connection
+});
 
 app.use("/api/auth", authRoutes);
 app.use("/api/exams", examRoutes);
@@ -40,6 +44,7 @@ app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/departments", departmentRoutes);
 
 app.get("/", (req, res) => {
   res.json({

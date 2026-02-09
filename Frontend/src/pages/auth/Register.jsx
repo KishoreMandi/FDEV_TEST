@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { registerUser } from "../../api/authApi";
+import { getDepartments } from "../../api/departmentApi";
 
 const Register = () => {
   const [name, setName] = useState("");
@@ -10,7 +11,25 @@ const Register = () => {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("student"); // Default role
   const [department, setDepartment] = useState(""); // New state for department
+  const [departmentList, setDepartmentList] = useState([]);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Fetch departments on mount
+    const fetchDepts = async () => {
+      try {
+        const { data } = await getDepartments();
+        setDepartmentList(data);
+        // Optional: Set default department if list is not empty
+        // if (data.length > 0) setDepartment(data[0].name);
+      } catch (error) {
+        console.error("Failed to load departments", error);
+        // Fallback or just leave empty so user can type if we wanted to support both, 
+        // but requirement is dropdown. We'll stick to dropdown.
+      }
+    };
+    fetchDepts();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -88,14 +107,27 @@ const Register = () => {
             </div>
 
             {role === "student" && (
-              <input
-                type="text"
-                placeholder="Department"
-                className="w-full p-3 rounded-full border focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={department}
-                onChange={(e) => setDepartment(e.target.value)}
-                required
-              />
+              <div className="relative">
+                <select
+                  className="w-full p-3 rounded-full border focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none pr-10"
+                  value={department}
+                  onChange={(e) => setDepartment(e.target.value)}
+                  required
+                >
+                  <option value="" disabled>Select Department</option>
+                  {departmentList.map((dept) => (
+                    <option key={dept._id} value={dept.name}>
+                      {dept.name}
+                    </option>
+                  ))}
+                  {departmentList.length === 0 && (
+                    <option value="" disabled>Loading departments...</option>
+                  )}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+                  <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                </div>
+              </div>
             )}
 
             <button
