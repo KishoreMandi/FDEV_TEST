@@ -6,20 +6,35 @@ import AdminSidebar from "../../components/AdminSidebar";
 import AdminHeader from "../../components/AdminHeader";
 import { getExamById, updateExam } from "../../api/examApi";
 import { getUsers } from "../../api/adminApi";
+import { getDepartments } from "../../api/departmentApi";
 
 const EditExam = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [exam, setExam] = useState(null);
   const [users, setUsers] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const [expandedDepts, setExpandedDepts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [assignToAll, setAssignToAll] = useState(false);
+  
+  // Assignment State
+  const [assignmentMode, setAssignmentMode] = useState("department"); // 'department' or 'specific'
+  const [selectedDepartment, setSelectedDepartment] = useState("All");
 
   useEffect(() => {
     fetchExam();
     loadUsers();
+    loadDepartments();
   }, [id]);
+
+  const loadDepartments = async () => {
+    try {
+      const res = await getDepartments();
+      setDepartments(res.data);
+    } catch (err) {
+      console.error("Failed to load departments", err);
+    }
+  };
 
   const fetchExam = async () => {
     try {
@@ -39,8 +54,15 @@ const EditExam = () => {
           tabSwitchLimit: 3,
         },
       });
-      // Initialize assignToAll if assignedTo is empty (implicit public)
-      setAssignToAll(data.assignedTo && data.assignedTo.length === 0);
+
+      // Initialize Assignment State
+      if (data.assignedTo && data.assignedTo.length > 0) {
+        setAssignmentMode("specific");
+      } else {
+        setAssignmentMode("department");
+      }
+      setSelectedDepartment(data.department || "All");
+      
       setLoading(false);
     } catch (error) {
       console.error("Failed to fetch exam", error);
@@ -128,14 +150,28 @@ const EditExam = () => {
       return;
     }
 
-    if (exam.isPublished && !assignToAll && (!exam.assignedTo || exam.assignedTo.length === 0)) {
-      toast.error("Please assign students or select 'Assign to All Students' to publish.");
+    // Validation for Specific Mode
+    if (assignmentMode === "specific" && (!exam.assignedTo || exam.assignedTo.length === 0)) {
+      toast.error("Please select at least one student or switch to Department mode.");
       return;
     }
 
-    if (exam.isPublished && assignToAll && users.length === 0) {
-      toast.error("No students found in the system. Cannot publish exam.");
-      return;
+    // Validation for Department Mode (Prevent publishing to empty departments)
+    if (assignmentMode === "department" && exam.isPublished) {
+        if (selectedDepartment === "All") {
+            if (users.length === 0) {
+                toast.error("No students found in the system. Cannot publish exam.");
+                return;
+            }
+        } else {
+            // Check if there are any students in the selected department
+            // We use the same 'users' list which is already filtered for students/employees
+            const usersInDept = users.filter(u => (u.department || "General") === selectedDepartment);
+            if (usersInDept.length === 0) {
+                toast.error(`No candidates found in '${selectedDepartment}' department. Cannot publish exam.`);
+                return;
+            }
+        }
     }
 
     try {
@@ -144,15 +180,29 @@ const EditExam = () => {
         startTime: exam.startTime ? new Date(exam.startTime).toISOString() : null,
         endTime: exam.endTime ? new Date(exam.endTime).toISOString() : null,
         proctoring: exam.proctoring,
-        assignedTo: assignToAll ? [] : exam.assignedTo,
+        // If specific, use assignedTo. If department, clear assignedTo.
+        assignedTo: assignmentMode === "specific" ? exam.assignedTo : [],
+        // Always save the selected department (even if in specific mode) to preserve metadata
+        department: selectedDepartment,
       };
       await updateExam(exam._id, payload);
       
-      const count = assignToAll ? "ALL" : exam.assignedTo.length;
       if (exam.isPublished) {
-        toast.success(`Exam published to ${count} students`);
+         if (assignmentMode === "specific") {
+             toast.success(`Exam published ONLY to ${exam.assignedTo.length} specific student(s).`);
+         } else {
+             if (selectedDepartment === "All") {
+                 toast.success("Exam published to ALL Departments.");
+             } else {
+                 toast.success(`Exam published ONLY to '${selectedDepartment}' Department. (Not visible to others)`);
+             }
+         }
       } else {
-        toast.success("Exam updated successfully (Draft)");
+        if (assignmentMode === "specific") {
+            toast.success("Exam updated successfully (Draft - Specific Students)");
+        } else {
+            toast.success(`Exam updated successfully (Draft - ${selectedDepartment})`);
+        }
       }
       
       navigate("/admin/manage-exams");
@@ -361,22 +411,60 @@ const EditExam = () => {
                 <div>
                   <h4 className="text-lg font-semibold text-blue-800 border-b pb-2 mb-4">Assign Candidates</h4>
                   
-                  <div className="mb-4 bg-blue-50 p-3 rounded-lg border border-blue-100 flex items-center gap-3">
-                    <input
-                      type="checkbox"
-                      id="assign-all"
-                      className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-                      checked={assignToAll}
-                      onChange={(e) => setAssignToAll(e.target.checked)}
-                    />
-                    <label htmlFor="assign-all" className="font-medium text-gray-700 cursor-pointer select-none">
-                      Assign to All Students
+                  {/* Assignment Mode Toggle */}
+                  <div className="flex gap-4 mb-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="radio" 
+                        name="assignmentMode"
+                        value="department"
+                        checked={assignmentMode === "department"}
+                        onChange={() => setAssignmentMode("department")}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <span className="text-gray-700 font-medium">By Department</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="radio" 
+                        name="assignmentMode"
+                        value="specific"
+                        checked={assignmentMode === "specific"}
+                        onChange={() => setAssignmentMode("specific")}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <span className="text-gray-700 font-medium">Specific Students</span>
                     </label>
                   </div>
 
-                  <div className={`bg-gray-50 border rounded-xl overflow-hidden flex flex-col h-64 transition-opacity ${assignToAll ? 'opacity-50 pointer-events-none' : 'opacity-100'}`}>
+                  {/* DEPARTMENT SELECTOR */}
+                  {assignmentMode === "department" && (
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Select Department</label>
+                      <select
+                        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                        value={selectedDepartment}
+                        onChange={(e) => setSelectedDepartment(e.target.value)}
+                      >
+                        <option value="All">All Departments</option>
+                        {departments.map((dept) => (
+                          <option key={dept._id} value={dept.name}>
+                            {dept.name}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Exam will be visible to all students in the selected department.
+                      </p>
+                    </div>
+                  )}
+
+                  {/* SPECIFIC STUDENTS LIST */}
+                  {assignmentMode === "specific" && (
+                  <div className={`bg-gray-50 border rounded-xl overflow-hidden flex flex-col h-64 transition-opacity`}>
                     <div className="p-2 bg-gray-100 border-b text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Select by Department
+                      Select Students
                     </div>
                      <div className="overflow-y-auto flex-1 p-2 space-y-2">
                        {Object.keys(groupedUsers).length === 0 ? (
@@ -427,13 +515,12 @@ const EditExam = () => {
                        )}
                      </div>
                      <div className="p-2 bg-gray-100 border-t text-xs text-center text-gray-500">
-                      {assignToAll 
-                        ? "Exam visible to ALL students" 
-                        : (exam.assignedTo?.length > 0 
+                        {exam.assignedTo?.length > 0 
                           ? `${exam.assignedTo.length} candidates selected`
-                          : "No candidates selected (Exam will NOT be published)")}
+                          : "No candidates selected (Exam will NOT be published)"}
                     </div>
                   </div>
+                  )}
                 </div>
 
                </div>

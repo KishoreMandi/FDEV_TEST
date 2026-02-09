@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import AdminSidebar from "../../components/AdminSidebar";
 import AdminHeader from "../../components/AdminHeader";
 import axios from "../../api/axiosInstance";
+import { getDepartments } from "../../api/departmentApi";
 
 const CreateExam = () => {
   const [title, setTitle] = useState("");
@@ -17,9 +18,24 @@ const CreateExam = () => {
     webcam: false,
     fullScreen: false,
     tabSwitch: false,
+    screenRecording: false,
     tabSwitchLimit: 3,
   });
+  const [departments, setDepartments] = useState([]);
+  const [selectedDepartment, setSelectedDepartment] = useState("All");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchDepts = async () => {
+      try {
+        const res = await getDepartments();
+        setDepartments(res.data);
+      } catch (err) {
+        console.error("Failed to fetch departments", err);
+      }
+    };
+    fetchDepts();
+  }, []);
 
   useEffect(() => {
     if (startTime && endTime) {
@@ -63,9 +79,10 @@ const CreateExam = () => {
         endTime: endTime ? new Date(endTime).toISOString() : null,
         attemptLimit,
         proctoring,
+        department: selectedDepartment,
       });
 
-      toast.success("Exam created successfully");
+      toast.success(`Exam created successfully for '${selectedDepartment}' (Draft)`);
 
       setTitle("");
       setDuration("");
@@ -74,6 +91,7 @@ const CreateExam = () => {
       setStartTime("");
       setEndTime("");
       setAttemptLimit(1);
+      setSelectedDepartment("All");
       setProctoring({
         webcam: false,
         fullScreen: false,
@@ -82,7 +100,21 @@ const CreateExam = () => {
         tabSwitchLimit: 3,
       });
     } catch (error) {
-      const message = error.response?.data?.message || "Failed to create exam";
+      console.error("Create Exam Error:", error);
+      let message = "Failed to create exam";
+      
+      if (error.response) {
+        // The request was made and the server responded with a status code
+        // that falls out of the range of 2xx
+        message = error.response.data.message || message;
+      } else if (error.request) {
+        // The request was made but no response was received
+        message = "Server unreachable. Please check your connection.";
+      } else {
+        // Something happened in setting up the request that triggered an Error
+        message = error.message;
+      }
+      
       toast.error(message);
     } finally {
       setLoading(false);
@@ -139,6 +171,22 @@ const CreateExam = () => {
               value={attemptLimit}
               onChange={(e) => setAttemptLimit(e.target.value)}
             />
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Assign to Department</label>
+              <select
+                className="w-full p-3 border rounded"
+                value={selectedDepartment}
+                onChange={(e) => setSelectedDepartment(e.target.value)}
+              >
+                <option value="All">All Departments</option>
+                {departments.map((dept) => (
+                  <option key={dept._id} value={dept.name}>
+                    {dept.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>

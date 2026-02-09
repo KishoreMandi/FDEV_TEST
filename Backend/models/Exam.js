@@ -35,6 +35,10 @@ const examSchema = new mongoose.Schema(
       screenRecording: { type: Boolean, default: false }, // New field
       tabSwitchLimit: { type: Number, default: 3 },
     },
+    department: {
+      type: String,
+      default: "All", // "All" or specific department name
+    },
     assignedTo: [
       {
         type: mongoose.Schema.Types.ObjectId,

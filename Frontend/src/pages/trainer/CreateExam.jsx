@@ -1,15 +1,30 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 
 import AdminSidebar from "../../components/AdminSidebar";
 import AdminHeader from "../../components/AdminHeader";
 import axios from "../../api/axiosInstance";
+import { getDepartments } from "../../api/departmentApi";
 
 const CreateExam = () => {
   const [title, setTitle] = useState("");
   const [duration, setDuration] = useState("");
   const [negativeMarking, setNegativeMarking] = useState("0");
+  const [departments, setDepartments] = useState([]);
+  const [selectedDepartment, setSelectedDepartment] = useState("All");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchDepts = async () => {
+      try {
+        const res = await getDepartments();
+        setDepartments(res.data);
+      } catch (err) {
+        console.error("Failed to fetch departments", err);
+      }
+    };
+    fetchDepts();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,6 +41,7 @@ const CreateExam = () => {
         title,
         duration,
         negativeMarking, // sent as string, backend converts to Number
+        department: selectedDepartment,
       });
 
       toast.success("Exam created successfully");
@@ -33,6 +49,7 @@ const CreateExam = () => {
       setTitle("");
       setDuration("");
       setNegativeMarking("0");
+      setSelectedDepartment("All");
     } catch {
       toast.error("Failed to create exam");
     } finally {
@@ -70,6 +87,22 @@ const CreateExam = () => {
               onChange={(e) => setDuration(e.target.value)}
               required
             />
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Assign to Department</label>
+              <select
+                className="w-full p-3 border rounded"
+                value={selectedDepartment}
+                onChange={(e) => setSelectedDepartment(e.target.value)}
+              >
+                <option value="All">All Departments</option>
+                {departments.map((dept) => (
+                  <option key={dept._id} value={dept.name}>
+                    {dept.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             {/* NEGATIVE MARKING FLOAT */}
             <input

@@ -6,10 +6,25 @@ import mongoose from "mongoose";
 /* ================= CREATE EXAM (ADMIN) ================= */
 export const createExam = async (req, res) => {
   try {
-    const { title, duration, negativeMarking, isPublished, startTime, endTime, attemptLimit, proctoring, assignedTo } = req.body;
+    const { title, duration, negativeMarking, isPublished, startTime, endTime, attemptLimit, proctoring, assignedTo, department } = req.body;
+    
+    console.log("Create Exam Request:", { title, department }); // Debug log
 
     if (!title || !duration) {
       return res.status(400).json({ message: "All fields required" });
+    }
+
+    // Check for duplicate title (Case Insensitive)
+    const trimmedTitle = title.trim();
+    console.log("Checking duplicate for:", trimmedTitle); // Debug log
+
+    const existingExam = await Exam.findOne({ 
+      title: { $regex: new RegExp(`^${trimmedTitle}$`, "i") } 
+    });
+    
+    if (existingExam) {
+      console.log("Duplicate found:", existingExam.title); // Debug log
+      return res.status(400).json({ message: "Title name is already there" });
     }
 
     if (isPublished) {
@@ -19,7 +34,7 @@ export const createExam = async (req, res) => {
     }
 
     const exam = await Exam.create({
-      title,
+      title: trimmedTitle,
       duration: Number(duration),
       negativeMarking: Number(negativeMarking),
       isPublished: isPublished || false,
@@ -28,6 +43,7 @@ export const createExam = async (req, res) => {
       attemptLimit: attemptLimit ? Number(attemptLimit) : 1,
       proctoring: proctoring || {},
       assignedTo: assignedTo || [],
+      department: department || "All",
       createdBy: req.user.id,
     });
 
@@ -47,9 +63,19 @@ export const getAllExams = async (req, res) => {
     if (role === 'student') {
       query.isPublished = true;
       query.$or = [
-        { assignedTo: { $exists: false } },
-        { assignedTo: { $size: 0 } },
-        { assignedTo: new mongoose.Types.ObjectId(req.user.id) }
+        { assignedTo: new mongoose.Types.ObjectId(req.user.id) }, // Explicitly assigned to user
+        {
+          $and: [
+            { $or: [{ assignedTo: { $exists: false } }, { assignedTo: { $size: 0 } }] }, // No specific user assignment
+            {
+              $or: [
+                { department: "All" },
+                { department: { $exists: false } }, // For backward compatibility
+                { department: req.user.department }
+              ]
+            }
+          ]
+        }
       ];
     }
 
@@ -68,7 +94,7 @@ export const getAllExams = async (req, res) => {
 export const updateExam = async (req, res) => {
   try {
     const { examId } = req.params;
-    const { title, duration, negativeMarking, isPublished, startTime, endTime, attemptLimit, proctoring, assignedTo } = req.body;
+    const { title, duration, negativeMarking, isPublished, startTime, endTime, attemptLimit, proctoring, assignedTo, department } = req.body;
 
     if (isPublished) {
       const questionCount = await Question.countDocuments({ examId });
@@ -91,6 +117,7 @@ export const updateExam = async (req, res) => {
         attemptLimit: Number(attemptLimit),
         proctoring,
         assignedTo,
+        department,
       },
       { new: true }
     );
