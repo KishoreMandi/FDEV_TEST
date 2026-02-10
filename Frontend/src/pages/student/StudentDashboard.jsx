@@ -11,22 +11,30 @@ import {
   LogOut,
   RefreshCw,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  Search,
+  Filter,
+  MoreVertical,
+  Timer,
+  Menu,
+  X
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { useAuth } from "../../context/AuthContext"; // Import useAuth
+import { useAuth } from "../../context/AuthContext";
 import SystemCheckModal from "../../components/SystemCheckModal";
 import { getExams } from "../../api/examApi";
 import { getStudentExamStatus } from "../../api/resultApi";
 
 const Dashboard = () => {
-  const { user, logout } = useAuth(); // Get user details
+  const { user, logout } = useAuth();
   const [exams, setExams] = useState([]);
   const [attempted, setAttempted] = useState([]);
   const [showCheckModal, setShowCheckModal] = useState(false);
   const [selectedExamId, setSelectedExamId] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState("pending"); // Default to pending as it's most important
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,7 +43,6 @@ const Dashboard = () => {
       setCurrentTime(new Date());
     }, 1000);
     
-    // Auto-refresh data every 30 seconds to keep sync with server
     const dataTimer = setInterval(loadData, 30000);
 
     return () => {
@@ -89,7 +96,6 @@ const Dashboard = () => {
   const completedCount = attempted.length;
   const pendingCount = exams.length - completedCount;
 
-  // Format date helper
   const formatDate = (date) => {
     return new Date(date).toLocaleString('en-US', {
       weekday: 'short',
@@ -100,7 +106,6 @@ const Dashboard = () => {
     });
   };
 
-  // Get time remaining string
   const getTimeRemaining = (targetDate) => {
     const total = Date.parse(targetDate) - Date.parse(currentTime);
     const seconds = Math.floor((total / 1000) % 60);
@@ -113,301 +118,355 @@ const Dashboard = () => {
     return `${minutes}m ${seconds}s`;
   };
 
+  // Filter exams based on active tab
+  const filteredExams = exams.filter(exam => {
+    const isCompleted = attempted.includes(exam._id);
+    if (activeTab === "all") return true;
+    if (activeTab === "completed") return isCompleted;
+    if (activeTab === "pending") return !isCompleted;
+    return true;
+  });
+
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
+    <div className="flex h-screen bg-slate-50 font-sans text-slate-900">
       <SystemCheckModal 
         open={showCheckModal}
         onClose={() => setShowCheckModal(false)}
         onConfirm={handleSystemCheckPass}
       />
       
-      {/* SIDEBAR - PROFILE SECTION */}
-      <aside className="w-80 bg-white shadow-2xl flex flex-col z-10 hidden md:flex">
-        <div className="p-8 flex flex-col items-center border-b border-gray-100">
-          <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white text-3xl font-bold mb-4 shadow-lg">
-            {user?.name?.charAt(0).toUpperCase() || "S"}
-          </div>
-          <h2 className="text-xl font-bold text-gray-800 text-center">{user?.name}</h2>
-          <p className="text-sm text-gray-500 mt-1">{user?.role?.toUpperCase()}</p>
-        </div>
+      {/* MOBILE OVERLAY */}
+      {isMobileMenuOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 z-20 md:hidden backdrop-blur-sm transition-opacity"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
 
-        <div className="p-6 flex-1 overflow-y-auto">
-          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">
-            Profile Details
-          </h3>
-          
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 text-gray-700 p-3 rounded-lg hover:bg-gray-50 transition">
-              <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-                <Mail size={16} />
-              </div>
-              <div className="flex-1 overflow-hidden">
-                <p className="text-xs text-gray-400">Email</p>
-                <p className="text-sm font-medium truncate" title={user?.email}>{user?.email}</p>
-              </div>
+      {/* SIDEBAR */}
+      <aside className={`
+        fixed md:relative inset-y-0 left-0 z-30
+        w-72 bg-white border-r border-slate-200 flex flex-col transition-transform duration-300 ease-in-out
+        ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+      `}>
+        <div className="p-6 border-b border-slate-100 flex flex-col items-center relative">
+          <button 
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="absolute top-4 right-4 p-1 text-slate-400 hover:text-slate-600 md:hidden"
+          >
+            <X size={20} />
+          </button>
+          <div className="relative mb-4 group">
+            <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl rotate-3 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-indigo-200 group-hover:rotate-6 transition-transform duration-300">
+              {user?.name?.charAt(0).toUpperCase() || "S"}
             </div>
-
-            <div className="flex items-center gap-3 text-gray-700 p-3 rounded-lg hover:bg-gray-50 transition">
-              <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center text-purple-600">
-                <Hash size={16} />
-              </div>
-              <div>
-                <p className="text-xs text-gray-400">Employee ID</p>
-                <p className="text-sm font-medium">{user?.employeeId || "N/A"}</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 text-gray-700 p-3 rounded-lg hover:bg-gray-50 transition">
-              <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center text-orange-600">
-                <Briefcase size={16} />
-              </div>
-              <div>
-                <p className="text-xs text-gray-400">Department</p>
-                <p className="text-sm font-medium">{user?.department || "General"}</p>
-              </div>
+            <div className="absolute -bottom-2 -right-2 bg-white p-1 rounded-full shadow-sm">
+               <div className="w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
             </div>
           </div>
+          <h2 className="text-lg font-bold text-slate-800 text-center">{user?.name}</h2>
+          <span className="px-3 py-1 mt-2 bg-slate-100 text-slate-500 text-xs font-semibold rounded-full uppercase tracking-wider">
+            {user?.role}
+          </span>
         </div>
 
-        <div className="p-6 border-t border-gray-100">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <div>
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">
+              Profile Details
+            </h3>
+            <div className="space-y-1">
+              <ProfileItem icon={<Mail size={16} />} label="Email" value={user?.email} />
+              <ProfileItem icon={<Hash size={16} />} label="ID" value={user?.employeeId} />
+              <ProfileItem icon={<Briefcase size={16} />} label="Dept" value={user?.department} />
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 border-t border-slate-100">
            <button 
              onClick={logout}
-             className="w-full flex items-center justify-center gap-2 bg-red-50 text-red-600 py-3 rounded-xl font-semibold hover:bg-red-100 transition duration-200"
+             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors duration-200 font-medium group"
            >
-             <LogOut size={18} />
+             <LogOut size={18} className="group-hover:-translate-x-1 transition-transform" />
              Sign Out
            </button>
         </div>
       </aside>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden">
+      <main className="flex-1 flex flex-col h-full overflow-hidden bg-slate-50/50">
         
-        {/* TOP BAR */}
-        <header className="bg-white shadow-sm px-8 py-4 flex justify-between items-center z-10">
-          <div className="flex items-center gap-4">
+        {/* HEADER */}
+        <header className="bg-white border-b border-slate-200 px-4 md:px-8 py-4 flex justify-between items-center z-10 sticky top-0">
+          <div className="flex items-center gap-3 md:gap-4">
+             <button 
+               onClick={() => setIsMobileMenuOpen(true)}
+               className="p-2 -ml-2 text-slate-500 hover:bg-slate-100 rounded-lg md:hidden"
+             >
+               <Menu size={24} />
+             </button>
              <img 
-                src="/F.log1.png" 
-                alt="Logo" 
-                className="w-12 h-12 object-contain mix-blend-multiply contrast-125 brightness-110" 
+               src="/F.log1.png" 
+               alt="Logo" 
+               className="w-12 h-12 object-contain hidden md:block mix-blend-multiply brightness-110 contrast-125" 
              />
              <div>
-                <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-                <p className="text-sm text-gray-500">Welcome back, ready for your exams?</p>
+                <h1 className="text-xl font-bold text-slate-800">Student Dashboard</h1>
+                <p className="text-xs text-slate-500 font-medium">Manage your exams and results</p>
              </div>
           </div>
           
           <div className="flex items-center gap-4">
-             <div className="hidden md:flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-lg text-gray-600 font-medium">
-                <Clock size={18} />
-                <span>{currentTime.toLocaleTimeString()}</span>
+             <div className="hidden md:flex flex-col items-end mr-2">
+                <span className="text-xs text-slate-400 font-medium uppercase tracking-wide">Current Time</span>
+                <div className="flex items-center gap-2 text-slate-700 font-mono font-semibold">
+                   <Clock size={16} className="text-indigo-500" />
+                   <span>{currentTime.toLocaleTimeString()}</span>
+                </div>
              </div>
              <button 
                onClick={loadData}
                disabled={loading}
-               className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition"
+               className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all duration-200 border border-transparent hover:border-indigo-100"
                title="Refresh Data"
              >
                <RefreshCw size={20} className={loading ? "animate-spin" : ""} />
              </button>
-             {/* Mobile Menu Button could go here */}
           </div>
         </header>
 
         {/* SCROLLABLE CONTENT */}
-        <div className="flex-1 overflow-y-auto p-8">
-          
-          {/* STATS ROW */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <StatCard
-              title="Total Exams"
-              value={exams.length}
-              icon={<BookOpen size={24} />}
-              color="blue"
-              subtext="Assigned to you"
-            />
-            <StatCard
-              title="Completed"
-              value={completedCount}
-              icon={<CheckCircle size={24} />}
-              color="green"
-              subtext="Successfully finished"
-            />
-            <StatCard
-              title="Pending"
-              value={pendingCount}
-              icon={<Clock size={24} />}
-              color="orange"
-              subtext="Waiting for action"
-            />
-          </div>
+        <div className="flex-1 overflow-y-auto p-4 md:p-8">
+          <div className="max-w-7xl mx-auto space-y-8">
+            
+            {/* STATS ROW */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <StatCard
+                title="Total Exams"
+                value={exams.length}
+                icon={<BookOpen size={24} />}
+                color="indigo"
+                trend="+2 new"
+                trendColor="text-green-600"
+              />
+              <StatCard
+                title="Completed"
+                value={completedCount}
+                icon={<CheckCircle size={24} />}
+                color="emerald"
+                trend="Great job!"
+                trendColor="text-emerald-600"
+              />
+              <StatCard
+                title="Pending"
+                value={pendingCount}
+                icon={<Timer size={24} />}
+                color="amber"
+                trend={pendingCount > 0 ? "Action needed" : "All clear"}
+                trendColor={pendingCount > 0 ? "text-amber-600" : "text-slate-400"}
+              />
+            </div>
 
-          {/* EXAMS SECTION */}
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-              <BookOpen className="text-blue-600" />
-              Your Exams
-            </h2>
-            <span className="text-sm text-gray-500">
-              {pendingCount} Pending
-            </span>
-          </div>
-
-          {exams.length === 0 ? (
-            <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-16 flex flex-col items-center justify-center text-center">
-              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6">
-                <BookOpen size={32} className="text-gray-400" />
+            {/* EXAMS SECTION */}
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                  My Exams
+                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-xs font-semibold">
+                    {exams.length}
+                  </span>
+                </h2>
+                
+                {/* TABS */}
+                <div className="bg-white p-1 rounded-xl border border-slate-200 inline-flex shadow-sm">
+                  {['all', 'pending', 'completed'].map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={`
+                        px-4 py-2 rounded-lg text-sm font-semibold transition-all duration-200 capitalize
+                        ${activeTab === tab 
+                          ? 'bg-slate-800 text-white shadow-md' 
+                          : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                        }
+                      `}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <h3 className="text-xl font-bold text-gray-800 mb-2">No Exams Assigned</h3>
-              <p className="text-gray-500 max-w-xs mx-auto">
-                You're all caught up! Check back later for new exam assignments.
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 pb-8">
-              {exams.map((exam) => {
-                const isCompleted = attempted.includes(exam._id);
-                const now = currentTime;
-                const start = exam.startTime ? new Date(exam.startTime) : null;
-                const end = exam.endTime ? new Date(exam.endTime) : null;
-                
-                let status = "available"; // available, scheduled, expired, completed
-                
-                if (isCompleted) status = "completed";
-                else if (start && now < start) status = "scheduled";
-                else if (end && now > end) status = "expired";
 
-                return (
-                  <div
-                    key={exam._id}
-                    className={`
-                      relative bg-white rounded-2xl p-6 shadow-sm border border-gray-100 
-                      hover:shadow-xl transition-all duration-300 flex flex-col group
-                      ${status === "completed" ? "opacity-75 bg-gray-50" : ""}
-                    `}
-                  >
-                    {/* Status Badge */}
-                    <div className="absolute top-6 right-6">
-                      {status === "completed" && (
-                        <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold">
-                          <CheckCircle size={12} /> Completed
-                        </span>
-                      )}
-                      {status === "scheduled" && (
-                        <span className="inline-flex items-center gap-1 bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-bold animate-pulse">
-                          <Clock size={12} /> Scheduled
-                        </span>
-                      )}
-                      {status === "expired" && (
-                        <span className="inline-flex items-center gap-1 bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-bold">
-                          <AlertCircle size={12} /> Expired
-                        </span>
-                      )}
-                      {status === "available" && (
-                        <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold">
-                          <CheckCircle size={12} /> Available
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Card Content */}
-                    <div className="mb-4 pr-20">
-                      <h3 className="text-lg font-bold text-gray-800 leading-tight mb-2 group-hover:text-blue-600 transition-colors">
-                        {exam.title}
-                      </h3>
-                      <div className="flex flex-wrap gap-3 text-sm text-gray-500">
-                        <div className="flex items-center gap-1">
-                           <Clock size={14} /> {exam.duration} min
-                        </div>
-                        {start && (
-                          <div className="flex items-center gap-1">
-                             <Calendar size={14} /> {formatDate(start)}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Dynamic Countdown / Info Area */}
-                    <div className="bg-gray-50 rounded-xl p-4 mb-6 mt-auto">
-                       {status === "scheduled" ? (
-                         <div className="text-center">
-                           <p className="text-xs text-gray-500 font-semibold uppercase tracking-wide mb-1">Starts In</p>
-                           <p className="text-2xl font-mono font-bold text-orange-600">
-                             {getTimeRemaining(start)}
-                           </p>
-                         </div>
-                       ) : status === "available" ? (
-                         <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-gray-600">Ready to take?</span>
-                            <span className="text-xs text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded">Action Required</span>
-                         </div>
-                       ) : status === "completed" ? (
-                         <div className="text-center text-gray-500 text-sm">
-                           You have completed this exam.
-                         </div>
-                       ) : (
-                         <div className="text-center text-red-500 text-sm font-medium">
-                           This exam is no longer available.
-                         </div>
-                       )}
-                    </div>
-
-                    {/* Action Button */}
-                    {status === "completed" ? (
-                       <button
-                         onClick={() => navigate(`/student/result/${exam._id}`)}
-                         className="w-full py-3 rounded-xl font-bold bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 transition shadow-sm"
-                       >
-                         View Result Status
-                       </button>
-                    ) : (
-                       <button
-                         onClick={() => handleStartExamClick(exam)}
-                         disabled={status === "expired" || (status === "scheduled" && false)} 
-                         // Keep scheduled clickable to show toast details, or disable if preferred. 
-                         // User requested detailed messages, so keeping clickable is good, but visual indication is handled by disabled style below if needed.
-                         // Actually, let's make the button distinct for Scheduled
-                         className={`
-                           w-full py-3 rounded-xl font-bold text-white shadow-lg transition transform hover:-translate-y-0.5 active:translate-y-0
-                           ${status === "available" 
-                              ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:shadow-blue-200" 
-                              : status === "scheduled"
-                                ? "bg-gray-400 cursor-not-allowed" // Visually disabled but we might want click for toast
-                                : "bg-gray-200 text-gray-400 cursor-not-allowed shadow-none"
-                           }
-                         `}
-                       >
-                         {status === "available" ? "Start Exam Now" : 
-                          status === "scheduled" ? "Wait for Start" : "Unavailable"}
-                       </button>
-                    )}
+              {filteredExams.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-slate-200 border-dashed p-16 flex flex-col items-center justify-center text-center">
+                  <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                    <Filter size={24} className="text-slate-400" />
                   </div>
-                );
-              })}
+                  <h3 className="text-lg font-bold text-slate-800 mb-1">No exams found</h3>
+                  <p className="text-slate-500 text-sm">
+                    {activeTab === 'all' 
+                      ? "You haven't been assigned any exams yet." 
+                      : `No ${activeTab} exams to show.`}
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {filteredExams.map((exam) => (
+                    <ExamCard 
+                      key={exam._id} 
+                      exam={exam} 
+                      isCompleted={attempted.includes(exam._id)}
+                      currentTime={currentTime}
+                      formatDate={formatDate}
+                      getTimeRemaining={getTimeRemaining}
+                      onStart={() => handleStartExamClick(exam)}
+                      navigate={navigate}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </main>
     </div>
   );
 };
 
-const StatCard = ({ title, value, icon, color, subtext }) => {
-  const colorStyles = {
-    blue: "bg-blue-50 text-blue-600",
-    green: "bg-green-50 text-green-600",
-    orange: "bg-orange-50 text-orange-600",
+// Sub-components
+const ProfileItem = ({ icon, label, value }) => (
+  <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors group cursor-default">
+    <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-white group-hover:text-indigo-500 group-hover:shadow-sm transition-all">
+      {icon}
+    </div>
+    <div className="flex-1 min-w-0">
+      <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-0.5">{label}</p>
+      <p className="text-sm font-medium text-slate-700 truncate" title={value}>{value || "N/A"}</p>
+    </div>
+  </div>
+);
+
+const StatCard = ({ title, value, icon, color, trend, trendColor }) => {
+  const colors = {
+    indigo: "bg-indigo-50 text-indigo-600 border-indigo-100",
+    emerald: "bg-emerald-50 text-emerald-600 border-emerald-100",
+    amber: "bg-amber-50 text-amber-600 border-amber-100",
   };
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-start gap-4 hover:shadow-md transition-shadow">
-      <div className={`p-3 rounded-xl ${colorStyles[color]}`}>
-        {icon}
+    <div className="bg-white rounded-2xl p-6 border border-slate-100 shadow-sm hover:shadow-md transition-shadow group">
+      <div className="flex items-start justify-between mb-4">
+        <div className={`p-3 rounded-xl ${colors[color]} group-hover:scale-110 transition-transform duration-300`}>
+          {icon}
+        </div>
+        {trend && (
+           <span className={`text-xs font-bold px-2 py-1 rounded-full bg-slate-50 ${trendColor}`}>
+             {trend}
+           </span>
+        )}
       </div>
       <div>
-        <p className="text-gray-500 text-sm font-medium">{title}</p>
-        <h3 className="text-3xl font-bold text-gray-800 my-1">{value}</h3>
-        {subtext && <p className="text-xs text-gray-400">{subtext}</p>}
+        <h3 className="text-3xl font-bold text-slate-800 mb-1">{value}</h3>
+        <p className="text-sm text-slate-500 font-medium">{title}</p>
+      </div>
+    </div>
+  );
+};
+
+const ExamCard = ({ exam, isCompleted, currentTime, formatDate, getTimeRemaining, onStart, navigate }) => {
+  const start = exam.startTime ? new Date(exam.startTime) : null;
+  const end = exam.endTime ? new Date(exam.endTime) : null;
+  
+  let status = "available";
+  if (isCompleted) status = "completed";
+  else if (start && currentTime < start) status = "scheduled";
+  else if (end && currentTime > end) status = "expired";
+
+  const statusColors = {
+    completed: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    scheduled: "bg-amber-100 text-amber-700 border-amber-200",
+    expired: "bg-red-100 text-red-700 border-red-200",
+    available: "bg-indigo-100 text-indigo-700 border-indigo-200",
+  };
+
+  const statusIcons = {
+    completed: <CheckCircle size={14} />,
+    scheduled: <Clock size={14} />,
+    expired: <AlertCircle size={14} />,
+    available: <Timer size={14} />,
+  };
+
+  return (
+    <div className={`
+      relative bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col
+      hover:shadow-lg hover:border-indigo-200 transition-all duration-300 group
+      ${status === 'completed' ? 'opacity-80 hover:opacity-100' : ''}
+    `}>
+      {/* Top Decoration */}
+      <div className={`h-2 w-full ${
+        status === 'available' ? 'bg-indigo-500' : 
+        status === 'completed' ? 'bg-emerald-500' :
+        status === 'scheduled' ? 'bg-amber-500' : 'bg-red-500'
+      }`} />
+
+      <div className="p-6 flex-1 flex flex-col">
+        <div className="flex justify-between items-start mb-4">
+          <div className={`
+            inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border
+            ${statusColors[status]}
+          `}>
+            {statusIcons[status]}
+            <span className="capitalize">{status}</span>
+          </div>
+          <div className="text-slate-400 hover:text-indigo-600 cursor-pointer">
+            <MoreVertical size={18} />
+          </div>
+        </div>
+
+        <h3 className="text-lg font-bold text-slate-800 mb-2 line-clamp-2 group-hover:text-indigo-600 transition-colors">
+          {exam.title}
+        </h3>
+
+        <div className="space-y-3 mb-6">
+          <div className="flex items-center gap-2 text-sm text-slate-500">
+            <Clock size={16} className="text-slate-400" />
+            <span>{exam.duration} mins duration</span>
+          </div>
+          {start && (
+            <div className="flex items-center gap-2 text-sm text-slate-500">
+              <Calendar size={16} className="text-slate-400" />
+              <span>{formatDate(start)}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-auto pt-4 border-t border-slate-100">
+          {status === "scheduled" ? (
+             <div className="flex items-center justify-between bg-amber-50 rounded-lg p-3">
+               <span className="text-xs font-bold text-amber-700 uppercase">Starts in</span>
+               <span className="font-mono font-bold text-amber-600">{getTimeRemaining(start)}</span>
+             </div>
+          ) : status === "available" ? (
+             <button
+               onClick={onStart}
+               className="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-semibold shadow-md shadow-indigo-200 transition-all flex items-center justify-center gap-2 group-hover:scale-[1.02]"
+             >
+               Start Exam <ChevronRight size={16} />
+             </button>
+          ) : status === "completed" ? (
+             <button
+               onClick={() => navigate(`/student/result/${exam._id}`)}
+               className="w-full py-2.5 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 rounded-xl font-semibold transition-all"
+             >
+               View Results
+             </button>
+          ) : (
+             <div className="w-full py-2.5 bg-slate-100 text-slate-400 rounded-xl font-semibold text-center text-sm cursor-not-allowed">
+               Unavailable
+             </div>
+          )}
+        </div>
       </div>
     </div>
   );
