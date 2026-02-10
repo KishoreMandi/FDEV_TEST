@@ -5,9 +5,16 @@ const AdminHeader = () => {
 
   return (
     <div className="flex justify-between items-center bg-white px-6 py-4 shadow">
-      <h2 className="text-xl font-semibold">
-        {user?.role === "trainer" ? "Trainer Dashboard" : "Admin Dashboard"}
-      </h2>
+      <div className="flex items-center gap-4">
+        <img 
+          src="/F.log1.png" 
+          alt="Logo" 
+          className="w-12 h-12 object-contain mix-blend-multiply contrast-125 brightness-110" 
+        />
+        <h2 className="text-xl font-bold text-gray-800 tracking-wide">
+          {user?.role === "trainer" ? "Trainer Dashboard" : "Admin Dashboard"}
+        </h2>
+      </div>
 
       <div className="flex items-center gap-4">
         <span className="text-gray-600">{user?.name}</span>

@@ -185,9 +185,16 @@ const Dashboard = () => {
         
         {/* TOP BAR */}
         <header className="bg-white shadow-sm px-8 py-4 flex justify-between items-center z-10">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-            <p className="text-sm text-gray-500">Welcome back, ready for your exams?</p>
+          <div className="flex items-center gap-4">
+             <img 
+                src="/F.log1.png" 
+                alt="Logo" 
+                className="w-12 h-12 object-contain mix-blend-multiply contrast-125 brightness-110" 
+             />
+             <div>
+                <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
+                <p className="text-sm text-gray-500">Welcome back, ready for your exams?</p>
+             </div>
           </div>
           
           <div className="flex items-center gap-4">
