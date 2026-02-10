@@ -32,7 +32,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-700 to-indigo-900">
-      <div className="bg-[#eef4ff] w-[900px] max-w-full rounded-2xl shadow-xl grid grid-cols-1 md:grid-cols-2 overflow-hidden">
+      <div className="bg-white w-[900px] max-w-full rounded-2xl shadow-xl grid grid-cols-1 md:grid-cols-2 overflow-hidden">
         
         {/* LEFT FORM */}
         <div className="p-10">
@@ -80,11 +80,11 @@ const Login = () => {
         </div>
 
         {/* RIGHT ILLUSTRATION */}
-        <div className="hidden md:flex items-center justify-center bg-[#e1ecff]">
+        <div className="hidden md:flex items-center justify-center bg-white">
           <img
-            src="/download.svg"
-            alt="Login Illustration"
-            className="w-72"
+            src="/Fdev.log.jpeg"
+            alt="FDev Logo"
+            className="w-full object-contain brightness-110 contrast-125"
           />
         </div>
       </div>
