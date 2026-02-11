@@ -17,7 +17,8 @@ import {
   MoreVertical,
   Timer,
   Menu,
-  X
+  X,
+  ChevronRight
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";

@@ -69,5 +69,6 @@ export const getAnalytics = async (req, res) => {
     unattempted: result.unattempted,
     accuracy: result.accuracy,
     timeSpent: `${timeSpentMinutes}m ${timeSpentSeconds}s`,
+    answers: result.answers,
   });
 };

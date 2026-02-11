@@ -13,8 +13,21 @@ const resultSchema = new mongoose.Schema(
     answers: [
       {
         questionId: { type: mongoose.Schema.Types.ObjectId, ref: "Question" },
-        selectedOption: String
-      }
+        selectedOption: Number, // For MCQ
+        code: String, // For Coding
+        language: String, // For Coding
+        isCorrect: Boolean, // For Coding
+        testCases: [
+          {
+            testCaseId: mongoose.Schema.Types.ObjectId,
+            input: String,
+            expectedOutput: String,
+            actualOutput: String,
+            passed: Boolean,
+            error: String,
+          }
+        ],
+      },
     ],
     markedForReview: [
       {

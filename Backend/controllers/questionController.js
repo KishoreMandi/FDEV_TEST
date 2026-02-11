@@ -5,7 +5,7 @@ import Exam from "../models/Exam.js";
 /* ================= ADD QUESTION (ADMIN) ================= */
 export const addQuestion = async (req, res) => {
   try {
-    const { examId, question, options, correctOption } = req.body;
+    const { examId, question, options, correctOption, type, codingData } = req.body;
 
     // Check if exam is published
     const exam = await Exam.findById(examId);
@@ -24,6 +24,8 @@ export const addQuestion = async (req, res) => {
       question,
       options,
       correctOption,
+      type: type || "mcq",
+      codingData,
     });
 
     res.status(201).json({
@@ -52,11 +54,11 @@ export const getAdminQuestionsByExam = async (req, res) => {
 export const updateQuestion = async (req, res) => {
   try {
     const { questionId } = req.params;
-    const { question, options, correctOption } = req.body;
+    const { question, options, correctOption, type, codingData } = req.body;
 
     const updatedQuestion = await Question.findByIdAndUpdate(
       questionId,
-      { question, options, correctOption },
+      { question, options, correctOption, type, codingData },
       { new: true }
     );
 
@@ -91,9 +93,31 @@ export const getQuestionsByExam = async (req, res) => {
   try {
     const questions = await Question.find({
       examId: req.params.examId,
-    }).select("-correctOption"); // hide answer
+    }).select("-correctOption"); // hide MCQ answer
 
-    res.json(questions);
+    // Sanitize coding questions: remove hidden test cases' details
+    const sanitizedQuestions = questions.map((q) => {
+      if (q.type === "coding" && q.codingData && q.codingData.testCases) {
+        const sanitizedTestCases = q.codingData.testCases.map((tc) => {
+          if (tc.isHidden) {
+            return {
+              _id: tc._id,
+              isHidden: true,
+              // Do not send input or expectedOutput for hidden test cases
+            };
+          }
+          return tc;
+        });
+        
+        // Convert to plain object to modify
+        const qObj = q.toObject();
+        qObj.codingData.testCases = sanitizedTestCases;
+        return qObj;
+      }
+      return q;
+    });
+
+    res.json(sanitizedQuestions);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

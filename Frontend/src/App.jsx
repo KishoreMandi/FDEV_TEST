@@ -1,9 +1,12 @@
 import AppRoutes from "./routes/AppRoutes";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 function App() {
   return (
     <div className="min-h-screen bg-gray-100">
-      <AppRoutes />
+      <ErrorBoundary>
+        <AppRoutes />
+      </ErrorBoundary>
     </div>
   );
 }

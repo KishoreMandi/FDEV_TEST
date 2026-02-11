@@ -2,11 +2,13 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "../../api/axiosInstance";
+import { Maximize2, Minimize2, Move } from "lucide-react";
 
 import Timer from "../../components/Timer";
 import QuestionCard from "../../components/QuestionCard";
 import QuestionPalette from "../../components/QuestionPalette";
 import SubmitModal from "../../components/SubmitModal";
+import CodingEnvironment from "../../components/CodingEnvironment";
 
 import { getQuestions } from "../../api/examApi";
 import { autoSave, resumeExam, submitExam } from "../../api/resultApi";
@@ -44,6 +46,37 @@ const Exam = () => {
   const screenStreamRef = useRef(null);
   const audioContextRef = useRef(null); // Store AudioContext to close it later
   const [hasScreenShare, setHasScreenShare] = useState(false);
+
+  // CAMERA DRAG STATE
+  const [cameraPos, setCameraPos] = useState({ x: 0, y: 0 });
+  const isDraggingRef = useRef(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+
+  const handleDragStart = (e) => {
+    e.preventDefault();
+    isDraggingRef.current = true;
+    dragStartRef.current = { x: e.clientX - cameraPos.x, y: e.clientY - cameraPos.y };
+  };
+
+  useEffect(() => {
+    const handleDragMove = (e) => {
+      if (!isDraggingRef.current) return;
+      const newX = e.clientX - dragStartRef.current.x;
+      const newY = e.clientY - dragStartRef.current.y;
+      setCameraPos({ x: newX, y: newY });
+    };
+
+    const handleDragEnd = () => {
+      isDraggingRef.current = false;
+    };
+
+    window.addEventListener("mousemove", handleDragMove);
+    window.addEventListener("mouseup", handleDragEnd);
+    return () => {
+      window.removeEventListener("mousemove", handleDragMove);
+      window.removeEventListener("mouseup", handleDragEnd);
+    };
+  }, []);
 
   const addLog = (type, message) => {
     logsRef.current.push({ type, message, timestamp: new Date() });
@@ -104,7 +137,15 @@ const Exam = () => {
                 (q) => q._id === a.questionId
               );
               if (index !== -1) {
-                restored[index] = a.selectedOption;
+                if (qRes.data[index].type === "coding") {
+                  restored[index] = {
+                    code: a.code,
+                    language: a.language,
+                    isCorrect: a.isCorrect,
+                  };
+                } else {
+                  restored[index] = a.selectedOption;
+                }
               }
             });
             setAnswers(restored);
@@ -401,13 +442,23 @@ const Exam = () => {
     try {
       await autoSave({
         examId,
-        answers: Object.entries(answers).map(
-          ([index, option]) => ({
-            questionId: questions[index]._id,
-            selectedOption: option,
-          })
-        ),
-        markedForReview: Array.from(marked).map(idx => questions[idx]._id),
+        answers: Object.entries(answers).map(([index, data]) => {
+          const q = questions[index];
+          if (q.type === "coding") {
+            return {
+              questionId: q._id,
+              code: data.code,
+              language: data.language,
+              isCorrect: data.isCorrect,
+              testCases: data.testCases,
+            };
+          }
+          return {
+            questionId: q._id,
+            selectedOption: data,
+          };
+        }),
+        markedForReview: Array.from(marked).map((idx) => questions[idx]._id),
         activityLogs: logsRef.current,
       });
     } catch (err) {
@@ -515,12 +566,21 @@ const Exam = () => {
 
       await submitExam({
         examId,
-        answers: Object.entries(answers).map(
-          ([index, option]) => ({
-            questionId: questions[index]._id,
-            selectedOption: option,
-          })
-        ),
+        answers: Object.entries(answers).map(([index, data]) => {
+          const q = questions[index];
+          if (q.type === "coding") {
+            return {
+              questionId: q._id,
+              code: data.code,
+              language: data.language,
+              isCorrect: data.isCorrect,
+            };
+          }
+          return {
+            questionId: q._id,
+            selectedOption: data,
+          };
+        }),
         activityLogs: logsRef.current,
       });
 
@@ -680,101 +740,233 @@ const Exam = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
-      {/* WEBCAM FEED */}
-      {exam?.proctoring?.webcam && (
-          <div className="fixed bottom-24 right-4 w-48 h-36 bg-black border-2 border-white shadow-lg z-50 rounded overflow-hidden">
-              <video 
-                  ref={videoRef} 
-                  autoPlay 
-                  muted 
-                  className="w-full h-full object-cover"
-              />
-          </div>
-      )}
-
+    <div className={`min-h-screen bg-gray-50 flex flex-col ${isFullScreen ? "fullscreen-mode" : ""}`}>
       {/* Header */}
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="font-bold text-lg">Online Examination</h1>
+      <header className={`bg-white border-b border-gray-200 px-6 py-3 flex justify-between items-center shadow-sm z-30`}>
+        <div className="flex items-center gap-4">
+          <h1 className="font-bold text-xl text-gray-800 tracking-tight">Online Examination</h1>
+          {exam && (
+            <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs font-bold uppercase border border-blue-100">
+              {exam.title}
+            </span>
+          )}
+        </div>
 
-        {/* TIMER */}
-        {initialSeconds !== null && (
-          <Timer
-            initialSeconds={initialSeconds}
-            onTimeUp={handleTimeUp}
-          />
-        )}
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* Question Area */}
-        <div className="md:col-span-3">
-          {questions[current] && (
-            <QuestionCard
-              question={questions[current]}
-              selectedOption={answers[current]}
-              onSelect={handleSelect}
+        <div className="flex items-center gap-6">
+          {initialSeconds !== null && (
+            <Timer
+              initialSeconds={initialSeconds}
+              onTimeUp={handleTimeUp}
             />
           )}
+            <div className="flex items-center space-x-4">
+              <button
+                type="button"
+                onClick={() => {
+                  if (isFullScreen) {
+                    document.exitFullscreen();
+                  } else {
+                    document.documentElement.requestFullscreen().catch(console.error);
+                  }
+                }}
+                className="text-gray-600 hover:text-gray-900"
+                title={isFullScreen ? "Exit Fullscreen" : "Enter Fullscreen"}
+              >
+                {isFullScreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
+              </button>
 
-          <div className="flex justify-between mt-4">
-            <button
-              disabled={current === 0}
-              onClick={() => setCurrent((p) => p - 1)}
-              className="px-4 py-2 bg-gray-300 rounded disabled:opacity-50"
-            >
-              Previous
-            </button>
+            </div>
+        </div>
+      </header>
 
-            <div className="space-x-2">
-               <button
-                onClick={toggleMark}
-                className={`px-4 py-2 rounded text-white ${marked.has(current) ? 'bg-purple-600' : 'bg-yellow-500'}`}
-               >
-                 {marked.has(current) ? "Unmark" : "Mark for Review"}
-               </button>
+      {/* Main Content */}
+      <main className={`flex-1 flex ${isFullScreen ? "mt-0" : "mt-20"} overflow-hidden relative`}>
+        {/* Left Side: Question Area (Scrollable) */}
+        <div className={`flex-1 flex flex-col bg-white overflow-hidden ${isFullScreen ? (questions[current]?.type === "coding" ? "w-1/2 border-r border-gray-200" : "w-full") : "w-1/3 border-r border-gray-200"}`}>
+          <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
+            {questions[current] && (
+              <div className={`space-y-6 animate-in fade-in slide-in-from-left-4 duration-500 ${isFullScreen && questions[current]?.type !== "coding" ? "max-w-4xl mx-auto pt-8" : ""}`}>
+                <div className="flex justify-between items-start">
+                  <h2 className="text-2xl font-black text-gray-900 flex items-center gap-3">
+                    <span className="flex items-center justify-center w-10 h-10 bg-blue-600 text-white rounded-lg shadow-blue-200 shadow-lg">
+                      {current + 1}
+                    </span>
+                    Question
+                  </h2>
+                  <button
+                    onClick={toggleMark}
+                    className={`p-2 rounded-lg transition-all ${
+                      marked.has(current) 
+                        ? 'bg-purple-100 text-purple-600 border border-purple-200' 
+                        : 'bg-gray-100 text-gray-400 border border-gray-200 hover:text-yellow-600 hover:bg-yellow-50 hover:border-yellow-200'
+                    }`}
+                    title={marked.has(current) ? "Unmark for review" : "Mark for review"}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill={marked.has(current) ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+                  </button>
+                </div>
 
-               <button
-                onClick={handleSaveAndNext}
-                disabled={current === questions.length - 1}
-                className="px-4 py-2 bg-blue-600 text-white rounded disabled:opacity-50"
-               >
-                Save & Next
-               </button>
+                <div className="prose prose-blue max-w-none">
+                  {questions[current].type === "coding" ? (
+                    <div className="bg-gray-50 p-5 rounded-xl border border-gray-100 text-gray-800 leading-relaxed font-medium whitespace-pre-wrap">
+                      {questions[current].question}
+                    </div>
+                  ) : (
+                    <QuestionCard
+                      question={questions[current]}
+                      selectedOption={answers[current]}
+                      onSelect={handleSelect}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className={`p-4 bg-white border-t border-gray-200 ${isFullScreen && questions[current]?.type !== "coding" ? "fixed bottom-0 left-0 right-0 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]" : ""}`}>
+            <div className={`${isFullScreen && questions[current]?.type !== "coding" ? "max-w-7xl mx-auto flex items-start gap-8" : ""}`}>
+               
+               <div className="flex-1">
+                  <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span> Question Navigator
+                  </h3>
+                  <QuestionPalette
+                    total={questions.length}
+                    answers={answers}
+                    current={current}
+                    onSelect={setCurrent}
+                    marked={marked}
+                  />
+                  {/* Legend */}
+                  <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                    <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-green-500 rounded-sm border border-green-600"></span> Answered</div>
+                    <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-purple-600 rounded-sm border border-purple-700"></span> Marked</div>
+                    <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-blue-600 rounded-sm border border-blue-700"></span> Current</div>
+                    <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-gray-100 border border-gray-300 rounded-sm"></span> Unvisited</div>
+                  </div>
+               </div>
+
+               {/* Navigation Buttons (Moved here for better layout in fullscreen) */}
+               {isFullScreen && questions[current]?.type === "mcq" && (
+                  <div className="flex items-center gap-3 self-center border-l border-gray-100 pl-8">
+                    <button
+                      disabled={current === 0}
+                      onClick={() => setCurrent((p) => p - 1)}
+                      className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-all disabled:opacity-50 text-sm"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                      Prev
+                    </button>
+
+                    <button
+                      onClick={handleSaveAndNext}
+                      disabled={current === questions.length - 1}
+                      className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-all shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 text-sm"
+                    >
+                      Save & Next
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </button>
+                    
+                    <button
+                      onClick={() => setShowSubmit(true)}
+                      className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg font-bold transition-all shadow-sm hover:shadow-md active:scale-95 text-sm ml-2"
+                    >
+                      Submit
+                    </button>
+                  </div>
+               )}
             </div>
           </div>
         </div>
 
-        {/* Palette */}
-        <div className="bg-white p-4 rounded shadow">
-          <h3 className="font-semibold mb-2">Questions</h3>
+        {/* Right Side: Editor/Content Area */}
+        <div className={`flex-1 flex flex-col bg-[#1e1e1e] overflow-hidden
+          ${isFullScreen && questions[current]?.type === "mcq" ? "hidden" : ""}
+          ${isFullScreen && questions[current]?.type === "coding" ? "w-1/2" : ""}`}>
+          {questions[current]?.type === "coding" ? (
+            <div className="flex-1 flex flex-col">
+              <CodingEnvironment
+                question={questions[current]}
+                initialData={answers[current]}
+                onSave={handleSelect}
+                layout="split-vertical" // We'll handle layout inside CodingEnvironment or by CSS
+              />
+            </div>
+          ) : (
+  <div className="flex-1 p-6 overflow-y-auto">
+    <QuestionCard
+      question={questions[current]}
+      selectedOption={answers[current]}
+      onSelect={handleSelect}
+    />
+  </div>
+)}
 
-          <QuestionPalette
-            total={questions.length}
-            answers={answers}
-            current={current}
-            onSelect={setCurrent}
-            marked={marked}
-          />
-          
-          {/* Legend */}
-          <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-             <div className="flex items-center"><span className="w-3 h-3 bg-green-500 mr-1 rounded"></span> Answered</div>
-             <div className="flex items-center"><span className="w-3 h-3 bg-purple-600 mr-1 rounded"></span> Marked</div>
-             <div className="flex items-center"><span className="w-3 h-3 bg-yellow-400 mr-1 rounded border border-blue-600"></span> Current</div>
-             <div className="flex items-center"><span className="w-3 h-3 bg-gray-300 mr-1 rounded"></span> Not Visited</div>
+          {/* Navigation Controls (Bottom Right) */}
+          <div className="bg-white border-t border-gray-200 px-6 py-4 flex justify-between items-center z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+            <button
+              disabled={current === 0}
+              onClick={() => setCurrent((p) => p - 1)}
+              className="flex items-center gap-2 px-5 py-2.5 text-gray-700 font-bold hover:bg-gray-100 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-transparent"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+              Previous
+            </button>
+
+            <button
+              onClick={handleSaveAndNext}
+              disabled={current === questions.length - 1}
+              className="flex items-center gap-2 px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-all shadow-md hover:shadow-lg active:scale-95 disabled:opacity-30"
+            >
+              Save & Next
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+            </button>
+            <button
+              onClick={() => setShowSubmit(true)}
+              className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold transition-all shadow-md hover:shadow-lg active:scale-95"
+            >
+              Submit Exam
+            </button>
           </div>
-
-          <button
-            onClick={() => setShowSubmit(true)}
-            className="mt-4 w-full bg-red-600 text-white py-2 rounded"
-          >
-            Submit Exam
-          </button>
         </div>
-      </div>
 
-      {/* Submit Confirmation */}
+        {/* WEBCAM FEED - Overlayed Floating */}
+        {exam?.proctoring?.webcam && (
+          <div 
+            className={`fixed bottom-24 right-6 w-48 h-36 bg-black border-2 border-white shadow-2xl rounded-xl overflow-hidden group transition-all duration-300 hover:w-64 hover:h-48 ${isFullScreen ? "z-[60]" : "z-50"}`}
+            style={{ 
+              transform: `translate(${cameraPos.x}px, ${cameraPos.y}px)`,
+              cursor: isDraggingRef.current ? "grabbing" : "default" 
+            }}
+          >
+            <video 
+              ref={videoRef} 
+              autoPlay 
+              muted 
+              className="w-full h-full object-cover transition-transform group-hover:scale-105"
+            />
+            
+            {/* Header / Drag Handle */}
+            <div className="absolute top-0 left-0 right-0 p-2 flex items-center justify-between z-10 pointer-events-none">
+                <div className="flex items-center gap-1.5 bg-black/50 px-2 py-0.5 rounded-full backdrop-blur-sm">
+                  <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(239,68,68,0.8)]"></span>
+                  <span className="text-[10px] font-bold text-white uppercase tracking-wider drop-shadow-md">Live Feed</span>
+                </div>
+                
+                {/* Drag Button */}
+                <div 
+                  onMouseDown={handleDragStart}
+                  className="bg-black/50 p-1.5 rounded-full backdrop-blur-sm cursor-move hover:bg-blue-600 transition-colors pointer-events-auto shadow-sm border border-white/10"
+                  title="Drag to move camera"
+                >
+                  <Move size={14} className="text-white" />
+                </div>
+            </div>
+          </div>
+        )}
+      </main>
+
+      {/* Submit Confirmation Modal */}
       <SubmitModal
         open={showSubmit}
         onClose={() => setShowSubmit(false)}

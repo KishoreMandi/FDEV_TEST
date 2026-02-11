@@ -41,27 +41,38 @@ export const submitExam = async (req, res) => {
       const question = await Question.findById(ans.questionId);
       if (!question) continue;
 
-      const selectedOpt = Number(ans.selectedOption);
-      const isValidAttempt =
-        ans.selectedOption !== null &&
-        ans.selectedOption !== undefined &&
-        ans.selectedOption !== "" &&
-        !isNaN(selectedOpt);
+      if (question.type === "mcq") {
+        const selectedOpt = Number(ans.selectedOption);
+        const isValidAttempt =
+          ans.selectedOption !== null &&
+          ans.selectedOption !== undefined &&
+          ans.selectedOption !== "" &&
+          !isNaN(selectedOpt);
 
-      if (!isValidAttempt) continue;
+        if (!isValidAttempt) continue;
 
-      if (question.correctOption === selectedOpt) {
-        score += 1;
-        correct++;
-      } else {
-        score -= exam.negativeMarking || 0;
-        wrong++;
+        if (question.correctOption === selectedOpt) {
+          score += 1;
+          correct++;
+        } else {
+          score -= exam.negativeMarking || 0;
+          wrong++;
+        }
+      } else if (question.type === "coding") {
+        if (ans.code && ans.isCorrect) {
+          score += 5; // Higher marks for coding questions? Let's assume 5 for now.
+          correct++;
+        } else if (ans.code) {
+          wrong++;
+        }
       }
     }
 
-    const totalQuestions = answers.length;
-    const unattempted =
-      totalQuestions - (correct + wrong);
+    // Fetch actual total questions count from DB
+    const totalQuestions = await Question.countDocuments({ examId });
+    
+    // Calculate unattempted based on actual total vs attempted (correct + wrong)
+    const unattempted = totalQuestions - (correct + wrong);
 
     const accuracy =
       totalQuestions > 0
@@ -193,9 +204,22 @@ export const autoSaveAnswers = async (req, res) => {
       });
     }
 
+    // Process answers to ensure selectedOption is a Number for MCQs
+    const questionIds = answers.map(ans => ans.questionId);
+    const questions = await Question.find({ _id: { $in: questionIds } }).select('type');
+    const questionTypeMap = new Map(questions.map(q => [q._id.toString(), q.type]));
+
+    const processedAnswers = answers.map(ans => {
+      const questionType = questionTypeMap.get(ans.questionId.toString());
+      if (questionType === "mcq" && ans.selectedOption !== null && ans.selectedOption !== undefined && ans.selectedOption !== "") {
+        return { ...ans, selectedOption: Number(ans.selectedOption) };
+      }
+      return ans;
+    });
+
     const attempt = await Result.findOneAndUpdate(
       { examId, studentId, status: "in-progress" },
-      { answers, activityLogs, markedForReview },
+      { answers: processedAnswers, activityLogs, markedForReview },
       { upsert: true, new: true }
     );
 
