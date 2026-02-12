@@ -4,6 +4,5 @@ dist
 coverage
 .DS_Store
 Backend/.env
-Backend/uploads/
 Frontend/dist/
 *.log
