@@ -212,8 +212,8 @@ const LANGUAGE_REFERENCES = {
 };
 
 const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }) => {
-  const [code, setCode] = useState(initialData?.code || question.codingData.starterCode || "");
-  const [language, setLanguage] = useState(initialData?.language || question.codingData.language);
+  const [code, setCode] = useState(initialData?.code || question?.codingData?.starterCode || "");
+  const [language, setLanguage] = useState(initialData?.language || question?.codingData?.language || "javascript");
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState(null);
   const [bottomTab, setBottomTab] = useState("tests");
@@ -228,7 +228,7 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
     // Initialize codeMap with initial data if available
     if (initialData?.code && initialData?.language) {
       codeMapRef.current[initialData.language] = initialData.code;
-    } else if (question.codingData.starterCode && question.codingData.language) {
+    } else if (question?.codingData?.starterCode && question?.codingData?.language) {
       codeMapRef.current[question.codingData.language] = question.codingData.starterCode;
     }
   }, [question, initialData]);
@@ -236,18 +236,19 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
   useEffect(() => {
     // Update code if question changes and no saved code exists
     if (!initialData?.code) {
-      setCode(question.codingData.starterCode || STARTER_CODE[question.codingData.language] || "");
-      setLanguage(question.codingData.language);
+      const starterCode = question?.codingData?.starterCode || (question?.codingData?.language ? STARTER_CODE[question.codingData.language] : "") || "";
+      setCode(starterCode);
+      setLanguage(question?.codingData?.language || "javascript");
       // Clear code map for new question
       codeMapRef.current = {};
-      if (question.codingData.starterCode) {
+      if (question?.codingData?.starterCode) {
         codeMapRef.current[question.codingData.language] = question.codingData.starterCode;
       }
     } else {
       setCode(initialData.code);
       setLanguage(initialData.language);
     }
-  }, [question._id, initialData]);
+  }, [question?._id, initialData]);
 
   const handleLanguageChange = (e) => {
     const newLang = e.target.value;
@@ -264,8 +265,8 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
     } else {
       // If no saved code, use starter code
       // If this is the question's original language, prefer admin starter code
-      if (newLang === question.codingData.language) {
-         setCode(question.codingData.starterCode || STARTER_CODE[newLang] || "");
+      if (newLang === question?.codingData?.language) {
+         setCode(question?.codingData?.starterCode || STARTER_CODE[newLang] || "");
       } else {
          setCode(STARTER_CODE[newLang] || "");
       }
@@ -299,7 +300,7 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
         toast.success("Custom execution complete");
       } else {
         const res = await axios.post("/questions/execute", {
-          questionId: question._id,
+          questionId: question?._id,
           code,
           language,
         });

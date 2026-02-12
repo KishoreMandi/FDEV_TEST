@@ -411,7 +411,7 @@ const ResultAnalysis = () => {
                 <XCircle size={24} />
               </button>
             </div>
-            <div className="flex-1 overflow-hidden p-0 relative">
+            <div className="flex-1 overflow-hidden p-0 relative flex flex-col">
               <CodingEnvironment 
                 question={retryData.question} 
                 initialData={retryData.initialData}
