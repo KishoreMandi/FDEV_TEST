@@ -460,7 +460,7 @@ const ExamCard = ({ exam, isCompleted, currentTime, formatDate, getTimeRemaining
                onClick={() => navigate(`/student/result/${exam._id}`)}
                className="w-full py-2.5 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 rounded-xl font-semibold transition-all"
              >
-               View Results
+               View Status
              </button>
           ) : (
              <div className="w-full py-2.5 bg-slate-100 text-slate-400 rounded-xl font-semibold text-center text-sm cursor-not-allowed">
