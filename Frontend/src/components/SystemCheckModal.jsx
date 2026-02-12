@@ -1,16 +1,19 @@
 import { useEffect, useRef, useState } from "react";
-import { X, Camera, Mic, AlertCircle, CheckCircle } from "lucide-react";
+import { X, Camera, Mic, AlertCircle, CheckCircle, User as UserIcon } from "lucide-react";
 import toast from "react-hot-toast";
 
 const SystemCheckModal = ({ open, onClose, onConfirm }) => {
   const videoRef = useRef(null);
+  const canvasRef = useRef(null);
   const [stream, setStream] = useState(null);
   const [checks, setChecks] = useState({
     camera: false,
     mic: false,
+    personDetected: false,
     permission: "pending", // pending, granted, denied
   });
   const [error, setError] = useState("");
+  const [videoSignalMsg, setVideoSignalMsg] = useState("");
 
   useEffect(() => {
     if (open) {
@@ -27,8 +30,9 @@ const SystemCheckModal = ({ open, onClose, onConfirm }) => {
       stream.getTracks().forEach((track) => track.stop());
       setStream(null);
     }
-    setChecks({ camera: false, mic: false, permission: "pending" });
+    setChecks({ camera: false, mic: false, personDetected: false, permission: "pending" });
     setError("");
+    setVideoSignalMsg("");
   };
 
   useEffect(() => {
@@ -36,6 +40,43 @@ const SystemCheckModal = ({ open, onClose, onConfirm }) => {
       videoRef.current.srcObject = stream;
       videoRef.current.play().catch(e => console.error("Error playing video stream:", e));
     }
+  }, [stream]);
+
+  // Video Signal & Person Detection Logic
+  useEffect(() => {
+    let interval;
+    if (stream && videoRef.current) {
+      interval = setInterval(() => {
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        if (video.readyState === 4 && canvas) {
+          try {
+            const ctx = canvas.getContext("2d", { willReadFrequently: true });
+            canvas.width = 100;
+            canvas.height = 100;
+            ctx.drawImage(video, 0, 0, 100, 100);
+            const imageData = ctx.getImageData(0, 0, 100, 100).data;
+            
+            let totalBrightness = 0;
+            for (let i = 0; i < imageData.length; i += 4) {
+              totalBrightness += (imageData[i] + imageData[i + 1] + imageData[i + 2]) / 3;
+            }
+            const avgBrightness = totalBrightness / (imageData.length / 4);
+            
+            if (avgBrightness < 15) {
+              setChecks(prev => ({ ...prev, personDetected: false }));
+              setVideoSignalMsg("Camera is too dark or covered. Please adjust lighting.");
+            } else {
+              setChecks(prev => ({ ...prev, personDetected: true }));
+              setVideoSignalMsg("");
+            }
+          } catch (err) {
+            console.error("Video analysis error:", err);
+          }
+        }
+      }, 1000);
+    }
+    return () => clearInterval(interval);
   }, [stream]);
 
   const startSystemCheck = async () => {
@@ -72,11 +113,12 @@ const SystemCheckModal = ({ open, onClose, onConfirm }) => {
 
   if (!open) return null;
 
-  const allPassed = checks.camera && checks.mic;
+  const allPassed = checks.camera && checks.mic && checks.personDetected;
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
       <div className="bg-white w-[90%] max-w-lg rounded-xl p-6 relative shadow-2xl">
+        <canvas ref={canvasRef} className="hidden" />
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
@@ -106,13 +148,13 @@ const SystemCheckModal = ({ open, onClose, onConfirm }) => {
             
             {/* Status Overlay */}
             <div className="absolute top-2 left-2 bg-black/60 text-white px-3 py-1 rounded-full text-xs flex items-center gap-2">
-               <span className={`w-2 h-2 rounded-full ${checks.camera ? 'bg-green-500' : 'bg-red-500'}`}></span>
-               {checks.camera ? "Camera Active" : "Camera Error"}
+               <span className={`w-2 h-2 rounded-full ${checks.camera && checks.personDetected ? 'bg-green-500' : 'bg-red-500'}`}></span>
+               {checks.camera && checks.personDetected ? "Camera Active" : "Camera Issue"}
             </div>
           </div>
 
           {/* Status List */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
              <div className={`p-4 rounded-lg border flex items-center gap-3 ${checks.camera ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
                 <Camera className={checks.camera ? "text-green-600" : "text-red-500"} />
                 <div>
@@ -129,6 +171,15 @@ const SystemCheckModal = ({ open, onClose, onConfirm }) => {
                    <p className="text-xs text-gray-500">{checks.mic ? "Detected & Working" : "Not Detected"}</p>
                 </div>
                 {checks.mic ? <CheckCircle size={18} className="text-green-600 ml-auto" /> : <AlertCircle size={18} className="text-red-500 ml-auto" />}
+             </div>
+
+             <div className={`p-4 rounded-lg border flex items-center gap-3 col-span-1 sm:col-span-2 ${checks.personDetected ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
+                <UserIcon className={checks.personDetected ? "text-green-600" : "text-amber-500"} />
+                <div>
+                   <p className="font-semibold text-sm">Person Detection</p>
+                   <p className="text-xs text-gray-500">{checks.personDetected ? "Person Detected" : (videoSignalMsg || "Adjusting...")}</p>
+                </div>
+                {checks.personDetected ? <CheckCircle size={18} className="text-green-600 ml-auto" /> : <AlertCircle size={18} className="text-amber-500 ml-auto" />}
              </div>
           </div>
 

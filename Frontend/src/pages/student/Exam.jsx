@@ -354,8 +354,8 @@ const Exam = () => {
            
            // Threshold for "black screen". 
            // Completely black is 0. A covered camera usually produces noise < 10-15.
-           if (avgBrightness < 10) { 
-             issue = "Camera is blank. Please set the camera properly";
+           if (avgBrightness < 15) { 
+             issue = "Person not detected or camera is blank. Please adjust the camera properly";
            }
          } catch (e) {
            console.error("Video analysis error:", e);
