@@ -109,6 +109,83 @@ const Exam = () => {
     };
   }, []);
 
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+
+    const prevStyles = {
+      htmlOverflow: html.style.overflow,
+      bodyOverflow: body.style.overflow,
+      htmlOverscroll: html.style.overscrollBehavior,
+      bodyOverscroll: body.style.overscrollBehavior,
+      htmlTouchAction: html.style.touchAction,
+      bodyTouchAction: body.style.touchAction,
+    };
+
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    html.style.overscrollBehavior = "none";
+    body.style.overscrollBehavior = "none";
+    html.style.touchAction = "pan-x pan-y";
+    body.style.touchAction = "pan-x pan-y";
+
+    const handleWheel = (e) => {
+      if (e.ctrlKey || e.metaKey) e.preventDefault();
+    };
+
+    const handleKeyDown = (e) => {
+      if (!(e.ctrlKey || e.metaKey)) return;
+
+      const zoomKeys = new Set(["+", "=", "-", "_", "0"]);
+      if (zoomKeys.has(e.key)) {
+        e.preventDefault();
+        return;
+      }
+
+      const zoomCodes = new Set(["NumpadAdd", "NumpadSubtract"]);
+      if (zoomCodes.has(e.code)) {
+        e.preventDefault();
+      }
+    };
+
+    const handleGesture = (e) => {
+      e.preventDefault();
+    };
+
+    const handleTouchMove = (e) => {
+      if (e.touches && e.touches.length > 1) e.preventDefault();
+    };
+
+    const handleDblClick = (e) => {
+      e.preventDefault();
+    };
+
+    window.addEventListener("wheel", handleWheel, { passive: false });
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("gesturestart", handleGesture, { passive: false });
+    window.addEventListener("gesturechange", handleGesture, { passive: false });
+    window.addEventListener("gestureend", handleGesture, { passive: false });
+    window.addEventListener("touchmove", handleTouchMove, { passive: false });
+    window.addEventListener("dblclick", handleDblClick);
+
+    return () => {
+      window.removeEventListener("wheel", handleWheel);
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("gesturestart", handleGesture);
+      window.removeEventListener("gesturechange", handleGesture);
+      window.removeEventListener("gestureend", handleGesture);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("dblclick", handleDblClick);
+
+      html.style.overflow = prevStyles.htmlOverflow;
+      body.style.overflow = prevStyles.bodyOverflow;
+      html.style.overscrollBehavior = prevStyles.htmlOverscroll;
+      body.style.overscrollBehavior = prevStyles.bodyOverscroll;
+      html.style.touchAction = prevStyles.htmlTouchAction;
+      body.style.touchAction = prevStyles.bodyTouchAction;
+    };
+  }, []);
+
   /* ================= LOAD QUESTIONS + RESUME ================= */
   useEffect(() => {
     const loadExam = async () => {
@@ -768,6 +845,8 @@ const Exam = () => {
       );
   }
 
+  const isLastQuestion = questions.length > 0 && current === questions.length - 1;
+
   return (
     <div className={`h-screen bg-gray-50 flex flex-col touch-manipulation ${isFullScreen ? "fullscreen-mode" : ""}`}>
       {/* Header */}
@@ -905,21 +984,24 @@ const Exam = () => {
                       Prev
                     </button>
 
-                    <button
-                      onClick={handleSaveAndNext}
-                      disabled={current === questions.length - 1}
-                      className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-all shadow-sm hover:shadow-md active:scale-95 disabled:opacity-50 text-sm"
-                    >
-                      Save & Next
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-                    </button>
-                    
-                    <button
-                      onClick={() => setShowSubmit(true)}
-                      className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg font-bold transition-all shadow-sm hover:shadow-md active:scale-95 text-sm ml-2"
-                    >
-                      Submit
-                    </button>
+                    {!isLastQuestion && (
+                      <button
+                        onClick={handleSaveAndNext}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-all shadow-sm hover:shadow-md active:scale-95 text-sm"
+                      >
+                        Save & Next
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                      </button>
+                    )}
+
+                    {isLastQuestion && (
+                      <button
+                        onClick={() => setShowSubmit(true)}
+                        className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg font-bold transition-all shadow-sm hover:shadow-md active:scale-95 text-sm ml-2"
+                      >
+                        Submit
+                      </button>
+                    )}
                   </div>
                )}
             </div>
@@ -960,20 +1042,24 @@ const Exam = () => {
               Previous
             </button>
 
-            <button
-              onClick={handleSaveAndNext}
-              disabled={current === questions.length - 1}
-              className="flex items-center gap-2 px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-all shadow-md hover:shadow-lg active:scale-95 disabled:opacity-30"
-            >
-              Save & Next
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-            </button>
-            <button
-              onClick={() => setShowSubmit(true)}
-              className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold transition-all shadow-md hover:shadow-lg active:scale-95"
-            >
-              Submit Exam
-            </button>
+            {!isLastQuestion && (
+              <button
+                onClick={handleSaveAndNext}
+                className="flex items-center gap-2 px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-all shadow-md hover:shadow-lg active:scale-95"
+              >
+                Save & Next
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+              </button>
+            )}
+
+            {isLastQuestion && (
+              <button
+                onClick={() => setShowSubmit(true)}
+                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold transition-all shadow-md hover:shadow-lg active:scale-95"
+              >
+                Submit Exam
+              </button>
+            )}
           </div>
         </div>
 
