@@ -719,9 +719,23 @@ const Exam = () => {
   const enableScreenShare = async () => {
       try {
           const screenStream = await navigator.mediaDevices.getDisplayMedia({ 
-              video: { cursor: "always" }, 
+              video: { 
+                  cursor: "always",
+                  displaySurface: "monitor",
+                  selfBrowserSurface: "exclude",
+                  surfaceSwitching: "exclude",
+                  monitorTypeSurfaces: "include",
+              }, 
               audio: true 
           });
+
+          const screenVideoTrack = screenStream.getVideoTracks()[0];
+          const displaySurface = screenVideoTrack?.getSettings?.()?.displaySurface;
+          if (displaySurface && displaySurface !== "monitor") {
+              screenStream.getTracks().forEach(track => track.stop());
+              toast.error("Select only 'Entire screen' to continue.");
+              return;
+          }
 
           // Check if system audio track exists
           const systemAudioTrack = screenStream.getAudioTracks()[0];
@@ -819,7 +833,7 @@ const Exam = () => {
       return (
           <div className="fixed inset-0 bg-gray-900 flex flex-col items-center justify-center z-50 text-white">
               <h2 className="text-2xl font-bold mb-4">Screen Share Required</h2>
-              <p className="mb-6">This exam requires screen recording. Please enable screen sharing to proceed.</p>
+              <p className="mb-6">This exam requires screen recording. Please select only Entire screen to proceed.</p>
               <button 
                   onClick={enableScreenShare}
                   className="px-6 py-3 bg-blue-600 rounded font-bold hover:bg-blue-700"
