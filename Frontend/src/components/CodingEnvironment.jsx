@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import Editor from "@monaco-editor/react";
-import { Play, CheckCircle, XCircle, Loader2, ChevronRight, ChevronDown, RotateCcw } from "lucide-react";
+import { Play, CheckCircle, XCircle, Loader2, ChevronRight, ChevronDown } from "lucide-react";
 import axios from "../api/axiosInstance";
 import toast from "react-hot-toast";
 
@@ -131,17 +131,6 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
     }
   };
 
-  const handleResetCode = () => {
-    // If the selected language matches the question's original language, use the admin's starter code
-    if (language === question.codingData.language) {
-      setCode(question.codingData.starterCode || STARTER_CODE[language] || "");
-    } else {
-      // Otherwise, use the generic starter code for that language
-      setCode(STARTER_CODE[language] || "");
-    }
-    toast.success("Code reset to template");
-  };
-
   const handleRun = async (mode) => {
     setIsRunning(true);
     setResults(null);
@@ -243,16 +232,6 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
           </label>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleResetCode}
-              disabled={isRunning}
-              className="flex items-center gap-2 bg-[#3c3c3c] hover:bg-[#4c4c4c] text-white px-3 py-1.5 rounded-md text-sm font-bold transition-all disabled:opacity-50 active:scale-95 shadow-md border border-gray-600"
-              title="Reset Code"
-              type="button"
-            >
-              <RotateCcw size={14} />
-              Reset
-            </button>
             <button
               onClick={() => handleRun('custom')}
               disabled={isRunning}
