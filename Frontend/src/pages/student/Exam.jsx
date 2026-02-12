@@ -1004,56 +1004,63 @@ const Exam = () => {
           </div>
 
           <div className={`p-4 bg-white border-t border-gray-200 ${isFullScreen && questions[current]?.type !== "coding" ? "fixed bottom-0 left-0 right-0 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]" : ""}`}>
-            <div className={`flex flex-col gap-6 ${isFullScreen && questions[current]?.type !== "coding" ? "max-w-7xl mx-auto" : ""}`}>
+            <div className={`flex flex-col gap-4 ${isFullScreen && questions[current]?.type !== "coding" ? "max-w-7xl mx-auto" : ""}`}>
                
                <div className="flex-1">
                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
                     <span className="w-1.5 h-1.5 bg-gray-400 rounded-full"></span> Question Navigator
                   </h3>
-                  <QuestionPalette
-                    total={questions.length}
-                    answers={answers}
-                    current={current}
-                    onSelect={setCurrent}
-                    marked={marked}
-                  />
+                  
+                  <div className="flex flex-wrap items-center justify-between gap-4">
+                    {/* Left: Palette */}
+                    <div className="flex-1 min-w-[200px]">
+                      <QuestionPalette
+                        total={questions.length}
+                        answers={answers}
+                        current={current}
+                        onSelect={setCurrent}
+                        marked={marked}
+                      />
+                    </div>
+
+                    {/* Right: Navigation Buttons */}
+                    <div className="flex items-center gap-3">
+                      <button
+                        disabled={current === 0}
+                        onClick={() => setCurrent((p) => p - 1)}
+                        className="flex items-center gap-2 px-6 py-2.5 text-gray-700 font-bold hover:bg-gray-100 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-transparent border border-gray-200 text-sm shadow-sm"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                        Previous
+                      </button>
+
+                      {!isLastQuestion ? (
+                        <button
+                          onClick={handleSaveAndNext}
+                          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-all shadow-md hover:shadow-lg active:scale-95 text-sm"
+                        >
+                          Save & Next
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => setShowSubmit(true)}
+                          className="flex items-center justify-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-all shadow-md hover:shadow-lg active:scale-95 text-sm"
+                        >
+                          Submit Exam
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Legend */}
-                  <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[10px] font-bold uppercase tracking-wider text-gray-500 border-b border-gray-100 pb-4">
+                  <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[10px] font-bold uppercase tracking-wider text-gray-500">
                     <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-green-500 rounded-sm border border-green-600"></span> Answered</div>
                     <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-purple-600 rounded-sm border border-purple-700"></span> Marked</div>
                     <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-blue-600 rounded-sm border border-blue-700"></span> Current</div>
                     <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-gray-100 border border-gray-300 rounded-sm"></span> Unvisited</div>
                   </div>
-               </div>
-
-               {/* Navigation Buttons */}
-               <div className="flex items-center gap-3">
-                  <button
-                    disabled={current === 0}
-                    onClick={() => setCurrent((p) => p - 1)}
-                    className="flex items-center gap-2 px-6 py-2.5 text-gray-700 font-bold hover:bg-gray-100 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-transparent border border-gray-200 text-sm shadow-sm"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-                    Previous
-                  </button>
-
-                  {!isLastQuestion ? (
-                    <button
-                      onClick={handleSaveAndNext}
-                      className="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-all shadow-md hover:shadow-lg active:scale-95 text-sm"
-                    >
-                      Save & Next
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setShowSubmit(true)}
-                      className="flex items-center justify-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-all shadow-md hover:shadow-lg active:scale-95 text-sm"
-                    >
-                      Submit Exam
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                    </button>
-                  )}
                </div>
             </div>
           </div>
