@@ -36,7 +36,7 @@ const questionSchema = new mongoose.Schema(
     codingData: {
       language: {
         type: String,
-        enum: ["javascript", "python", "java", "cpp", "c"],
+        enum: ["javascript", "typescript", "python", "java", "cpp", "c", "csharp", "go", "rust", "php", "ruby", "kotlin"],
       },
       starterCode: String,
       testCases: [

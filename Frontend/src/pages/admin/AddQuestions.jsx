@@ -474,10 +474,17 @@ const AddQuestions = () => {
                               className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500"
                             >
                               <option value="javascript">JavaScript</option>
+                              <option value="typescript">TypeScript</option>
                               <option value="python">Python</option>
                               <option value="java">Java</option>
                               <option value="cpp">C++</option>
                               <option value="c">C</option>
+                              <option value="csharp">C#</option>
+                              <option value="go">Go</option>
+                              <option value="rust">Rust</option>
+                              <option value="php">PHP</option>
+                              <option value="ruby">Ruby</option>
+                              <option value="kotlin">Kotlin</option>
                             </select>
                           </div>
 

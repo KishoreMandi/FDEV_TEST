@@ -1,15 +1,22 @@
 import { useState, useEffect, useRef } from "react";
 import Editor from "@monaco-editor/react";
-import { Play, CheckCircle, XCircle, Loader2, ChevronRight, ChevronDown } from "lucide-react";
+import { Play, CheckCircle, XCircle, Loader2, ChevronDown, Wand2 } from "lucide-react";
 import axios from "../api/axiosInstance";
 import toast from "react-hot-toast";
 
 const LANGUAGES = [
   { id: "javascript", name: "JavaScript (Node.js)" },
+  { id: "typescript", name: "TypeScript" },
   { id: "python", name: "Python 3" },
   { id: "java", name: "Java" },
   { id: "cpp", name: "C++" },
   { id: "c", name: "C" },
+  { id: "csharp", name: "C#" },
+  { id: "go", name: "Go" },
+  { id: "rust", name: "Rust" },
+  { id: "php", name: "PHP" },
+  { id: "ruby", name: "Ruby" },
+  { id: "kotlin", name: "Kotlin" },
 ];
 
 const STARTER_CODE = {
@@ -19,6 +26,16 @@ const input = fs.readFileSync(0, 'utf-8').trim();
 
 // Write your logic here
 console.log('Hello World');`,
+
+  typescript: `import * as fs from "fs";
+
+const input = fs.readFileSync(0, "utf8").trim();
+
+function solve(): void {
+  console.log("Hello World");
+}
+
+solve();`,
 
   python: `import sys
 
@@ -68,7 +85,130 @@ int main() {
     printf("Hello World");
     
     return 0;
-}`
+}`,
+
+  csharp: `using System;
+using System.Collections.Generic;
+
+public class Program
+{
+    public static void Main(string[] args)
+    {
+        Console.WriteLine("Hello World");
+    }
+}`,
+
+  go: `package main
+
+import (
+	"bufio"
+	"fmt"
+	"os"
+)
+
+func main() {
+	in := bufio.NewReader(os.Stdin)
+	_ = in
+	fmt.Println("Hello World")
+}`,
+
+  rust: `use std::io::{self, Read};
+
+fn main() {
+    let mut input = String::new();
+    io::stdin().read_to_string(&mut input).unwrap();
+    println!("Hello World");
+}`,
+
+  php: `<?php
+$input = trim(stream_get_contents(STDIN));
+echo "Hello World\n";
+?>`,
+
+  ruby: `input = STDIN.read.strip
+puts "Hello World"`,
+
+  kotlin: `import java.io.BufferedReader
+import java.io.InputStreamReader
+
+fun main() {
+    val br = BufferedReader(InputStreamReader(System.`in`))
+    val input = br.readLine()
+    println("Hello World")
+}`,
+};
+
+const LIBRARY_SNIPPETS = {
+  javascript: [
+    { label: "fs (read stdin)", insertText: "const fs = require('fs');\nconst input = fs.readFileSync(0, 'utf-8').trim();\n" },
+    { label: "path", insertText: "const path = require('path');\n" },
+    { label: "url", insertText: "const url = require('url');\n" },
+  ],
+  typescript: [
+    { label: "fs (read stdin)", insertText: "import * as fs from \"fs\";\nconst input = fs.readFileSync(0, \"utf8\").trim();\n" },
+  ],
+  python: [
+    { label: "sys.stdin", insertText: "import sys\ninput_data = sys.stdin.read().strip()\n" },
+    { label: "math", insertText: "import math\n" },
+    { label: "collections", insertText: "from collections import deque, defaultdict, Counter\n" },
+    { label: "itertools", insertText: "import itertools\n" },
+    { label: "heapq", insertText: "import heapq\n" },
+    { label: "re", insertText: "import re\n" },
+  ],
+  java: [
+    { label: "java.util.*", insertText: "import java.util.*;\n" },
+    { label: "java.io.*", insertText: "import java.io.*;\n" },
+    { label: "FastScanner (snippet)", insertText: "static class FastScanner {\n    private final InputStream in;\n    private final byte[] buffer = new byte[1 << 16];\n    private int ptr = 0, len = 0;\n\n    FastScanner(InputStream in) { this.in = in; }\n\n    private int readByte() throws IOException {\n        if (ptr >= len) {\n            len = in.read(buffer);\n            ptr = 0;\n            if (len <= 0) return -1;\n        }\n        return buffer[ptr++];\n    }\n\n    String next() throws IOException {\n        StringBuilder sb = new StringBuilder();\n        int c;\n        while ((c = readByte()) != -1 && c <= ' ') {}\n        if (c == -1) return null;\n        do {\n            sb.append((char)c);\n        } while ((c = readByte()) != -1 && c > ' ');\n        return sb.toString();\n    }\n\n    int nextInt() throws IOException {\n        String s = next();\n        return s == null ? 0 : Integer.parseInt(s);\n    }\n}\n" },
+  ],
+  cpp: [
+    { label: "bits/stdc++.h", insertText: "#include <bits/stdc++.h>\nusing namespace std;\n" },
+    { label: "vector", insertText: "#include <vector>\n" },
+    { label: "algorithm", insertText: "#include <algorithm>\n" },
+  ],
+  c: [
+    { label: "stdio.h", insertText: "#include <stdio.h>\n" },
+    { label: "stdlib.h", insertText: "#include <stdlib.h>\n" },
+    { label: "string.h", insertText: "#include <string.h>\n" },
+  ],
+  csharp: [
+    { label: "System", insertText: "using System;\n" },
+    { label: "Collections.Generic", insertText: "using System.Collections.Generic;\n" },
+    { label: "Linq", insertText: "using System.Linq;\n" },
+  ],
+  go: [
+    { label: "bufio", insertText: "import (\n\t\"bufio\"\n\t\"os\"\n)\n" },
+    { label: "fmt", insertText: "import \"fmt\"\n" },
+  ],
+  rust: [
+    { label: "Read stdin", insertText: "use std::io::{self, Read};\nlet mut input = String::new();\nio::stdin().read_to_string(&mut input).unwrap();\n" },
+  ],
+  php: [
+    { label: "Read stdin", insertText: "$input = trim(stream_get_contents(STDIN));\n" },
+  ],
+  ruby: [
+    { label: "Read stdin", insertText: "input = STDIN.read\n" },
+  ],
+  kotlin: [
+    { label: "BufferedReader", insertText: "import java.io.BufferedReader\nimport java.io.InputStreamReader\n" },
+  ],
+};
+
+const LANGUAGE_REFERENCES = {
+  javascript: [
+    { label: "Node.js Docs", href: "https://nodejs.org/api/" },
+    { label: "MDN JavaScript", href: "https://developer.mozilla.org/en-US/docs/Web/JavaScript" },
+  ],
+  typescript: [{ label: "TypeScript Docs", href: "https://www.typescriptlang.org/docs/" }],
+  python: [{ label: "Python Docs", href: "https://docs.python.org/3/" }],
+  java: [{ label: "Java Docs", href: "https://docs.oracle.com/en/java/" }],
+  cpp: [{ label: "cppreference", href: "https://en.cppreference.com/w/" }],
+  c: [{ label: "cppreference (C)", href: "https://en.cppreference.com/w/c" }],
+  csharp: [{ label: "C# Docs", href: "https://learn.microsoft.com/en-us/dotnet/csharp/" }],
+  go: [{ label: "Go Docs", href: "https://go.dev/doc/" }],
+  rust: [{ label: "Rust Book", href: "https://doc.rust-lang.org/book/" }],
+  php: [{ label: "PHP Manual", href: "https://www.php.net/manual/en/" }],
+  ruby: [{ label: "Ruby Docs", href: "https://www.ruby-lang.org/en/documentation/" }],
+  kotlin: [{ label: "Kotlin Docs", href: "https://kotlinlang.org/docs/home.html" }],
 };
 
 const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }) => {
@@ -76,10 +216,11 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
   const [language, setLanguage] = useState(initialData?.language || question.codingData.language);
   const [isRunning, setIsRunning] = useState(false);
   const [results, setResults] = useState(null);
-  const [isCustomMode, setIsCustomMode] = useState(false);
+  const [bottomTab, setBottomTab] = useState("tests");
   const [customInput, setCustomInput] = useState("");
   const [customOutput, setCustomOutput] = useState(null);
   const editorRef = useRef(null);
+  const monacoRef = useRef(null);
   // Ref to store code for each language to prevent data loss when switching
   const codeMapRef = useRef({});
 
@@ -136,12 +277,7 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
     setResults(null);
     setCustomOutput(null);
 
-    // If running custom input, ensure the panel is visible
-    if (mode === 'custom') {
-      setIsCustomMode(true);
-    } else {
-      setIsCustomMode(false);
-    }
+    setBottomTab(mode === "custom" ? "custom" : "tests");
 
     try {
       if (mode === 'custom') {
@@ -179,8 +315,72 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
     }
   };
 
-  const handleEditorMount = (editor) => {
+  const insertTextAtCursor = (text) => {
+    const editor = editorRef.current;
+    const monaco = monacoRef.current;
+    if (!editor || !monaco) return;
+
+    const position = editor.getPosition();
+    if (!position) return;
+
+    const range = new monaco.Range(
+      position.lineNumber,
+      position.column,
+      position.lineNumber,
+      position.column
+    );
+
+    editor.executeEdits("insert-snippet", [{ range, text }]);
+    editor.focus();
+  };
+
+  const registerLanguageHelpers = (monaco) => {
+    if (monaco.__ONLINE_EXAM_LANGUAGE_HELPERS__) return;
+    monaco.__ONLINE_EXAM_LANGUAGE_HELPERS__ = true;
+
+    const buildSuggestions = (languageId) =>
+      (LIBRARY_SNIPPETS[languageId] || []).map((s) => ({
+        label: s.label,
+        insertText: s.insertText,
+      }));
+
+    const register = (languageId) => {
+      monaco.languages.registerCompletionItemProvider(languageId, {
+        provideCompletionItems: (model, position) => {
+          const word = model.getWordUntilPosition(position);
+          const range = {
+            startLineNumber: position.lineNumber,
+            endLineNumber: position.lineNumber,
+            startColumn: word.startColumn,
+            endColumn: word.endColumn,
+          };
+
+          const suggestions = buildSuggestions(languageId).map((s) => ({
+            label: s.label,
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            insertText: s.insertText,
+            insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            range,
+          }));
+
+          return { suggestions };
+        },
+      });
+    };
+
+    LANGUAGES.forEach((l) => register(l.id));
+  };
+
+  const handleFormat = async () => {
+    const editor = editorRef.current;
+    if (!editor) return;
+    await editor.getAction("editor.action.formatDocument")?.run();
+  };
+
+  const handleEditorMount = (editor, monaco) => {
     editorRef.current = editor;
+    monacoRef.current = monaco;
+    registerLanguageHelpers(monaco);
     
     // Disable Copy/Paste
     editor.onKeyDown((e) => {
@@ -221,23 +421,13 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
         </div>
 
         <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 cursor-pointer mr-2">
-            <input 
-              type="checkbox" 
-              checked={isCustomMode} 
-              onChange={(e) => setIsCustomMode(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-600 text-blue-600 focus:ring-blue-500 bg-[#3c3c3c]"
-            />
-            <span className="text-xs font-medium text-gray-400 select-none">Show Custom Input</span>
-          </label>
-
           <div className="flex items-center gap-2">
             <button
               onClick={() => handleRun('custom')}
               disabled={isRunning}
               className="flex items-center gap-2 bg-[#3c3c3c] hover:bg-[#4c4c4c] text-white px-4 py-1.5 rounded-md text-sm font-bold transition-all disabled:opacity-50 active:scale-95 shadow-md border border-gray-600"
             >
-              {isRunning && isCustomMode ? <Loader2 className="animate-spin" size={14} /> : <Play size={14} />}
+              {isRunning && bottomTab === "custom" ? <Loader2 className="animate-spin" size={14} /> : <Play size={14} />}
               Run Code
             </button>
 
@@ -246,9 +436,20 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
               disabled={isRunning}
               className="flex items-center gap-2 bg-[#238636] hover:bg-[#2ea043] text-white px-4 py-1.5 rounded-md text-sm font-bold transition-all disabled:opacity-50 active:scale-95 shadow-md border border-[rgba(240,246,252,0.1)]"
             >
-              {isRunning && !isCustomMode ? <Loader2 className="animate-spin" size={14} /> : <CheckCircle size={14} />}
+              {isRunning && bottomTab === "tests" ? <Loader2 className="animate-spin" size={14} /> : <CheckCircle size={14} />}
               Run Tests
             </button>
+
+            <button
+              onClick={handleFormat}
+              className="flex items-center gap-2 bg-[#3c3c3c] hover:bg-[#4c4c4c] text-white px-4 py-1.5 rounded-md text-sm font-bold transition-all active:scale-95 shadow-md border border-gray-600"
+              type="button"
+              title="Format code"
+            >
+              <Wand2 size={14} />
+              Format
+            </button>
+
           </div>
         </div>
       </div>
@@ -292,19 +493,54 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
         <div className="h-1/3 bg-[#1e1e1e] flex flex-col border-t border-[#3e3e3e]">
           <div className="p-3 border-b border-[#3e3e3e] bg-[#252526] flex justify-between items-center px-6">
             <h3 className="font-bold text-gray-300 flex items-center gap-2 text-xs uppercase tracking-wider">
-              {isCustomMode ? "Custom Input / Output" : "Test Results"}
+              {bottomTab === "custom" ? "Custom Input / Output" : bottomTab === "refs" ? "References" : "Test Results"}
             </h3>
-            {!isCustomMode && results && (
-              <div className="flex gap-4">
+            <div className="flex items-center gap-3">
+              {bottomTab === "tests" && results && (
                 <span className="text-xs font-bold text-gray-400">
                   Passed: <span className="text-green-400">{results.results.filter(r => r.passed).length}/{results.results.length}</span>
                 </span>
+              )}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setBottomTab("tests")}
+                  className={`px-3 py-1 rounded border text-xs font-bold transition ${
+                    bottomTab === "tests"
+                      ? "bg-blue-600 border-blue-500 text-white"
+                      : "bg-[#2d2d2d] border-[#3e3e3e] text-gray-300 hover:bg-[#3a3a3a]"
+                  }`}
+                >
+                  Tests
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBottomTab("custom")}
+                  className={`px-3 py-1 rounded border text-xs font-bold transition ${
+                    bottomTab === "custom"
+                      ? "bg-blue-600 border-blue-500 text-white"
+                      : "bg-[#2d2d2d] border-[#3e3e3e] text-gray-300 hover:bg-[#3a3a3a]"
+                  }`}
+                >
+                  Custom
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setBottomTab("refs")}
+                  className={`px-3 py-1 rounded border text-xs font-bold transition ${
+                    bottomTab === "refs"
+                      ? "bg-blue-600 border-blue-500 text-white"
+                      : "bg-[#2d2d2d] border-[#3e3e3e] text-gray-300 hover:bg-[#3a3a3a]"
+                  }`}
+                >
+                  Refs
+                </button>
               </div>
-            )}
+            </div>
           </div>
           
           <div className="flex-1 overflow-y-auto p-4 pb-24 custom-scrollbar bg-[#1e1e1e]">
-            {isCustomMode ? (
+            {bottomTab === "custom" ? (
               <div className="flex h-full gap-4">
                 <div className="flex-1 flex flex-col gap-2">
                   <label className="text-xs font-bold text-gray-500 uppercase">Input</label>
@@ -325,6 +561,54 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
                       </>
                     ) : (
                       <span className="text-gray-600 italic">Run code to see output...</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : bottomTab === "refs" ? (
+              <div className="h-full flex flex-col gap-4">
+                <div className="flex flex-wrap gap-2">
+                  {(LANGUAGE_REFERENCES[language] || []).map((r) => (
+                    <a
+                      key={r.href}
+                      href={r.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs font-bold bg-[#2d2d2d] hover:bg-[#3a3a3a] text-gray-300 px-3 py-1.5 rounded border border-[#3e3e3e] transition"
+                    >
+                      {r.label}
+                    </a>
+                  ))}
+                </div>
+
+                <div className="bg-[#2d2d2d] border border-[#3e3e3e] rounded-lg overflow-hidden">
+                  <div className="px-4 py-2 border-b border-[#3e3e3e] bg-[#252526]">
+                    <div className="text-xs font-black text-gray-400 uppercase tracking-widest">
+                      Quick Libraries / Snippets
+                    </div>
+                  </div>
+                  <div className="p-3 space-y-2">
+                    {(LIBRARY_SNIPPETS[language] || []).length === 0 ? (
+                      <div className="text-gray-500 text-sm italic">No snippets for this language yet.</div>
+                    ) : (
+                      (LIBRARY_SNIPPETS[language] || []).map((s) => (
+                        <div
+                          key={s.label}
+                          className="flex items-center justify-between gap-3 bg-[#1e1e1e] border border-[#3e3e3e] rounded-md px-3 py-2"
+                        >
+                          <div className="min-w-0">
+                            <div className="text-sm font-bold text-gray-200 truncate">{s.label}</div>
+                            <div className="text-[11px] text-gray-500 font-mono truncate">{s.insertText.replace(/\n/g, " ")}</div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => insertTextAtCursor(s.insertText)}
+                            className="shrink-0 bg-[#3c3c3c] hover:bg-[#4c4c4c] text-white px-3 py-1.5 rounded-md text-xs font-bold transition-all active:scale-95 shadow-md border border-gray-600"
+                          >
+                            Insert
+                          </button>
+                        </div>
+                      ))
                     )}
                   </div>
                 </div>
