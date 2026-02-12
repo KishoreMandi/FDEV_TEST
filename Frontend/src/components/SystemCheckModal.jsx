@@ -15,17 +15,7 @@ const SystemCheckModal = ({ open, onClose, onConfirm }) => {
   const [error, setError] = useState("");
   const [videoSignalMsg, setVideoSignalMsg] = useState("");
 
-  useEffect(() => {
-    if (open) {
-      startSystemCheck();
-    } else {
-      stopStream();
-    }
-
-    return () => stopStream();
-  }, [open]);
-
-  const stopStream = () => {
+  function stopStream() {
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
       setStream(null);
@@ -33,7 +23,55 @@ const SystemCheckModal = ({ open, onClose, onConfirm }) => {
     setChecks({ camera: false, mic: false, personDetected: false, permission: "pending" });
     setError("");
     setVideoSignalMsg("");
-  };
+  }
+
+  async function startSystemCheck() {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: true,
+        audio: true,
+      });
+
+      setStream(mediaStream);
+
+      const videoTrack = mediaStream.getVideoTracks()[0];
+      const audioTrack = mediaStream.getAudioTracks()[0];
+
+      if (videoTrack && videoTrack.readyState === "live") {
+        setChecks((prev) => ({ ...prev, camera: true }));
+      }
+      if (audioTrack && audioTrack.readyState === "live") {
+        setChecks((prev) => ({ ...prev, mic: true }));
+      }
+
+      setChecks((prev) => ({ ...prev, permission: "granted" }));
+    } catch (err) {
+      console.error("System check failed", err);
+      setChecks((prev) => ({ ...prev, permission: "denied" }));
+      setError(
+        "Could not access Camera or Microphone. Please allow permissions to proceed."
+      );
+      toast.error("System check failed!");
+    }
+  }
+
+  useEffect(() => {
+    let timeoutId;
+    if (open) {
+      timeoutId = setTimeout(() => {
+        startSystemCheck();
+      }, 0);
+    } else {
+      timeoutId = setTimeout(() => {
+        stopStream();
+      }, 0);
+    }
+
+    return () => {
+      clearTimeout(timeoutId);
+      stopStream();
+    };
+  }, [open]);
 
   useEffect(() => {
     if (videoRef.current && stream) {
@@ -78,38 +116,6 @@ const SystemCheckModal = ({ open, onClose, onConfirm }) => {
     }
     return () => clearInterval(interval);
   }, [stream]);
-
-  const startSystemCheck = async () => {
-    try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      });
-
-      setStream(mediaStream);
-      // Removed direct videoRef access here as it's handled by useEffect
-
-      // Verify tracks
-      const videoTrack = mediaStream.getVideoTracks()[0];
-      const audioTrack = mediaStream.getAudioTracks()[0];
-
-      if (videoTrack && videoTrack.readyState === "live") {
-        setChecks((prev) => ({ ...prev, camera: true }));
-      }
-      if (audioTrack && audioTrack.readyState === "live") {
-        setChecks((prev) => ({ ...prev, mic: true }));
-      }
-
-      setChecks((prev) => ({ ...prev, permission: "granted" }));
-    } catch (err) {
-      console.error("System check failed", err);
-      setChecks((prev) => ({ ...prev, permission: "denied" }));
-      setError(
-        "Could not access Camera or Microphone. Please allow permissions to proceed."
-      );
-      toast.error("System check failed!");
-    }
-  };
 
   if (!open) return null;
 

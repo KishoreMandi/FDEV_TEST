@@ -59,6 +59,11 @@ const resultSchema = new mongoose.Schema(
       default: Date.now,
     },
     submittedAt: Date,
+    submissionType: {
+      type: String,
+      enum: ["manual", "auto"],
+      default: "manual",
+    },
     screenRecording: String, // Path to screen recording file
     webcamRecording: String, // Path to webcam recording file
   },

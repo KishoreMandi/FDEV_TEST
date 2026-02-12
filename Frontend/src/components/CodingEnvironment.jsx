@@ -190,7 +190,7 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
     }
   };
 
-  const handleEditorMount = (editor, monaco) => {
+  const handleEditorMount = (editor) => {
     editorRef.current = editor;
     
     // Disable Copy/Paste
@@ -221,7 +221,7 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
             <select 
               value={language}
               onChange={handleLanguageChange}
-              className="appearance-none bg-[#3c3c3c] text-white px-4 py-1.5 pr-8 rounded border border-gray-600 focus:outline-none focus:border-blue-500 text-sm font-medium hover:bg-[#4c4c4c] transition-colors cursor-pointer"
+              className="appearance-none bg-[#3c3c3c] text-white px-4 py-1.5 pr-8 rounded border border-gray-600 focus:outline-none focus:border-blue-500 text-[16px] font-medium hover:bg-[#4c4c4c] transition-colors cursor-pointer"
             >
               {LANGUAGES.map((lang) => (
                 <option key={lang.id} value={lang.id}>{lang.name}</option>
@@ -243,6 +243,16 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
           </label>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={handleResetCode}
+              disabled={isRunning}
+              className="flex items-center gap-2 bg-[#3c3c3c] hover:bg-[#4c4c4c] text-white px-3 py-1.5 rounded-md text-sm font-bold transition-all disabled:opacity-50 active:scale-95 shadow-md border border-gray-600"
+              title="Reset Code"
+              type="button"
+            >
+              <RotateCcw size={14} />
+              Reset
+            </button>
             <button
               onClick={() => handleRun('custom')}
               disabled={isRunning}
@@ -282,6 +292,7 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
               minimap: { enabled: false },
               fontSize: 14,
               automaticLayout: true,
+              mouseWheelZoom: false,
               scrollBeyondLastLine: false,
               padding: { top: 16, bottom: 16 },
               fontFamily: "'Fira Code', 'Cascadia Code', Consolas, monospace",
@@ -321,7 +332,7 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
                   <textarea
                     value={customInput}
                     onChange={(e) => setCustomInput(e.target.value)}
-                    className="flex-1 bg-[#2d2d2d] text-gray-300 p-3 rounded-lg border border-[#3e3e3e] focus:outline-none focus:border-blue-500 font-mono text-sm resize-none"
+                    className="flex-1 bg-[#2d2d2d] text-gray-300 p-3 rounded-lg border border-[#3e3e3e] focus:outline-none focus:border-blue-500 font-mono text-[16px] resize-none"
                     placeholder="Enter custom input here..."
                   />
                 </div>

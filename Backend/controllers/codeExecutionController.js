@@ -31,6 +31,23 @@ export const executeCode = async (req, res) => {
     const testCases = question.codingData.testCases;
     const results = [];
 
+    // Helper to detect hardcoding of expected outputs
+    const isHardcoded = (submittedCode, expected) => {
+      if (!expected || expected.trim().length < 2) return false;
+      const cleanCode = submittedCode.replace(/\s+/g, ' ');
+      const cleanExpected = expected.trim();
+      
+      // Check for string literals containing the expected output
+      // This is a basic check and can be improved with regex for different languages
+      const patterns = [
+        `"${cleanExpected}"`,
+        `'${cleanExpected}'`,
+        `\`${cleanExpected}\``
+      ];
+      
+      return patterns.some(p => cleanCode.includes(p));
+    };
+
     for (let i = 0; i < testCases.length; i++) {
       const testCase = testCases[i];
       
@@ -53,15 +70,23 @@ export const executeCode = async (req, res) => {
         
         // Check for non-zero exit code (Runtime/Compilation Error)
         const isError = data.run.code !== 0;
-        const passed = !isError && actualOutput === expectedOutput;
+        let passed = !isError && actualOutput === expectedOutput;
+        let hardcodingDetected = false;
+
+        if (passed && isHardcoded(code, expectedOutput)) {
+          passed = false;
+          hardcodingDetected = true;
+        }
 
         results.push({
           testCaseId: testCase._id,
           input: testCase.isHidden ? "Hidden" : testCase.input,
           expectedOutput: testCase.isHidden ? "Hidden" : testCase.expectedOutput,
-          actualOutput: testCase.isHidden ? (passed ? "Passed" : "Failed") : actualOutput,
+          actualOutput: testCase.isHidden ? (passed ? "Passed" : (hardcodingDetected ? "Hardcoding Detected" : "Failed")) : actualOutput,
           passed,
-          error: data.run.stderr || (isError ? `Process exited with code ${data.run.code}` : null),
+          error: hardcodingDetected 
+            ? "Logic violation: Hardcoding expected output is not allowed. Please implement the actual logic." 
+            : (data.run.stderr || (isError ? `Process exited with code ${data.run.code}` : null)),
         });
       } else {
         results.push({

@@ -22,6 +22,7 @@ const Exam = () => {
   const [marked, setMarked] = useState(new Set()); // Stores indices
   const [current, setCurrent] = useState(0);
   const [showSubmit, setShowSubmit] = useState(false);
+  const [isAutoSubmitting, setIsAutoSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [initialSeconds, setInitialSeconds] = useState(null);
 
@@ -30,7 +31,7 @@ const Exam = () => {
 
   // PROCTORING STATE
   const [tabSwitches, setTabSwitches] = useState(0);
-  const [deviceViolations, setDeviceViolations] = useState(0); // Track device issues
+  const [_deviceViolations, setDeviceViolations] = useState(0); // Track device issues
   const [isFullScreen, setIsFullScreen] = useState(false);
   const logsRef = useRef([]);
   const videoRef = useRef(null);
@@ -87,7 +88,7 @@ const Exam = () => {
     // 1. Push state to prevent back navigation
     window.history.pushState(null, document.title, window.location.href);
 
-    const handlePopState = (event) => {
+    const handlePopState = () => {
       window.history.pushState(null, document.title, window.location.href);
       toast.error("Navigation is disabled during the exam!");
     };
@@ -176,7 +177,7 @@ const Exam = () => {
           setInitialSeconds(examRes.data.duration * 60);
         }
 
-      } catch (error) {
+      } catch {
         toast.error("Failed to load exam");
       } finally {
         setLoading(false);
@@ -551,21 +552,17 @@ const Exam = () => {
   };
 
   /* ================= FINAL SUBMIT ================= */
-  const finalSubmit = async () => {
+  const finalSubmit = async (submissionType = "manual") => {
     try {
-      // 1. Upload Recordings
-      await uploadRecordings();
-
-      // 2. Stop Camera/Mic/Screen
-      stopMediaStream();
-      
-      // Exit Fullscreen
-      if (document.fullscreenElement) {
-        document.exitFullscreen().catch(err => console.error(err));
+      if (submissionType === "auto") {
+        setIsAutoSubmitting(true);
+        toast.loading("Time's up! Auto-submitting your exam...", { id: "auto-submit" });
       }
 
+      // 1. Prioritize Answer Submission (Submit answers first)
       await submitExam({
         examId,
+        submissionType,
         answers: Object.entries(answers).map(([index, data]) => {
           const q = questions[index];
           if (q.type === "coding") {
@@ -584,11 +581,37 @@ const Exam = () => {
         activityLogs: logsRef.current,
       });
 
-      toast.success("Exam submitted successfully");
+      // 2. Upload Recordings (in background if possible, or wait)
+      try {
+        await uploadRecordings();
+      } catch (recErr) {
+        console.error("Recording upload failed", recErr);
+        // Don't block exam submission for recording failure
+      }
+
+      // 3. Stop Camera/Mic/Screen
+      stopMediaStream();
+      
+      // Exit Fullscreen
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(err => console.error(err));
+      }
+
+      if (submissionType === "auto") {
+        toast.success("Exam auto-submitted successfully", { id: "auto-submit" });
+      } else {
+        toast.success("Exam submitted successfully");
+      }
+      
       navigate(`/student/result/${examId}`);
     } catch (error) {
       console.error(error);
-      toast.error("Failed to submit exam");
+      if (submissionType === "auto") {
+        toast.error("Auto-submit failed. Please click submit manually if possible.", { id: "auto-submit" });
+        setIsAutoSubmitting(false);
+      } else {
+        toast.error("Failed to submit exam");
+      }
     }
   };
 
@@ -599,8 +622,7 @@ const Exam = () => {
 
   /* ================= AUTO SUBMIT ON TIME UP ================= */
   const handleTimeUp = () => {
-    toast.error("Time is up! Exam auto-submitted.");
-    finalSubmit();
+    finalSubmit("auto");
   };
 
   if (loading) {
@@ -624,14 +646,21 @@ const Exam = () => {
               audio: true 
           });
 
+          // Check if system audio track exists
+          const systemAudioTrack = screenStream.getAudioTracks()[0];
+          
+          if (!systemAudioTrack) {
+              // Stop the video track if audio wasn't shared
+              screenStream.getTracks().forEach(track => track.stop());
+              toast.error("Without audio you can't share the screen. Please turn on the 'Also share system audio' option!");
+              return;
+          }
+
           let finalStream = screenStream;
           const audioTracks = [];
 
-          // 1. Get System Audio (if shared)
-          const systemAudioTrack = screenStream.getAudioTracks()[0];
-          if (systemAudioTrack) {
-              audioTracks.push(systemAudioTrack);
-          }
+          // 1. Get System Audio (already confirmed exists)
+          audioTracks.push(systemAudioTrack);
 
           // 2. Get Mic Audio (from webcam stream)
           if (mediaStreamRef.current) {
@@ -740,9 +769,9 @@ const Exam = () => {
   }
 
   return (
-    <div className={`min-h-screen bg-gray-50 flex flex-col ${isFullScreen ? "fullscreen-mode" : ""}`}>
+    <div className={`h-screen bg-gray-50 flex flex-col touch-manipulation ${isFullScreen ? "fullscreen-mode" : ""}`}>
       {/* Header */}
-      <header className={`bg-white border-b border-gray-200 px-6 py-3 flex justify-between items-center shadow-sm z-30`}>
+      <header className={`h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-50 shadow-sm flex-shrink-0`}>
         <div className="flex items-center gap-4">
           <h1 className="font-bold text-xl text-gray-800 tracking-tight">Online Examination</h1>
           {exam && (
@@ -753,11 +782,16 @@ const Exam = () => {
         </div>
 
         <div className="flex items-center gap-6">
-          {initialSeconds !== null && (
-            <Timer
-              initialSeconds={initialSeconds}
-              onTimeUp={handleTimeUp}
-            />
+          {initialSeconds !== null ? (
+            <div className="flex items-center gap-3">
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest hidden md:block">Time Remaining</span>
+              <Timer
+                initialSeconds={initialSeconds}
+                onTimeUp={handleTimeUp}
+              />
+            </div>
+          ) : (
+            <div className="text-gray-400 text-sm italic">Initializing timer...</div>
           )}
             <div className="flex items-center space-x-4">
               <button
@@ -774,13 +808,26 @@ const Exam = () => {
               >
                 {isFullScreen ? <Minimize2 size={20} /> : <Maximize2 size={20} />}
               </button>
-
             </div>
         </div>
       </header>
 
+      {/* Auto-Submit Overlay */}
+      {isAutoSubmitting && (
+        <div className="fixed inset-0 bg-black/80 flex flex-col items-center justify-center z-[100] backdrop-blur-sm">
+          <div className="bg-[#1e1e1e] p-8 rounded-2xl border border-blue-500/30 flex flex-col items-center max-w-sm text-center shadow-2xl animate-in zoom-in duration-300">
+            <div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-6"></div>
+            <h2 className="text-2xl font-bold text-white mb-2">Time is Up!</h2>
+            <p className="text-gray-400 mb-4">Your exam is being automatically submitted. Please do not close this window.</p>
+            <div className="px-4 py-2 bg-blue-500/10 text-blue-400 rounded-lg text-sm font-medium border border-blue-500/20">
+              Saving your answers...
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
-      <main className={`flex-1 flex ${isFullScreen ? "mt-0" : "mt-20"} overflow-hidden relative`}>
+      <main className={`flex-1 flex overflow-hidden relative`}>
         {/* Left Side: Question Area (Scrollable) */}
         <div className={`flex-1 flex flex-col bg-white overflow-hidden ${isFullScreen ? (questions[current]?.type === "coding" ? "w-1/2 border-r border-gray-200" : "w-full") : "w-1/3 border-r border-gray-200"}`}>
           <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">

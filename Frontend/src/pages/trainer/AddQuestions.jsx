@@ -28,31 +28,35 @@ const AddQuestions = () => {
     getExams().then((res) => setExams(res.data));
   }, []);
 
-  useEffect(() => {
-    if (examId) {
-      // Find current exam status
-      const selectedExam = exams.find((e) => e._id === examId);
-      if (selectedExam && selectedExam.isPublished) {
-        setIsPublished(true);
-        toast.error("Your exam is already published, unable to add questions");
-      } else {
-        setIsPublished(false);
-      }
-      fetchQuestions();
-    } else {
-      setQuestionsList([]);
-      setIsPublished(false);
-    }
-  }, [examId, exams]);
-
-  const fetchQuestions = async () => {
+  async function fetchQuestions() {
     try {
       const res = await getAdminQuestions(examId);
       setQuestionsList(res.data);
     } catch (error) {
       console.error("Failed to fetch questions", error);
     }
-  };
+  }
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (examId) {
+        const selectedExam = exams.find((e) => e._id === examId);
+        const published = Boolean(selectedExam?.isPublished);
+
+        setIsPublished(published);
+        if (published) {
+          toast.error("Your exam is already published, unable to add questions");
+        }
+
+        fetchQuestions();
+      } else {
+        setQuestionsList([]);
+        setIsPublished(false);
+      }
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [examId, exams]);
 
   const handleOptionChange = (value, index) => {
     // Clear undo history if user manually edits options
@@ -150,7 +154,7 @@ const AddQuestions = () => {
 
     if (lines.length >= 5) {
       const last4 = lines.slice(-4);
-      const optionRegex = /^([A-Da-d1-4])[\.\)\-]\s+(.*)$/;
+      const optionRegex = /^([A-Da-d1-4])[.)-]\s+(.*)$/;
       
       const cleanedOptions = last4.map(opt => {
         const match = opt.match(optionRegex);

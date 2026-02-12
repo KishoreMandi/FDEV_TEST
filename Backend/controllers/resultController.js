@@ -7,7 +7,7 @@ import Exam from "../models/Exam.js";
 
 export const submitExam = async (req, res) => {
   try {
-    const { examId, answers } = req.body;
+    const { examId, answers, submissionType } = req.body;
     const studentId = req.user.id;
 
     if (!examId || !answers) {
@@ -43,7 +43,7 @@ export const submitExam = async (req, res) => {
 
       if (question.type === "mcq") {
         const selectedOpt = Number(ans.selectedOption);
-        const isValidAttempt =
+        const isValidAttempt = 
           ans.selectedOption !== null &&
           ans.selectedOption !== undefined &&
           ans.selectedOption !== "" &&
@@ -60,7 +60,7 @@ export const submitExam = async (req, res) => {
         }
       } else if (question.type === "coding") {
         if (ans.code && ans.isCorrect) {
-          score += 5; // Higher marks for coding questions? Let's assume 5 for now.
+          score += 1;
           correct++;
         } else if (ans.code) {
           wrong++;
@@ -68,38 +68,28 @@ export const submitExam = async (req, res) => {
       }
     }
 
-    // Fetch actual total questions count from DB
     const totalQuestions = await Question.countDocuments({ examId });
-    
-    // Calculate unattempted based on actual total vs attempted (correct + wrong)
     const unattempted = totalQuestions - (correct + wrong);
-
-    const accuracy =
-      totalQuestions > 0
-        ? Math.round((correct / totalQuestions) * 100)
-        : 0;
 
     result.answers = answers;
     result.score = score;
     result.correct = correct;
     result.wrong = wrong;
     result.unattempted = unattempted;
-    result.accuracy = accuracy;
+    result.accuracy = totalQuestions > 0 ? (correct / totalQuestions) * 100 : 0;
     result.status = "submitted";
     result.submittedAt = new Date();
+    result.submissionType = submissionType || "manual";
 
     await result.save();
 
     res.json({
       success: true,
-      message: "Exam submitted successfully",
+      message: submissionType === "auto" ? "Exam auto-submitted" : "Exam submitted successfully",
+      score,
     });
   } catch (error) {
-    console.error("SUBMIT ERROR:", error);
-    res.status(500).json({
-      message: "Internal server error",
-      error: error.message,
-    });
+    res.status(500).json({ message: error.message });
   }
 };
 

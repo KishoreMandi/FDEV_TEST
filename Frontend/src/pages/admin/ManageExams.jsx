@@ -10,14 +10,27 @@ const ManageExams = () => {
   const navigate = useNavigate();
   const [exams, setExams] = useState([]);
 
-  useEffect(() => {
-    loadExams();
-  }, []);
-
-  const loadExams = async () => {
+  async function loadExams() {
     const res = await getExams();
     setExams(res.data);
-  };
+  }
+
+  useEffect(() => {
+    let canceled = false;
+
+    (async () => {
+      try {
+        const res = await getExams();
+        if (!canceled) setExams(res.data);
+      } catch {
+        toast.error("Failed to load exams");
+      }
+    })();
+
+    return () => {
+      canceled = true;
+    };
+  }, []);
 
   const handleDelete = async (id) => {
     if (!confirm("Delete this exam?")) return;

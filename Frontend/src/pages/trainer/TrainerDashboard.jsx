@@ -6,7 +6,7 @@ import AdminHeader from "../../components/AdminHeader";
 import StatCard from "../../components/StatCard";
 import CsvUploader from "../../components/CsvUploader";
 import { getAdminStats, getUsers, approveUser, rejectUser, updateUserStatus } from "../../api/adminApi";
-import { useAuth } from "../../context/AuthContext";
+import { useAuth } from "../../context/auth";
 
 const TrainerDashboard = () => {
   const [stats, setStats] = useState(null);
@@ -37,9 +37,33 @@ const TrainerDashboard = () => {
   };
 
   useEffect(() => {
-    fetchStats();
-    fetchUsers();
-  }, [user]);
+    let canceled = false;
+
+    (async () => {
+      try {
+        const res = await getAdminStats();
+        if (!canceled) setStats(res.data);
+      } catch {
+        toast.error("Failed to load admin stats");
+      }
+
+      if (user?.role === "admin") {
+        try {
+          const res = await getUsers();
+          if (!canceled) {
+            setAllUsers(res.data);
+            setPendingUsers(res.data.filter((u) => !u.isApproved));
+          }
+        } catch {
+          console.error("Failed to fetch users");
+        }
+      }
+    })();
+
+    return () => {
+      canceled = true;
+    };
+  }, [user?.role]);
 
   const handleApprove = async (id) => {
     try {

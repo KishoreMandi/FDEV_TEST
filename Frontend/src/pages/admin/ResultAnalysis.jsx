@@ -7,7 +7,7 @@ import AdminSidebar from "../../components/AdminSidebar";
 import AdminHeader from "../../components/AdminHeader";
 import CodingEnvironment from "../../components/CodingEnvironment";
 import axios from "../../api/axiosInstance";
-import { getQuestions, getExamById, getAdminQuestions } from "../../api/examApi";
+import { getExamById, getAdminQuestions } from "../../api/examApi";
 
 const ResultAnalysis = () => {
   const { resultId } = useParams();

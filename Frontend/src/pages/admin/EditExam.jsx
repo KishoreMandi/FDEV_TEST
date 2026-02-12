@@ -21,22 +21,24 @@ const EditExam = () => {
   const [assignmentMode, setAssignmentMode] = useState("department"); // 'department' or 'specific'
   const [selectedDepartment, setSelectedDepartment] = useState("All");
 
-  useEffect(() => {
-    fetchExam();
-    loadUsers();
-    loadDepartments();
-  }, [id]);
+  function formatDateTimeLocal(isoString) {
+    if (!isoString) return "";
+    const date = new Date(isoString);
+    const offset = date.getTimezoneOffset() * 60000;
+    const localDate = new Date(date.getTime() - offset);
+    return localDate.toISOString().slice(0, 16);
+  }
 
-  const loadDepartments = async () => {
+  async function loadDepartments() {
     try {
       const res = await getDepartments();
       setDepartments(res.data);
     } catch (err) {
       console.error("Failed to load departments", err);
     }
-  };
+  }
 
-  const fetchExam = async () => {
+  async function fetchExam() {
     try {
       const res = await getExamById(id);
       const data = res.data;
@@ -69,9 +71,9 @@ const EditExam = () => {
       toast.error("Failed to load exam details");
       navigate("/admin/manage-exams");
     }
-  };
+  }
 
-  const loadUsers = async () => {
+  async function loadUsers() {
     try {
       const res = await getUsers();
       // Filter only students and employees
@@ -80,15 +82,17 @@ const EditExam = () => {
     } catch (err) {
       console.error("Failed to load users", err);
     }
-  };
+  }
 
-  const formatDateTimeLocal = (isoString) => {
-    if (!isoString) return "";
-    const date = new Date(isoString);
-    const offset = date.getTimezoneOffset() * 60000;
-    const localDate = new Date(date.getTime() - offset);
-    return localDate.toISOString().slice(0, 16);
-  };
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchExam();
+      loadUsers();
+      loadDepartments();
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [id]);
 
   const handleDateChange = (field, value) => {
     const newState = { ...exam, [field]: value };

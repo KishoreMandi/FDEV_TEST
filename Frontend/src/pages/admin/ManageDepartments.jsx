@@ -22,7 +22,7 @@ const ManageDepartments = () => {
       setLoading(true);
       const { data } = await getDepartments();
       setDepartments(data);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load departments");
     } finally {
       setLoading(false);
@@ -66,7 +66,7 @@ const ManageDepartments = () => {
       await deleteDepartment(id);
       toast.success("Department deleted");
       fetchDepartments();
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete department");
     }
   };
