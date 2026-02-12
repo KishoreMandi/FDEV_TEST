@@ -38,6 +38,10 @@ const Exam = () => {
   const mediaStreamRef = useRef(null); // Store stream for monitoring
   const finalSubmitRef = useRef(null); // Ref for finalSubmit to avoid stale closures in intervals
   const canvasRef = useRef(document.createElement("canvas")); // Off-screen canvas for analysis
+  const submittingRef = useRef(false);
+  const answersRef = useRef({});
+  const markedRef = useRef(new Set());
+  const questionsRef = useRef([]);
 
   // RECORDING REFS
   const webcamRecorderRef = useRef(null);
@@ -78,6 +82,18 @@ const Exam = () => {
       window.removeEventListener("mouseup", handleDragEnd);
     };
   }, []);
+
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
+
+  useEffect(() => {
+    markedRef.current = marked;
+  }, [marked]);
+
+  useEffect(() => {
+    questionsRef.current = questions;
+  }, [questions]);
 
   const addLog = (type, message) => {
     logsRef.current.push({ type, message, timestamp: new Date() });
@@ -520,8 +536,9 @@ const Exam = () => {
     try {
       await autoSave({
         examId,
-        answers: Object.entries(answers).map(([index, data]) => {
-          const q = questions[index];
+        answers: Object.entries(answersRef.current).flatMap(([index, data]) => {
+          const q = questionsRef.current[index];
+          if (!q) return [];
           if (q.type === "coding") {
             return {
               questionId: q._id,
@@ -536,7 +553,9 @@ const Exam = () => {
             selectedOption: data,
           };
         }),
-        markedForReview: Array.from(marked).map((idx) => questions[idx]._id),
+        markedForReview: Array.from(markedRef.current)
+          .map((idx) => questionsRef.current[idx]?._id)
+          .filter(Boolean),
         activityLogs: logsRef.current,
       });
     } catch (err) {
@@ -553,14 +572,15 @@ const Exam = () => {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [answers, questions, examId, marked]);
+  }, [questions.length, examId]);
 
   /* ================= HANDLE ACTIONS ================= */
   const handleSelect = (optionIndex) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [current]: optionIndex,
-    }));
+    setAnswers((prev) => {
+      const next = { ...prev, [current]: optionIndex };
+      answersRef.current = next;
+      return next;
+    });
   };
 
   const toggleMark = () => {
@@ -568,6 +588,7 @@ const Exam = () => {
       const newSet = new Set(prev);
       if (newSet.has(current)) newSet.delete(current);
       else newSet.add(current);
+      markedRef.current = newSet;
       return newSet;
     });
   };
@@ -629,25 +650,35 @@ const Exam = () => {
   };
 
   /* ================= FINAL SUBMIT ================= */
-  const finalSubmit = async (submissionType = "manual") => {
+  const finalSubmit = async (type = "manual") => {
     try {
+      if (submittingRef.current) return;
+      submittingRef.current = true;
+
+      // Ensure type is a string and not an event object
+      const submissionType = typeof type === 'string' ? type : "manual";
+
       if (submissionType === "auto") {
         setIsAutoSubmitting(true);
         toast.loading("Time's up! Auto-submitting your exam...", { id: "auto-submit" });
       }
 
+      await triggerAutoSave();
+
       // 1. Prioritize Answer Submission (Submit answers first)
-      await submitExam({
+      const submissionData = {
         examId,
         submissionType,
-        answers: Object.entries(answers).map(([index, data]) => {
-          const q = questions[index];
+        answers: Object.entries(answersRef.current).flatMap(([index, data]) => {
+          const q = questionsRef.current[index];
+          if (!q) return [];
           if (q.type === "coding") {
             return {
               questionId: q._id,
               code: data.code,
               language: data.language,
               isCorrect: data.isCorrect,
+              testCases: data.testCases,
             };
           }
           return {
@@ -655,8 +686,13 @@ const Exam = () => {
             selectedOption: data,
           };
         }),
+        markedForReview: Array.from(markedRef.current)
+          .map((idx) => questionsRef.current[idx]?._id)
+          .filter(Boolean),
         activityLogs: logsRef.current,
-      });
+      };
+
+      await submitExam(submissionData);
 
       // 2. Upload Recordings (in background if possible, or wait)
       try {
@@ -682,13 +718,17 @@ const Exam = () => {
       
       navigate(`/student/result/${examId}`);
     } catch (error) {
-      console.error(error);
+      console.error("Submission error:", error);
+      const errorMessage = error.response?.data?.message || "Failed to submit exam";
+      
       if (submissionType === "auto") {
-        toast.error("Auto-submit failed. Please click submit manually if possible.", { id: "auto-submit" });
+        toast.error(`Auto-submit failed: ${errorMessage}. Please click submit manually if possible.`, { id: "auto-submit" });
         setIsAutoSubmitting(false);
       } else {
-        toast.error("Failed to submit exam");
+        toast.error(errorMessage);
       }
+    } finally {
+      submittingRef.current = false;
     }
   };
 
@@ -699,7 +739,7 @@ const Exam = () => {
 
   /* ================= AUTO SUBMIT ON TIME UP ================= */
   const handleTimeUp = () => {
-    finalSubmit("auto");
+    if (finalSubmitRef.current) finalSubmitRef.current("auto");
   };
 
   if (loading) {
@@ -821,7 +861,7 @@ const Exam = () => {
           // Listen for stop on the original screen stream video track
           screenStream.getVideoTracks()[0].onended = () => {
               toast.error("Screen sharing stopped! Exam will be submitted.");
-              if (finalSubmitRef.current) finalSubmitRef.current();
+              if (finalSubmitRef.current) finalSubmitRef.current("auto");
           };
       } catch (err) {
           console.error(err);
@@ -920,9 +960,9 @@ const Exam = () => {
       )}
 
       {/* Main Content */}
-      <main className={`flex-1 flex overflow-hidden relative`}>
+      <main className={`flex-1 flex overflow-hidden relative min-h-0`}>
         {/* Left Side: Question Area (Scrollable) */}
-        <div className={`flex-1 flex flex-col bg-white overflow-hidden ${isFullScreen ? (questions[current]?.type === "coding" ? "w-1/2 border-r border-gray-200" : "w-full") : "w-1/3 border-r border-gray-200"}`}>
+        <div className={`flex-1 flex flex-col bg-white overflow-hidden min-h-0 ${isFullScreen ? (questions[current]?.type === "coding" ? "w-1/2 border-r border-gray-200" : "w-full") : "w-1/3 border-r border-gray-200"}`}>
           <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
             {questions[current] && (
               <div className={`space-y-6 animate-in fade-in slide-in-from-left-4 duration-500 ${isFullScreen && questions[current]?.type !== "coding" ? "max-w-4xl mx-auto pt-8" : ""}`}>
@@ -964,7 +1004,7 @@ const Exam = () => {
           </div>
 
           <div className={`p-4 bg-white border-t border-gray-200 ${isFullScreen && questions[current]?.type !== "coding" ? "fixed bottom-0 left-0 right-0 z-50 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)]" : ""}`}>
-            <div className={`${isFullScreen && questions[current]?.type !== "coding" ? "max-w-7xl mx-auto flex items-start gap-8" : ""}`}>
+            <div className={`flex flex-col gap-6 ${isFullScreen && questions[current]?.type !== "coding" ? "max-w-7xl mx-auto" : ""}`}>
                
                <div className="flex-1">
                   <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3 flex items-center gap-2">
@@ -978,7 +1018,7 @@ const Exam = () => {
                     marked={marked}
                   />
                   {/* Legend */}
-                  <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[10px] font-bold uppercase tracking-wider text-gray-500">
+                  <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-[10px] font-bold uppercase tracking-wider text-gray-500 border-b border-gray-100 pb-4">
                     <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-green-500 rounded-sm border border-green-600"></span> Answered</div>
                     <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-purple-600 rounded-sm border border-purple-700"></span> Marked</div>
                     <div className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-blue-600 rounded-sm border border-blue-700"></span> Current</div>
@@ -986,101 +1026,67 @@ const Exam = () => {
                   </div>
                </div>
 
-               {/* Navigation Buttons (Moved here for better layout in fullscreen) */}
-               {isFullScreen && questions[current]?.type === "mcq" && (
-                  <div className="flex items-center gap-3 self-center border-l border-gray-100 pl-8">
+               {/* Navigation Buttons */}
+               <div className="flex items-center gap-3">
+                  <button
+                    disabled={current === 0}
+                    onClick={() => setCurrent((p) => p - 1)}
+                    className="flex items-center gap-2 px-6 py-2.5 text-gray-700 font-bold hover:bg-gray-100 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-transparent border border-gray-200 text-sm shadow-sm"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+                    Previous
+                  </button>
+
+                  {!isLastQuestion ? (
                     <button
-                      disabled={current === 0}
-                      onClick={() => setCurrent((p) => p - 1)}
-                      className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg transition-all disabled:opacity-50 text-sm"
+                      onClick={handleSaveAndNext}
+                      className="flex items-center justify-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-all shadow-md hover:shadow-lg active:scale-95 text-sm"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-                      Prev
+                      Save & Next
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
                     </button>
-
-                    {!isLastQuestion && (
-                      <button
-                        onClick={handleSaveAndNext}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-all shadow-sm hover:shadow-md active:scale-95 text-sm"
-                      >
-                        Save & Next
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-                      </button>
-                    )}
-
-                    {isLastQuestion && (
-                      <button
-                        onClick={() => setShowSubmit(true)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg font-bold transition-all shadow-sm hover:shadow-md active:scale-95 text-sm ml-2"
-                      >
-                        Submit
-                      </button>
-                    )}
-                  </div>
-               )}
+                  ) : (
+                    <button
+                      onClick={() => setShowSubmit(true)}
+                      className="flex items-center justify-center gap-2 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-all shadow-md hover:shadow-lg active:scale-95 text-sm"
+                    >
+                      Submit Exam
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    </button>
+                  )}
+               </div>
             </div>
           </div>
         </div>
 
         {/* Right Side: Editor/Content Area */}
-        <div className={`flex-1 flex flex-col bg-[#1e1e1e] overflow-hidden
+        <div className={`flex-1 flex flex-col bg-[#1e1e1e] overflow-hidden min-h-0
           ${isFullScreen && questions[current]?.type === "mcq" ? "hidden" : ""}
           ${isFullScreen && questions[current]?.type === "coding" ? "w-1/2" : ""}`}>
           {questions[current]?.type === "coding" ? (
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
               <CodingEnvironment
                 question={questions[current]}
                 initialData={answers[current]}
                 onSave={handleSelect}
-                layout="split-vertical" // We'll handle layout inside CodingEnvironment or by CSS
+                layout="split-vertical"
               />
             </div>
           ) : (
-  <div className="flex-1 p-6 overflow-y-auto">
-    <QuestionCard
-      question={questions[current]}
-      selectedOption={answers[current]}
-      onSelect={handleSelect}
-    />
-  </div>
-)}
-
-          {/* Navigation Controls (Bottom Right) */}
-          <div className="bg-white border-t border-gray-200 px-6 py-4 flex justify-between items-center z-20 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
-            <button
-              disabled={current === 0}
-              onClick={() => setCurrent((p) => p - 1)}
-              className="flex items-center gap-2 px-5 py-2.5 text-gray-700 font-bold hover:bg-gray-100 rounded-lg transition-all disabled:opacity-30 disabled:hover:bg-transparent"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
-              Previous
-            </button>
-
-            {!isLastQuestion && (
-              <button
-                onClick={handleSaveAndNext}
-                className="flex items-center gap-2 px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition-all shadow-md hover:shadow-lg active:scale-95"
-              >
-                Save & Next
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-              </button>
-            )}
-
-            {isLastQuestion && (
-              <button
-                onClick={() => setShowSubmit(true)}
-                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-lg font-bold transition-all shadow-md hover:shadow-lg active:scale-95"
-              >
-                Submit Exam
-              </button>
-            )}
-          </div>
+            <div className="flex-1 p-6 overflow-y-auto">
+              <QuestionCard
+                question={questions[current]}
+                selectedOption={answers[current]}
+                onSelect={handleSelect}
+              />
+            </div>
+          )}
         </div>
 
         {/* WEBCAM FEED - Overlayed Floating */}
         {exam?.proctoring?.webcam && (
           <div 
-            className={`fixed bottom-24 right-6 w-48 h-36 bg-black border-2 border-white shadow-2xl rounded-xl overflow-hidden group transition-all duration-300 hover:w-64 hover:h-48 ${isFullScreen ? "z-[60]" : "z-50"}`}
+            className={`fixed bottom-6 right-6 w-48 h-36 bg-black border-2 border-white shadow-2xl rounded-xl overflow-hidden group transition-all duration-300 hover:w-64 hover:h-48 ${isFullScreen ? "z-[60]" : "z-50"}`}
             style={{ 
               transform: `translate(${cameraPos.x}px, ${cameraPos.y}px)`,
               cursor: isDraggingRef.current ? "grabbing" : "default" 
@@ -1119,7 +1125,7 @@ const Exam = () => {
         onClose={() => setShowSubmit(false)}
         attempted={Object.keys(answers).length}
         total={questions.length}
-        onConfirm={finalSubmit}
+        onConfirm={() => finalSubmit("manual")}
       />
     </div>
   );

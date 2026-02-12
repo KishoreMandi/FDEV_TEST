@@ -7,7 +7,7 @@ import Exam from "../models/Exam.js";
 
 export const submitExam = async (req, res) => {
   try {
-    const { examId, answers, submissionType } = req.body;
+    const { examId, answers, submissionType, markedForReview, activityLogs } = req.body;
     const studentId = req.user.id;
 
     if (!examId || !answers) {
@@ -19,15 +19,34 @@ export const submitExam = async (req, res) => {
       return res.status(404).json({ message: "Exam not found" });
     }
 
-    const result = await Result.findOne({
+    let result = await Result.findOne({
       examId,
       studentId,
       status: "in-progress",
     });
 
+    // If no in-progress attempt, check if already submitted
     if (!result) {
-      return res.status(400).json({
-        message: "No active exam attempt found",
+      const alreadySubmitted = await Result.findOne({
+        examId,
+        studentId,
+        status: "submitted",
+      });
+
+      if (alreadySubmitted) {
+        return res.json({
+          success: true,
+          message: "Exam already submitted",
+          score: alreadySubmitted.score,
+        });
+      }
+
+      // If neither, create a new one (shouldn't happen often if auto-save is working)
+      result = new Result({
+        examId,
+        studentId,
+        status: "in-progress",
+        startedAt: new Date(),
       });
     }
 
@@ -80,6 +99,10 @@ export const submitExam = async (req, res) => {
     result.status = "submitted";
     result.submittedAt = new Date();
     result.submissionType = submissionType || "manual";
+    
+    // Also save these in case they weren't auto-saved recently
+    if (markedForReview) result.markedForReview = markedForReview;
+    if (activityLogs) result.activityLogs = activityLogs;
 
     await result.save();
 

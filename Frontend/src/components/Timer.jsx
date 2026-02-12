@@ -1,7 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const Timer = ({ initialSeconds, onTimeUp }) => {
   const [timeLeft, setTimeLeft] = useState(initialSeconds);
+  const onTimeUpRef = useRef(onTimeUp);
+
+  useEffect(() => {
+    onTimeUpRef.current = onTimeUp;
+  }, [onTimeUp]);
 
   useEffect(() => {
     // Sync local state if prop changes drastically (optional, but good for resume)
@@ -13,7 +18,7 @@ const Timer = ({ initialSeconds, onTimeUp }) => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
-          onTimeUp();
+          onTimeUpRef.current?.();
           return 0;
         }
         return prev - 1;

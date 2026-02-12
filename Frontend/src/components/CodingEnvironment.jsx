@@ -132,7 +132,7 @@ puts "Hello World"`,
 import java.io.InputStreamReader
 
 fun main() {
-    val br = BufferedReader(InputStreamReader(System.`in`))
+    val br = BufferedReader(InputStreamReader(System.\`in\`))
     val input = br.readLine()
     println("Hello World")
 }`,
@@ -279,6 +279,15 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
 
     setBottomTab(mode === "custom" ? "custom" : "tests");
 
+    // Auto-scroll to results panel when running
+    const resultsPanel = document.querySelector('.results-panel-container');
+    if (resultsPanel && resultsPanel.parentElement) {
+      resultsPanel.parentElement.scrollTo({
+        top: resultsPanel.offsetTop,
+        behavior: 'smooth'
+      });
+    }
+
     try {
       if (mode === 'custom') {
         const res = await axios.post("/questions/execute-custom", {
@@ -402,7 +411,7 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
   const isSplitVertical = layout === "split-vertical";
 
   return (
-    <div className={`flex flex-col h-full bg-[#1e1e1e] ${!isSplitVertical ? 'rounded-xl shadow-2xl border border-gray-700' : ''} overflow-hidden`}>
+    <div className={`flex flex-col flex-1 min-h-0 bg-[#1e1e1e] ${!isSplitVertical ? 'rounded-xl shadow-2xl border border-gray-700' : ''} overflow-hidden`}>
       {/* MNC Style Header */}
       <div className="bg-[#252526] text-gray-300 p-2 px-4 flex justify-between items-center border-b border-[#3e3e3e] z-10 h-14">
         <div className="flex items-center gap-4">
@@ -421,6 +430,18 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
         </div>
 
         <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 mr-2">
+            <label className="flex items-center gap-2 cursor-pointer group">
+              <input 
+                type="checkbox" 
+                checked={bottomTab === "custom"}
+                onChange={(e) => setBottomTab(e.target.checked ? "custom" : "tests")}
+                className="w-4 h-4 rounded border-gray-600 bg-[#3c3c3c] text-blue-600 focus:ring-blue-500 focus:ring-offset-0"
+              />
+              <span className="text-xs font-bold text-gray-400 group-hover:text-gray-200 transition-colors">Show Custom Input</span>
+            </label>
+          </div>
+
           <div className="flex items-center gap-2">
             <button
               onClick={() => handleRun('custom')}
@@ -440,24 +461,14 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
               Run Tests
             </button>
 
-            <button
-              onClick={handleFormat}
-              className="flex items-center gap-2 bg-[#3c3c3c] hover:bg-[#4c4c4c] text-white px-4 py-1.5 rounded-md text-sm font-bold transition-all active:scale-95 shadow-md border border-gray-600"
-              type="button"
-              title="Format code"
-            >
-              <Wand2 size={14} />
-              Format
-            </button>
-
           </div>
         </div>
       </div>
 
       {/* Main Layout Area */}
-      <div className={`flex flex-col flex-1 overflow-hidden relative`}>
+      <div className={`flex flex-col flex-1 min-h-0 overflow-hidden relative`}>
         {/* Editor Area */}
-        <div className="flex-1 relative border-b border-[#3e3e3e]">
+        <div className="flex-1 min-h-0 relative border-b border-[#3e3e3e]">
           <Editor
             height="100%"
             language={language === 'cpp' ? 'cpp' : language === 'c' ? 'c' : language}
@@ -466,7 +477,12 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
             onMount={handleEditorMount}
             onChange={(value) => {
               setCode(value);
-              onSave({ code: value, language, isCorrect: results?.allPassed || false });
+              onSave({ 
+                code: value, 
+                language, 
+                isCorrect: results?.allPassed || false,
+                testCases: results?.results || []
+              });
             }}
             options={{
               minimap: { enabled: false },
@@ -490,10 +506,10 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
         </div>
 
         {/* Results Panel (Bottom) */}
-        <div className="h-1/3 bg-[#1e1e1e] flex flex-col border-t border-[#3e3e3e]">
+        <div className="results-panel-container h-72 md:h-80 flex-shrink-0 bg-[#1e1e1e] flex flex-col border-t border-[#3e3e3e] shadow-[0_-4px_12px_rgba(0,0,0,0.3)] z-20">
           <div className="p-3 border-b border-[#3e3e3e] bg-[#252526] flex justify-between items-center px-6">
             <h3 className="font-bold text-gray-300 flex items-center gap-2 text-xs uppercase tracking-wider">
-              {bottomTab === "custom" ? "Custom Input / Output" : bottomTab === "refs" ? "References" : "Test Results"}
+              {bottomTab === "custom" ? "Custom Input / Output" : "Test Results"}
             </h3>
             <div className="flex items-center gap-3">
               {bottomTab === "tests" && results && (
@@ -524,36 +540,25 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
                 >
                   Custom
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setBottomTab("refs")}
-                  className={`px-3 py-1 rounded border text-xs font-bold transition ${
-                    bottomTab === "refs"
-                      ? "bg-blue-600 border-blue-500 text-white"
-                      : "bg-[#2d2d2d] border-[#3e3e3e] text-gray-300 hover:bg-[#3a3a3a]"
-                  }`}
-                >
-                  Refs
-                </button>
               </div>
             </div>
           </div>
           
-          <div className="flex-1 overflow-y-auto p-4 pb-24 custom-scrollbar bg-[#1e1e1e]">
+          <div className="flex-1 overflow-y-auto p-4 pb-12 custom-scrollbar bg-[#1e1e1e]">
             {bottomTab === "custom" ? (
               <div className="flex h-full gap-4">
                 <div className="flex-1 flex flex-col gap-2">
                   <label className="text-xs font-bold text-gray-500 uppercase">Input</label>
                   <textarea
-                    value={customInput}
-                    onChange={(e) => setCustomInput(e.target.value)}
-                    className="flex-1 bg-[#2d2d2d] text-gray-300 p-3 rounded-lg border border-[#3e3e3e] focus:outline-none focus:border-blue-500 font-mono text-[16px] resize-none"
-                    placeholder="Enter custom input here..."
-                  />
+                      value={customInput}
+                      onChange={(e) => setCustomInput(e.target.value)}
+                      className="flex-1 bg-[#2d2d2d] text-gray-300 p-3 rounded-lg border border-[#3e3e3e] focus:outline-none focus:border-blue-500 font-mono text-sm resize-none custom-scrollbar"
+                      placeholder="Enter custom input here..."
+                    />
                 </div>
                 <div className="flex-1 flex flex-col gap-2">
                   <label className="text-xs font-bold text-gray-500 uppercase">Output</label>
-                  <div className="flex-1 bg-[#2d2d2d] text-gray-300 p-3 rounded-lg border border-[#3e3e3e] font-mono text-sm overflow-auto whitespace-pre-wrap">
+                  <div className="flex-1 bg-[#2d2d2d] text-gray-300 p-3 rounded-lg border border-[#3e3e3e] font-mono text-sm overflow-auto whitespace-pre-wrap custom-scrollbar">
                     {customOutput ? (
                       <>
                         {customOutput.output}
@@ -561,54 +566,6 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
                       </>
                     ) : (
                       <span className="text-gray-600 italic">Run code to see output...</span>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ) : bottomTab === "refs" ? (
-              <div className="h-full flex flex-col gap-4">
-                <div className="flex flex-wrap gap-2">
-                  {(LANGUAGE_REFERENCES[language] || []).map((r) => (
-                    <a
-                      key={r.href}
-                      href={r.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs font-bold bg-[#2d2d2d] hover:bg-[#3a3a3a] text-gray-300 px-3 py-1.5 rounded border border-[#3e3e3e] transition"
-                    >
-                      {r.label}
-                    </a>
-                  ))}
-                </div>
-
-                <div className="bg-[#2d2d2d] border border-[#3e3e3e] rounded-lg overflow-hidden">
-                  <div className="px-4 py-2 border-b border-[#3e3e3e] bg-[#252526]">
-                    <div className="text-xs font-black text-gray-400 uppercase tracking-widest">
-                      Quick Libraries / Snippets
-                    </div>
-                  </div>
-                  <div className="p-3 space-y-2">
-                    {(LIBRARY_SNIPPETS[language] || []).length === 0 ? (
-                      <div className="text-gray-500 text-sm italic">No snippets for this language yet.</div>
-                    ) : (
-                      (LIBRARY_SNIPPETS[language] || []).map((s) => (
-                        <div
-                          key={s.label}
-                          className="flex items-center justify-between gap-3 bg-[#1e1e1e] border border-[#3e3e3e] rounded-md px-3 py-2"
-                        >
-                          <div className="min-w-0">
-                            <div className="text-sm font-bold text-gray-200 truncate">{s.label}</div>
-                            <div className="text-[11px] text-gray-500 font-mono truncate">{s.insertText.replace(/\n/g, " ")}</div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => insertTextAtCursor(s.insertText)}
-                            className="shrink-0 bg-[#3c3c3c] hover:bg-[#4c4c4c] text-white px-3 py-1.5 rounded-md text-xs font-bold transition-all active:scale-95 shadow-md border border-gray-600"
-                          >
-                            Insert
-                          </button>
-                        </div>
-                      ))
                     )}
                   </div>
                 </div>
