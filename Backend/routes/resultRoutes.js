@@ -13,7 +13,6 @@ import {
 
 import authMiddleware from "../middleware/authMiddleware.js";
 import adminMiddleware from "../middleware/adminMiddleware.js";
-import trainerMiddleware from "../middleware/trainerMiddleware.js";
 import multer from "multer";
 import path from "path";
 
@@ -42,8 +41,8 @@ router.post(
 );
 router.get("/my/:examId", authMiddleware, getMyResult);
 
-// admin & trainer
-router.get("/all", authMiddleware, trainerMiddleware, getAllResults);
+// admin
+router.get("/all", authMiddleware, adminMiddleware, getAllResults);
 
 router.patch(
   "/autosave",
@@ -63,18 +62,18 @@ router.get(
   getStudentExamStatus
 );
 
-// admin & trainer - results by exam
+// admin - results by exam
 router.get(
   "/admin/:examId",
   authMiddleware,
-  trainerMiddleware,
+  adminMiddleware,
   getResultsByExam
 );
 
 router.get(
   "/:id",
   authMiddleware,
-  trainerMiddleware,
+  adminMiddleware,
   getResultById
 );
 

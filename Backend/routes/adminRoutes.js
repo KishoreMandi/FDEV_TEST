@@ -14,13 +14,12 @@ import {
 } from "../controllers/adminController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
 import adminMiddleware from "../middleware/adminMiddleware.js";
-import trainerMiddleware from "../middleware/trainerMiddleware.js";
 
 const router = express.Router();
 const upload = multer({ dest: "uploads/" });
 
-router.get("/stats", authMiddleware, trainerMiddleware, getAdminStats);
-router.get("/users", authMiddleware, trainerMiddleware, getUsers);
+router.get("/stats", authMiddleware, adminMiddleware, getAdminStats);
+router.get("/users", authMiddleware, adminMiddleware, getUsers);
 router.put("/approve-user", authMiddleware, adminMiddleware, approveUser);
 router.post("/reject-user", authMiddleware, adminMiddleware, rejectUser);
 

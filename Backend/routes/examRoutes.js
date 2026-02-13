@@ -1,17 +1,17 @@
 import express from "express";
 import { createExam, getAllExams,updateExam,deleteExam,startExam,examData } from "../controllers/examController.js";
 import authMiddleware from "../middleware/authMiddleware.js";
-import trainerMiddleware from "../middleware/trainerMiddleware.js";
+import adminMiddleware from "../middleware/adminMiddleware.js";
 
 const router = express.Router();
 
-router.post("/", authMiddleware, trainerMiddleware, createExam);
+router.post("/", authMiddleware, adminMiddleware, createExam);
 router.get("/", authMiddleware, getAllExams);
 /* UPDATE */
 router.put(
   "/:examId",
   authMiddleware,
-  trainerMiddleware,
+  adminMiddleware,
   updateExam
 );
 
@@ -19,7 +19,7 @@ router.put(
 router.delete(
   "/:examId",
   authMiddleware,
-  trainerMiddleware,
+  adminMiddleware,
   deleteExam
 );
 

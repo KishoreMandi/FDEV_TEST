@@ -4,14 +4,10 @@ import Login from "../pages/auth/Login";
 import Register from "../pages/auth/Register";
 
 import AdminDashboard from "../pages/admin/Dashboard";
-import TrainerDashboard from "../pages/trainer/TrainerDashboard";
 import CreateExam from "../pages/admin/CreateExam";
-import TrainerCreateExam from "../pages/trainer/CreateExam";
 import AddQuestions from "../pages/admin/AddQuestions";
-import TrainerAddQuestions from "../pages/trainer/AddQuestions";
 import Results from "../pages/admin/Results";
 import ResultAnalysis from "../pages/admin/ResultAnalysis";
-import TrainerResults from "../pages/trainer/Results";
 import Reports from "../pages/admin/Reports";
 
 import StudentDashboard from "../pages/student/StudentDashboard";
@@ -21,7 +17,6 @@ import StudentLeaderboard from "../pages/student/Leaderboard";
 import ManageExams from "../pages/admin/ManageExams";
 import ManageDepartments from "../pages/admin/ManageDepartments";
 import EditExam from "../pages/admin/EditExam";
-import TrainerManageExams from "../pages/trainer/ManageExams";
 import ProtectedRoute from "./ProtectedRoute";
 
 const AppRoutes = () => {
@@ -97,15 +92,6 @@ const AppRoutes = () => {
       />
 
       <Route
-        path="/trainer/dashboard"
-        element={
-          <ProtectedRoute role="trainer">
-            <TrainerDashboard />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
         path="/admin/create-exam"
         element={
           <ProtectedRoute role="admin">
@@ -115,28 +101,10 @@ const AppRoutes = () => {
       />
 
       <Route
-        path="/trainer/create-exam"
-        element={
-          <ProtectedRoute role="trainer">
-            <TrainerCreateExam />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
         path="/admin/add-questions"
         element={
           <ProtectedRoute role="admin">
             <AddQuestions />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/trainer/add-questions"
-        element={
-          <ProtectedRoute role="trainer">
-            <TrainerAddQuestions />
           </ProtectedRoute>
         }
       />
@@ -160,33 +128,6 @@ const AppRoutes = () => {
       />
 
       <Route
-        path="/trainer/results"
-        element={
-          <ProtectedRoute role="trainer">
-            <TrainerResults />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/trainer/result-analysis/:resultId"
-        element={
-          <ProtectedRoute role="trainer">
-            <ResultAnalysis />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/trainer/reports"
-        element={
-          <ProtectedRoute role="trainer">
-            <Reports />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
         path="/admin/manage-exams"
         element={
           <ProtectedRoute role="admin">
@@ -200,15 +141,6 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute role="admin">
             <EditExam />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/trainer/manage-exams"
-        element={
-          <ProtectedRoute role="trainer">
-            <TrainerManageExams />
           </ProtectedRoute>
         }
       />

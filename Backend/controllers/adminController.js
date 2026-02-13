@@ -86,7 +86,7 @@ export const updateUserRole = async (req, res) => {
   try {
     const { userId, role } = req.body;
     
-    if (!["admin", "trainer", "employee", "student"].includes(role)) {
+    if (!["admin", "employee", "student"].includes(role)) {
       return res.status(400).json({ message: "Invalid role" });
     }
 
@@ -250,7 +250,7 @@ export const bulkImportUsers = async (req, res) => {
         let role = "student";
         if (roleRaw) {
           const lower = roleRaw.toLowerCase().trim();
-          if (["admin", "trainer", "employee", "student"].includes(lower)) {
+          if (["admin", "employee", "student"].includes(lower)) {
             role = lower;
           } else if (lower === "manager") {
             role = "admin"; // Map Manager to Admin

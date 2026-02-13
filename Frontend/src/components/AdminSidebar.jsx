@@ -24,12 +24,12 @@ const AdminSidebar = () => {
   return (
     <div className="h-screen w-64 bg-[#0f172a] text-white fixed">
       <h1 className="text-xl font-bold p-6 border-b border-gray-700">
-        {user?.role === "trainer" ? "Exam Trainer" : "Exam Admin"}
+        Exam Admin
       </h1>
 
       <nav className="p-4 space-y-2">
         <NavLink
-          to={user?.role === "trainer" ? "/trainer/dashboard" : "/admin/dashboard"}
+          to="/admin/dashboard"
           className={({ isActive }) =>
             `${baseClass} ${isActive ? activeClass : inactiveClass}`
           }
@@ -39,7 +39,7 @@ const AdminSidebar = () => {
         </NavLink>
 
         <NavLink
-          to={user?.role === "trainer" ? "/trainer/create-exam" : "/admin/create-exam"}
+          to="/admin/create-exam"
           className={({ isActive }) =>
             `${baseClass} ${isActive ? activeClass : inactiveClass}`
           }
@@ -49,7 +49,7 @@ const AdminSidebar = () => {
         </NavLink>
 
         <NavLink
-          to={user?.role === "trainer" ? "/trainer/add-questions" : "/admin/add-questions"}
+          to="/admin/add-questions"
           className={({ isActive }) =>
             `${baseClass} ${isActive ? activeClass : inactiveClass}`
           }
@@ -59,7 +59,7 @@ const AdminSidebar = () => {
         </NavLink>
 
         <NavLink
-          to={user?.role === "trainer" ? "/trainer/manage-exams" : "/admin/manage-exams"}
+          to="/admin/manage-exams"
           className={({ isActive }) =>
             `${baseClass} ${isActive ? activeClass : inactiveClass}`
           }
@@ -69,7 +69,7 @@ const AdminSidebar = () => {
         </NavLink>
 
         <NavLink
-          to={user?.role === "trainer" ? "/trainer/results" : "/admin/results"}
+          to="/admin/results"
           className={({ isActive }) =>
             `${baseClass} ${isActive ? activeClass : inactiveClass}`
           }
@@ -79,7 +79,7 @@ const AdminSidebar = () => {
         </NavLink>
 
         <NavLink
-          to={user?.role === "trainer" ? "/trainer/reports" : "/admin/reports"}
+          to="/admin/reports"
           className={({ isActive }) =>
             `${baseClass} ${isActive ? activeClass : inactiveClass}`
           }
@@ -88,17 +88,15 @@ const AdminSidebar = () => {
           <span>Reports</span>
         </NavLink>
 
-        {user?.role === "admin" && (
-          <NavLink
-            to="/admin/departments"
-            className={({ isActive }) =>
-              `${baseClass} ${isActive ? activeClass : inactiveClass}`
-            }
-          >
-            <Building size={20} />
-            <span>Departments</span>
-          </NavLink>
-        )}
+        <NavLink
+          to="/admin/departments"
+          className={({ isActive }) =>
+            `${baseClass} ${isActive ? activeClass : inactiveClass}`
+          }
+        >
+          <Building size={20} />
+          <span>Departments</span>
+        </NavLink>
       </nav>
     </div>
   );

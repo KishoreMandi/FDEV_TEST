@@ -12,7 +12,7 @@ const AdminHeader = () => {
           className="w-12 h-12 object-contain mix-blend-multiply contrast-125 brightness-110" 
         />
         <h2 className="text-xl font-bold text-gray-800 tracking-wide">
-          {user?.role === "trainer" ? "Trainer Dashboard" : "Admin Dashboard"}
+          Admin Dashboard
         </h2>
       </div>
 
