@@ -53,6 +53,7 @@ const EditExam = () => {
           fullScreen: false,
           tabSwitch: false,
           screenRecording: false,
+          multiplePersonDetection: false,
           tabSwitchLimit: 3,
         },
       });
@@ -391,6 +392,19 @@ const EditExam = () => {
                            })}
                          />
                          <span className="text-gray-700 font-medium">Tab Switch</span>
+                       </label>
+
+                       <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-white rounded transition">
+                         <input
+                           type="checkbox"
+                           className="w-4 h-4 text-blue-600 rounded"
+                           checked={exam.proctoring?.multiplePersonDetection}
+                           onChange={(e) => setExam({
+                             ...exam,
+                             proctoring: { ...exam.proctoring, multiplePersonDetection: e.target.checked }
+                           })}
+                         />
+                         <span className="text-gray-700 font-medium">Multi-Person</span>
                        </label>
                      </div>
 

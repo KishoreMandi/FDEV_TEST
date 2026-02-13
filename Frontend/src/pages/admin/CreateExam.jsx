@@ -19,6 +19,7 @@ const CreateExam = () => {
     fullScreen: false,
     tabSwitch: false,
     screenRecording: false,
+    multiplePersonDetection: false,
     tabSwitchLimit: 3,
   });
   const [departments, setDepartments] = useState([]);
@@ -97,6 +98,7 @@ const CreateExam = () => {
         fullScreen: false,
         tabSwitch: false,
         screenRecording: false,
+        multiplePersonDetection: false,
         tabSwitchLimit: 3,
       });
     } catch (error) {
@@ -249,6 +251,16 @@ const CreateExam = () => {
                   />
                   <span>Tab Switch Detection</span>
                 </label>
+
+                <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-white rounded transition">
+                  <input
+                    type="checkbox"
+                    checked={proctoring.multiplePersonDetection}
+                    onChange={(e) => setProctoring({ ...proctoring, multiplePersonDetection: e.target.checked })}
+                  />
+                  <span>Multi-Person Detection</span>
+                </label>
+
                 {proctoring.tabSwitch && (
                   <div className="flex items-center gap-2">
                     <span className="text-sm">Max Violations:</span>

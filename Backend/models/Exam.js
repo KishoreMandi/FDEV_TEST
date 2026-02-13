@@ -33,6 +33,7 @@ const examSchema = new mongoose.Schema(
       fullScreen: { type: Boolean, default: false },
       tabSwitch: { type: Boolean, default: false },
       screenRecording: { type: Boolean, default: false }, // New field
+      multiplePersonDetection: { type: Boolean, default: false }, // New field
       tabSwitchLimit: { type: Number, default: 3 },
     },
     department: {

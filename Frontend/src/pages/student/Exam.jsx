@@ -2,7 +2,8 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "../../api/axiosInstance";
-import { Maximize2, Minimize2, Move } from "lucide-react";
+import { Maximize2, Minimize2, Move, Camera, User as UserIcon } from "lucide-react";
+import * as faceapi from '@vladmandic/face-api';
 
 import Timer from "../../components/Timer";
 import QuestionCard from "../../components/QuestionCard";
@@ -29,9 +30,20 @@ const Exam = () => {
   // Store exam data
   const [exam, setExam] = useState(null);
 
+  // FACE DETECTION STATE
+  const [modelsLoaded, setModelsLoaded] = useState(false);
+
   // PROCTORING STATE
   const [tabSwitches, setTabSwitches] = useState(0);
-  const [_deviceViolations, setDeviceViolations] = useState(0); // Track device issues
+  const [_deviceViolations, setDeviceViolations] = useState(0); 
+  const [multiPersonViolations, setMultiPersonViolations] = useState(0);
+  const [headTurnViolations, setHeadTurnViolations] = useState(0);
+  const [outOfFrameViolations, setOutOfFrameViolations] = useState(0);
+  
+  const [isMultiplePersons, setIsMultiplePersons] = useState(false);
+  const [isHeadTurned, setIsHeadTurned] = useState(false);
+  const [isOutOfFrame, setIsOutOfFrame] = useState(false);
+  const [faceCount, setFaceCount] = useState(0);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const logsRef = useRef([]);
   const videoRef = useRef(null);
@@ -200,6 +212,32 @@ const Exam = () => {
       html.style.touchAction = prevStyles.htmlTouchAction;
       body.style.touchAction = prevStyles.bodyTouchAction;
     };
+  }, []);
+
+  /* ================= LOAD MODELS ================= */
+  useEffect(() => {
+    const loadModels = async () => {
+      try {
+        console.log("Starting to load AI models...");
+        const MODEL_URL = "/models";
+        
+        // faceapi in @vladmandic fork handles its own initialization
+        // Load face-api models
+        await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+        console.log("SSD face model loaded");
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+        console.log("Tiny face model loaded");
+        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+        console.log("Landmarks face model loaded");
+        
+        setModelsLoaded(true);
+        console.log("ALL AI models loaded successfully");
+      } catch (err) {
+        console.error("CRITICAL Error loading AI models:", err);
+        toast.error("AI Proctoring models failed to load. Please refresh the page.", { duration: 10000 });
+      }
+    };
+    loadModels();
   }, []);
 
   /* ================= LOAD QUESTIONS + RESUME ================= */
@@ -405,12 +443,14 @@ const Exam = () => {
   // 3. DEVICE MONITORING (Video/Mic + Black Screen Detection)
   useEffect(() => {
     if (!exam?.proctoring?.webcam) return;
+    console.log("Monitoring started. Multi-person detection:", exam.proctoring?.multiplePersonDetection);
 
-    const interval = setInterval(() => {
+    const interval = setInterval(async () => {
       const stream = mediaStreamRef.current;
       const videoEl = videoRef.current;
 
       let issue = null;
+      console.log("Monitoring cycle triggered. Face models loaded:", modelsLoaded);
 
       // Check 1: Stream integrity
       if (!stream) {
@@ -456,7 +496,168 @@ const Exam = () => {
          }
       }
 
+      // Check 3: Multiple Person Detection
+      if (exam.proctoring?.multiplePersonDetection) {
+        if (!modelsLoaded) {
+          console.log("Face detection: models not loaded yet");
+        } else if (!videoEl || videoEl.readyState !== 4) {
+          console.log("Face detection: video not ready. ReadyState:", videoEl?.readyState);
+        } else {
+          try {
+             // LOGS FOR DEBUGGING - Check if video is actually ready
+             if (videoEl.readyState < 2 || videoEl.videoWidth === 0) {
+                console.warn(`Video not ready for detection: readyState=${videoEl.readyState}, width=${videoEl.videoWidth}`);
+                return;
+             }
+
+             // Aggressive check: Try BOTH SSD and Tiny to be absolutely sure
+             let detectionsSSD = [];
+             let detectionsTiny = [];
+             
+             try {
+                detectionsSSD = await faceapi.detectAllFaces(videoEl, new faceapi.SsdMobilenetv1Options({ 
+                  minConfidence: 0.12 // EVEN LOWER
+                }));
+             } catch (err) {
+                console.error("SSD Detection error:", err);
+             }
+
+             try {
+                detectionsTiny = await faceapi.detectAllFaces(videoEl, new faceapi.TinyFaceDetectorOptions({ 
+                  inputSize: 512, // LARGER for better detail
+                  scoreThreshold: 0.12 // EVEN LOWER
+                }));
+             } catch (err) {
+                console.error("Tiny Detection error:", err);
+             }
+
+             // Take the maximum count from both face detection methods
+             const finalCount = Math.max(detectionsSSD.length, detectionsTiny.length);
+             setFaceCount(finalCount);
+             
+             if (finalCount === 0) {
+                 setIsOutOfFrame(true);
+                 setOutOfFrameViolations(prev => {
+                   const newCount = prev + 1;
+                   addLog("out_of_frame_violation", `No person detected in camera. Violation ${newCount}`);
+                   
+                   const limit = 5;
+                   if (newCount >= limit) {
+                      toast.error("CRITICAL: You are out of camera frame! Submitting exam...", { 
+                        duration: 5000,
+                        style: { background: '#7f1d1d', color: '#fff' }
+                      });
+                      if (finalSubmitRef.current) finalSubmitRef.current();
+                   } else {
+                      toast.error(`WARNING: Please stay inside the camera frame! (${newCount}/${limit})`, {
+                        duration: 4000,
+                        icon: '📷',
+                        style: { background: '#991b1b', color: '#fff', fontWeight: 'bold' }
+                      });
+                   }
+                   return newCount;
+                 });
+             } else {
+                 setIsOutOfFrame(false);
+                 
+                 // HEAD ORIENTATION CHECK (If only one person)
+                 if (finalCount === 1) {
+                    try {
+                        const detectionsWithLandmarks = await faceapi.detectSingleFace(videoEl, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks();
+                        if (detectionsWithLandmarks) {
+                            const landmarks = detectionsWithLandmarks.landmarks;
+                            const leftEye = landmarks.getLeftEye();
+                            const rightEye = landmarks.getRightEye();
+                            const nose = landmarks.getNose();
+                            
+                            // Simple head turn detection based on nose position relative to eyes
+                            const eyeCenter = (leftEye[0].x + rightEye[3].x) / 2;
+                            const nosePos = nose[0].x;
+                            const diff = Math.abs(nosePos - eyeCenter);
+                            const eyeDist = Math.abs(rightEye[3].x - leftEye[0].x);
+                            
+                            // If nose is too far from center of eyes, head is turned
+                            if (diff > eyeDist * 0.35) {
+                                setIsHeadTurned(true);
+                                setHeadTurnViolations(prev => {
+                                    const newCount = prev + 1;
+                                    addLog("head_turn_violation", `Head turned away from screen. Violation ${newCount}`);
+                                    
+                                    const limit = 5;
+                                    if (newCount >= limit) {
+                                        toast.error("CRITICAL: Repeatedly looking away from screen! Submitting exam...", {
+                                            duration: 5000,
+                                            style: { background: '#7f1d1d', color: '#fff' }
+                                        });
+                                        if (finalSubmitRef.current) finalSubmitRef.current();
+                                    } else {
+                                        toast.error(`WARNING: Please look straight at the screen! (${newCount}/${limit})`, {
+                                            duration: 4000,
+                                            icon: '👀',
+                                            style: { background: '#991b1b', color: '#fff', fontWeight: 'bold' }
+                                        });
+                                    }
+                                    return newCount;
+                                });
+                            } else {
+                                setIsHeadTurned(false);
+                            }
+                        }
+                    } catch (err) {
+                        console.error("Head orientation check failed:", err);
+                    }
+                 }
+             }
+             
+             if (finalCount > 0) {
+               console.log(`Face detection SUCCESS: found ${finalCount} faces (SSD: ${detectionsSSD.length}, Tiny: ${detectionsTiny.length})`);
+             }
+             
+             if (finalCount > 1) {
+                 setIsMultiplePersons(true);
+                 
+                 // AGGRESSIVE MULTI-PERSON VIOLATION LOGIC
+                 setMultiPersonViolations(prev => {
+                   const newCount = prev + 1;
+                   addLog("multi_person_violation", `Multiple persons detected (${finalCount} people). Violation ${newCount}`);
+                   
+                   const limit = 3;
+                   if (newCount >= limit) {
+                      toast.error("CRITICAL: Multiple persons detected! Submitting exam immediately...", { 
+                        duration: 5000,
+                        style: { background: '#7f1d1d', color: '#fff' }
+                      });
+                      if (finalSubmitRef.current) {
+                        finalSubmitRef.current();
+                      }
+                   } else {
+                      toast.error(`WARNING: Multiple persons detected! (${newCount}/${limit})`, {
+                        duration: 4000,
+                        icon: '🚨',
+                        style: {
+                          background: '#991b1b',
+                          color: '#fff',
+                          fontWeight: 'bold',
+                          fontSize: '16px',
+                          border: '2px solid white'
+                        }
+                      });
+                   }
+                   return newCount;
+                 });
+
+                 return;
+             } else {
+                 setIsMultiplePersons(false);
+             }
+          } catch (e) {
+             console.error("CRITICAL Face detection error:", e);
+          }
+        }
+      }
+
       if (issue) {
+         console.log("PROCTORING ISSUE DETECTED:", issue);
          setDeviceViolations(prev => {
             const newCount = prev + 1;
             addLog("device_violation", `${issue}. Count: ${newCount}`);
@@ -479,10 +680,10 @@ const Exam = () => {
             return newCount;
          });
       }
-    }, 5000); // Check every 5 seconds
+    }, 1000); // Check every 1 second for near-instant response
 
     return () => clearInterval(interval);
-  }, [exam]);
+  }, [exam, modelsLoaded]);
 
   // 4. TAB SWITCH
   useEffect(() => {
@@ -959,6 +1160,111 @@ const Exam = () => {
         </div>
       )}
 
+      {/* Multiple Persons Detected Overlay */}
+      {isMultiplePersons && (
+        <div className="fixed inset-0 bg-red-900/95 flex flex-col items-center justify-center z-[100] backdrop-blur-md text-white p-6">
+          <div className="bg-white/10 p-8 rounded-2xl border border-red-500/50 flex flex-col items-center max-w-md text-center shadow-2xl animate-bounce">
+            <div className="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-red-900/50">
+              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+            </div>
+            <h2 className="text-3xl font-black mb-4 tracking-tight">MULTIPLE PERSONS DETECTED</h2>
+            <p className="text-red-100 text-lg mb-6 font-medium leading-relaxed">
+              Our system has detected more than one person in the camera feed. This is a proctoring violation.
+            </p>
+            <div className="px-6 py-3 bg-white/20 rounded-xl border border-white/30 text-sm font-bold animate-pulse">
+              Please ensure you are alone to continue the exam.
+            </div>
+            <div className="mt-6 flex flex-col items-center gap-2">
+              <span className="text-red-200 text-xs uppercase tracking-[0.2em] font-black opacity-80">Current Violations</span>
+              <div className="flex gap-2">
+                {[1, 2, 3].map((v) => (
+                  <div 
+                    key={v}
+                    className={`w-12 h-1.5 rounded-full transition-all duration-500 ${
+                      multiPersonViolations >= v ? 'bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)]' : 'bg-white/20'
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="text-2xl font-black mt-1">
+                {multiPersonViolations} <span className="text-white/50 text-lg">/ 3</span>
+              </span>
+            </div>
+            <p className="mt-8 text-red-200 text-[10px] uppercase tracking-widest font-black opacity-60">
+              The exam will automatically submit after the 3rd violation.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Out of Frame Overlay */}
+      {isOutOfFrame && !isMultiplePersons && (
+        <div className="fixed inset-0 bg-red-900/95 flex flex-col items-center justify-center z-[100] backdrop-blur-md text-white p-6">
+          <div className="bg-white/10 p-8 rounded-2xl border border-red-500/50 flex flex-col items-center max-w-md text-center shadow-2xl">
+            <div className="w-20 h-20 bg-amber-600 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-amber-900/50">
+              <Camera size={40} strokeWidth={3} />
+            </div>
+            <h2 className="text-3xl font-black mb-4 tracking-tight">PERSON NOT DETECTED</h2>
+            <p className="text-red-100 text-lg mb-6 font-medium leading-relaxed">
+              We cannot see you in the camera. Please stay in front of the camera at all times.
+            </p>
+            <div className="px-6 py-3 bg-white/20 rounded-xl border border-white/30 text-sm font-bold animate-pulse">
+              Return to the center of the frame to continue.
+            </div>
+            <div className="mt-6 flex flex-col items-center gap-2">
+              <span className="text-red-200 text-xs uppercase tracking-[0.2em] font-black opacity-80">Current Violations</span>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((v) => (
+                  <div 
+                    key={v}
+                    className={`w-8 h-1.5 rounded-full transition-all duration-500 ${
+                      outOfFrameViolations >= v ? 'bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)]' : 'bg-white/20'
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="text-2xl font-black mt-1">
+                {outOfFrameViolations} <span className="text-white/50 text-lg">/ 5</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Head Turn Overlay */}
+      {isHeadTurned && !isMultiplePersons && !isOutOfFrame && (
+        <div className="fixed inset-0 bg-red-900/95 flex flex-col items-center justify-center z-[100] backdrop-blur-md text-white p-6">
+          <div className="bg-white/10 p-8 rounded-2xl border border-red-500/50 flex flex-col items-center max-w-md text-center shadow-2xl">
+            <div className="w-20 h-20 bg-amber-600 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-amber-900/50">
+              <UserIcon size={40} strokeWidth={3} />
+            </div>
+            <h2 className="text-3xl font-black mb-4 tracking-tight">LOOK AT THE SCREEN</h2>
+            <p className="text-red-100 text-lg mb-6 font-medium leading-relaxed">
+              Please look directly at the screen. Turning your head away is a violation.
+            </p>
+            <div className="px-6 py-3 bg-white/20 rounded-xl border border-white/30 text-sm font-bold animate-pulse">
+              Look straight ahead to continue the exam.
+            </div>
+            <div className="mt-6 flex flex-col items-center gap-2">
+              <span className="text-red-200 text-xs uppercase tracking-[0.2em] font-black opacity-80">Current Violations</span>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((v) => (
+                  <div 
+                    key={v}
+                    className={`w-8 h-1.5 rounded-full transition-all duration-500 ${
+                      headTurnViolations >= v ? 'bg-white shadow-[0_0_15px_rgba(255,255,255,0.8)]' : 'bg-white/20'
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="text-2xl font-black mt-1">
+                {headTurnViolations} <span className="text-white/50 text-lg">/ 5</span>
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
       <main className={`flex-1 flex overflow-hidden relative min-h-0`}>
         {/* Left Side: Question Area (Scrollable) */}
@@ -1122,6 +1428,16 @@ const Exam = () => {
                   <Move size={14} className="text-white" />
                 </div>
             </div>
+
+            {/* Face Count Badge - ALWAYS VISIBLE */}
+            {exam?.proctoring?.multiplePersonDetection && (
+              <div className={`absolute bottom-2 left-2 px-2 py-1 rounded-md flex items-center gap-1.5 backdrop-blur-md border shadow-lg transition-all duration-300 ${faceCount > 1 ? 'bg-red-600/90 border-red-400 text-white' : 'bg-black/60 border-white/20 text-white'}`}>
+                <div className={`w-2 h-2 rounded-full ${!modelsLoaded ? 'bg-gray-500' : faceCount > 1 ? 'bg-white animate-pulse shadow-[0_0_8px_#ffffff]' : faceCount === 1 ? 'bg-green-500 shadow-[0_0_8px_#22c55e]' : 'bg-yellow-500 animate-bounce shadow-[0_0_8px_#eab308]'}`}></div>
+                <span className="font-bold tracking-tight text-[10px]">
+                  {!modelsLoaded ? 'AI Loading...' : `${faceCount} ${faceCount === 1 ? 'Person' : 'People'}`}
+                </span>
+              </div>
+            )}
           </div>
         )}
       </main>

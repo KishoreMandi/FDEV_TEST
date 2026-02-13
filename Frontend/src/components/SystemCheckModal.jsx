@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { X, Camera, Mic, AlertCircle, CheckCircle, User as UserIcon } from "lucide-react";
 import toast from "react-hot-toast";
+import * as faceapi from '@vladmandic/face-api';
 
 const SystemCheckModal = ({ open, onClose, onConfirm }) => {
   const videoRef = useRef(null);
@@ -14,6 +15,31 @@ const SystemCheckModal = ({ open, onClose, onConfirm }) => {
   });
   const [error, setError] = useState("");
   const [videoSignalMsg, setVideoSignalMsg] = useState("");
+  const [modelsLoaded, setModelsLoaded] = useState(false);
+
+  useEffect(() => {
+    const loadModels = async () => {
+      try {
+        console.log("SystemCheck: Loading AI models...");
+        const MODEL_URL = "/models";
+        
+        // faceapi in @vladmandic fork handles its own initialization
+        await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+        console.log("SystemCheck: SSD face model loaded");
+        await faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL);
+        console.log("SystemCheck: Tiny face model loaded");
+        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+        console.log("SystemCheck: Landmarks face model loaded");
+        
+        setModelsLoaded(true);
+        console.log("SystemCheck: ALL AI models loaded successfully");
+      } catch (err) {
+        console.error("SystemCheck: Error loading AI models:", err);
+        setError("AI Proctoring models failed to load. Please check your internet or refresh.");
+      }
+    };
+    loadModels();
+  }, []);
 
   function stopStream() {
     if (stream) {
@@ -84,7 +110,7 @@ const SystemCheckModal = ({ open, onClose, onConfirm }) => {
   useEffect(() => {
     let interval;
     if (stream && videoRef.current) {
-      interval = setInterval(() => {
+      interval = setInterval(async () => {
         const video = videoRef.current;
         const canvas = canvasRef.current;
         if (video.readyState === 4 && canvas) {
@@ -104,7 +130,28 @@ const SystemCheckModal = ({ open, onClose, onConfirm }) => {
             if (avgBrightness < 15) {
               setChecks(prev => ({ ...prev, personDetected: false }));
               setVideoSignalMsg("Camera is too dark or covered. Please adjust lighting.");
+            } else if (modelsLoaded) {
+              let faceDetections = [];
+              try {
+                faceDetections = await faceapi.detectAllFaces(video, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.15 }));
+              } catch (e) {
+                faceDetections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.15 }));
+              }
+              
+              const totalCount = faceDetections.length;
+              
+              if (totalCount === 0) {
+                setChecks(prev => ({ ...prev, personDetected: false }));
+                setVideoSignalMsg("No person detected. Please face the camera.");
+              } else if (totalCount > 1) {
+                setChecks(prev => ({ ...prev, personDetected: false }));
+                setVideoSignalMsg("Multiple persons detected. Please ensure you are alone.");
+              } else {
+                setChecks(prev => ({ ...prev, personDetected: true }));
+                setVideoSignalMsg("");
+              }
             } else {
+              // Models not loaded yet, fallback to brightness
               setChecks(prev => ({ ...prev, personDetected: true }));
               setVideoSignalMsg("");
             }
@@ -115,7 +162,7 @@ const SystemCheckModal = ({ open, onClose, onConfirm }) => {
       }, 1000);
     }
     return () => clearInterval(interval);
-  }, [stream]);
+  }, [stream, modelsLoaded]);
 
   if (!open) return null;
 
