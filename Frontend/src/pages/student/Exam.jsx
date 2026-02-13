@@ -42,12 +42,11 @@ const Exam = () => {
   const [headTurnViolations, setHeadTurnViolations] = useState(0);
   const headTurnRef = useRef(false); // Ref to track state without closure issues
   const [outOfFrameViolations, setOutOfFrameViolations] = useState(0);
-  
+  const outOfFrameRef = useRef(false); // Ref to track state without closure issues
   const [isMultiplePersons, setIsMultiplePersons] = useState(false);
   const [isHeadTurned, setIsHeadTurned] = useState(false);
   const [isOutOfFrame, setIsOutOfFrame] = useState(false);
   const [faceCount, setFaceCount] = useState(0);
-  const outOfFrameRef = useRef(false); // Ref to track state without closure issues
   const [isFullScreen, setIsFullScreen] = useState(false);
   const lastFullScreenRef = useRef(false);
   const lastWarningTimeRef = useRef(0);
@@ -546,7 +545,7 @@ const Exam = () => {
              
              try {
                 detectionsSSD = await faceapi.detectAllFaces(videoEl, new faceapi.SsdMobilenetv1Options({ 
-                  minConfidence: 0.12 // EVEN LOWER
+                  minConfidence: 0.4 // Adjusted to be more responsive to side profiles
                 }));
              } catch (err) {
                 console.error("SSD Detection error:", err);
@@ -554,8 +553,8 @@ const Exam = () => {
 
              try {
                 detectionsTiny = await faceapi.detectAllFaces(videoEl, new faceapi.TinyFaceDetectorOptions({ 
-                  inputSize: 512, // LARGER for better detail
-                  scoreThreshold: 0.12 // EVEN LOWER
+                  inputSize: 512, 
+                  scoreThreshold: 0.4 // Adjusted to be more responsive to side profiles
                 }));
              } catch (err) {
                 console.error("Tiny Detection error:", err);
@@ -566,6 +565,7 @@ const Exam = () => {
              setFaceCount(finalCount);
              
              if (finalCount === 0) {
+                 // REMOVED DELAY - TRIGGER INSTANTLY AS REQUESTED
                  if (!outOfFrameRef.current) {
                    setIsOutOfFrame(true);
                    outOfFrameRef.current = true;
@@ -591,63 +591,67 @@ const Exam = () => {
                    });
                  }
              } else {
+                 // Reset IMMEDIATELY if person is detected
                  setIsOutOfFrame(false);
                  outOfFrameRef.current = false;
                  
                  // HEAD ORIENTATION CHECK (If only one person)
                  if (finalCount === 1) {
                     try {
-                        const detectionsWithLandmarks = await faceapi.detectSingleFace(videoEl, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks();
+                        const detectionsWithLandmarks = await faceapi.detectSingleFace(videoEl, new faceapi.TinyFaceDetectorOptions({
+                            scoreThreshold: 0.3 // Lower threshold for landmarks to catch side views better
+                        })).withFaceLandmarks();
+                        
                         if (detectionsWithLandmarks) {
                             const landmarks = detectionsWithLandmarks.landmarks;
-                            
-                            // HEAD TURN DETECTION (Aggressive)
                             const nose = landmarks.getNose();
                             const jaw = landmarks.getJawOutline();
                             const leftJaw = jaw[0];
                             const rightJaw = jaw[16];
                             const nosePos = nose[0];
                             
-                            // Calculate nose position relative to jaw edges
                             const jawWidth = Math.abs(rightJaw.x - leftJaw.x);
                             const noseRelativePos = (nosePos.x - leftJaw.x) / jawWidth;
                             
-                            // If nose is too close to either side of the jaw, the head is turned
-                            // Normal range is around 0.5 (center). 
-                            // < 0.35 (turned right from camera perspective) or > 0.65 (turned left)
-                            if (noseRelativePos < 0.35 || noseRelativePos > 0.65) {
+                            // INSTANT TRIGGER: 0.35 - 0.65 is the "straight" range
+                            if (noseRelativePos < 0.38 || noseRelativePos > 0.62) {
                                 if (!headTurnRef.current) {
                                     setIsHeadTurned(true);
                                     headTurnRef.current = true;
                                     setHeadTurnViolations(prev => {
                                         const newCount = prev + 1;
-                                        addLog("head_turn_violation", `Head turned away (pos: ${noseRelativePos.toFixed(2)}). Violation ${newCount}`);
+                                        addLog("head_turn_violation", `Head turned (pos: ${noseRelativePos.toFixed(2)})`);
                                         
-                                        const limit = 5;
-                                        if (newCount >= limit) {
-                                            toast.error("CRITICAL: Repeatedly looking away from screen! Submitting exam...", {
-                                                duration: 5000,
-                                                style: { background: '#7f1d1d', color: '#fff' }
-                                            });
+                                        if (newCount >= 5) {
+                                            toast.error("CRITICAL: Repeatedly looking away! Submitting...", { duration: 3000 });
                                             if (finalSubmitRef.current) finalSubmitRef.current();
                                         } else {
-                                            toast.error(`WARNING: Please look straight at the screen! (${newCount}/${limit})`, {
-                                                duration: 4000,
+                                            toast.error(`WARNING: Look straight! (${newCount}/5)`, {
+                                                duration: 2000,
                                                 icon: '👀',
-                                                style: { background: '#991b1b', color: '#fff', fontWeight: 'bold' }
+                                                style: { background: '#991b1b', color: '#fff' }
                                             });
                                         }
                                         return newCount;
                                     });
                                 }
                             } else {
-                                setIsHeadTurned(false);
-                                headTurnRef.current = false;
+                                // Clear warning instantly when looking straight
+                                if (headTurnRef.current) {
+                                    setIsHeadTurned(false);
+                                    headTurnRef.current = false;
+                                }
                             }
                         }
                     } catch (err) {
                         console.error("Head orientation check failed:", err);
                     }
+                 } else {
+                     // Reset if not 1 person
+                     if (headTurnRef.current) {
+                         setIsHeadTurned(false);
+                         headTurnRef.current = false;
+                     }
                  }
              }
              
@@ -658,6 +662,7 @@ const Exam = () => {
              }
              
              if (finalCount > 1) {
+                 // REMOVED DELAY - TRIGGER INSTANTLY AS REQUESTED
                  if (!multiPersonRef.current) {
                    setIsMultiplePersons(true);
                    multiPersonRef.current = true;
@@ -692,9 +697,9 @@ const Exam = () => {
                      return newCount;
                    });
                  }
-
                  return;
              } else {
+                 // Reset IMMEDIATELY if count is 1 or 0
                  setIsMultiplePersons(false);
                  multiPersonRef.current = false;
              }

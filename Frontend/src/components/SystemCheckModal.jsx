@@ -114,7 +114,7 @@ const SystemCheckModal = ({ open, onClose, onConfirm }) => {
       interval = setInterval(async () => {
         const video = videoRef.current;
         const canvas = canvasRef.current;
-        if (video.readyState === 4 && canvas) {
+        if (video && video.readyState === 4 && canvas) {
           try {
             const ctx = canvas.getContext("2d", { willReadFrequently: true });
             canvas.width = 100;
