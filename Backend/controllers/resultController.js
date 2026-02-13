@@ -233,7 +233,7 @@ export const autoSaveAnswers = async (req, res) => {
     const attempt = await Result.findOneAndUpdate(
       { examId, studentId, status: "in-progress" },
       { answers: processedAnswers, activityLogs, markedForReview },
-      { upsert: true, new: true }
+      { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
     res.json({
@@ -279,11 +279,37 @@ export const getResultsByExam = async (req, res) => {
     .populate("studentId", "name email employeeId")
     .populate({
       path: "answers.questionId",
-      // Remove select to fetch all fields to avoid missing data issues
     })
-    .sort({ score: -1 });
+    .sort({ score: -1, status: 1 }); // Sort by score and then status (submitted first)
 
-  res.json(results);
+  // FILTER: Keep only one result per student
+  // If multiple results exist, prefer 'submitted' over 'in-progress'
+  const filteredResults = [];
+  const studentMap = new Map();
+
+  results.forEach(res => {
+    const studentIdStr = res.studentId?._id?.toString() || res.studentId?.toString();
+    if (!studentIdStr) return;
+
+    if (!studentMap.has(studentIdStr)) {
+      studentMap.set(studentIdStr, res);
+      filteredResults.push(res);
+    } else {
+      // If we already have a result for this student, check if the current one is 'submitted'
+      // while the stored one is 'in-progress'. If so, replace it.
+      const existingRes = studentMap.get(studentIdStr);
+      if (existingRes.status === 'in-progress' && res.status === 'submitted') {
+        // Find index of existing result and replace it
+        const index = filteredResults.findIndex(r => (r.studentId?._id?.toString() || r.studentId?.toString()) === studentIdStr);
+        if (index !== -1) {
+          filteredResults[index] = res;
+          studentMap.set(studentIdStr, res);
+        }
+      }
+    }
+  });
+
+  res.json(filteredResults);
 };
 
 /* ================= GET SINGLE RESULT BY ID ================= */

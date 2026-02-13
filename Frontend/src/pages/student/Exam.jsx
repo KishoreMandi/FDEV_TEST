@@ -575,24 +575,28 @@ const Exam = () => {
                         const detectionsWithLandmarks = await faceapi.detectSingleFace(videoEl, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks();
                         if (detectionsWithLandmarks) {
                             const landmarks = detectionsWithLandmarks.landmarks;
-                            const leftEye = landmarks.getLeftEye();
-                            const rightEye = landmarks.getRightEye();
+                            
+                            // HEAD TURN DETECTION (Aggressive)
                             const nose = landmarks.getNose();
+                            const jaw = landmarks.getJawOutline();
+                            const leftJaw = jaw[0];
+                            const rightJaw = jaw[16];
+                            const nosePos = nose[0];
                             
-                            // Simple head turn detection based on nose position relative to eyes
-                            const eyeCenter = (leftEye[0].x + rightEye[3].x) / 2;
-                            const nosePos = nose[0].x;
-                            const diff = Math.abs(nosePos - eyeCenter);
-                            const eyeDist = Math.abs(rightEye[3].x - leftEye[0].x);
+                            // Calculate nose position relative to jaw edges
+                            const jawWidth = Math.abs(rightJaw.x - leftJaw.x);
+                            const noseRelativePos = (nosePos.x - leftJaw.x) / jawWidth;
                             
-                            // If nose is too far from center of eyes, head is turned
-                            if (diff > eyeDist * 0.35) {
+                            // If nose is too close to either side of the jaw, the head is turned
+                            // Normal range is around 0.5 (center). 
+                            // < 0.35 (turned right from camera perspective) or > 0.65 (turned left)
+                            if (noseRelativePos < 0.35 || noseRelativePos > 0.65) {
                                 if (!headTurnRef.current) {
                                     setIsHeadTurned(true);
                                     headTurnRef.current = true;
                                     setHeadTurnViolations(prev => {
                                         const newCount = prev + 1;
-                                        addLog("head_turn_violation", `Head turned away from screen. Violation ${newCount}`);
+                                        addLog("head_turn_violation", `Head turned away (pos: ${noseRelativePos.toFixed(2)}). Violation ${newCount}`);
                                         
                                         const limit = 5;
                                         if (newCount >= limit) {
@@ -624,7 +628,7 @@ const Exam = () => {
              
              const now = Date.now();
              if (now - lastFaceLogTimeRef.current >= 5000) {
-               console.log(`[AI MONITOR] Face Count: ${finalCount} (${detectionsSSD.length} SSD, ${detectionsTiny.length} Tiny)`);
+               console.log(`[AI MONITOR] Total Count: ${finalCount} (Face SSD: ${detectionsSSD.length}, Face Tiny: ${detectionsTiny.length}, Body/Parts: ${personCount})`);
                lastFaceLogTimeRef.current = now;
              }
              
