@@ -422,6 +422,19 @@ const Exam = () => {
         setIsFullScreen(isFull);
         if (!isFull) {
             addLog("fullscreen_exit", "Exited fullscreen");
+            setTabSwitches(prev => {
+                const newCount = prev + 1;
+                const limit = exam.proctoring.tabSwitchLimit || 3;
+                if (newCount >= limit) {
+                   toast.error("Max violations reached. Submitting...");
+                   if (finalSubmitRef.current) {
+                     finalSubmitRef.current();
+                   }
+                } else {
+                   toast.error(`Warning: Fullscreen exit detected! (${newCount}/${limit})`);
+                }
+                return newCount;
+            });
         }
       };
       document.addEventListener("fullscreenchange", handleFullScreenChange);
@@ -628,7 +641,7 @@ const Exam = () => {
              
              const now = Date.now();
              if (now - lastFaceLogTimeRef.current >= 5000) {
-               console.log(`[AI MONITOR] Total Count: ${finalCount} (Face SSD: ${detectionsSSD.length}, Face Tiny: ${detectionsTiny.length}, Body/Parts: ${personCount})`);
+               console.log(`[AI MONITOR] Total Count: ${finalCount} (Face SSD: ${detectionsSSD.length}, Face Tiny: ${detectionsTiny.length})`);
                lastFaceLogTimeRef.current = now;
              }
              
@@ -719,25 +732,27 @@ const Exam = () => {
 
       const handleVisibilityChange = () => {
         if (document.hidden) {
-          const newCount = tabSwitches + 1;
-          setTabSwitches(newCount);
-          addLog("tab_switch", `Tab switched. Violation ${newCount}`);
-          
-          const limit = exam.proctoring.tabSwitchLimit || 3;
-          if (newCount >= limit) {
-             toast.error("Max violations reached. Submitting...");
-             if (finalSubmitRef.current) {
-               finalSubmitRef.current();
-             }
-          } else {
-             toast.error(`Warning: Tab switch detected! (${newCount}/${limit})`);
-          }
+          setTabSwitches(prev => {
+            const newCount = prev + 1;
+            addLog("tab_switch", `Tab switched. Violation ${newCount}`);
+            
+            const limit = exam.proctoring.tabSwitchLimit || 3;
+            if (newCount >= limit) {
+               toast.error("Max violations reached. Submitting...");
+               if (finalSubmitRef.current) {
+                 finalSubmitRef.current();
+               }
+            } else {
+               toast.error(`Warning: Tab switch detected! (${newCount}/${limit})`);
+            }
+            return newCount;
+          });
         }
       };
 
       document.addEventListener("visibilitychange", handleVisibilityChange);
       return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, [exam, tabSwitches]);
+  }, [exam]);
 
   // 4. COPY-PASTE BLOCK
   useEffect(() => {
