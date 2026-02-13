@@ -49,6 +49,8 @@ const Exam = () => {
   const [faceCount, setFaceCount] = useState(0);
   const outOfFrameRef = useRef(false); // Ref to track state without closure issues
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const lastFullScreenRef = useRef(false);
+  const lastWarningTimeRef = useRef(0);
   const logsRef = useRef([]);
   const videoRef = useRef(null);
   const mediaStreamRef = useRef(null); // Store stream for monitoring
@@ -419,8 +421,12 @@ const Exam = () => {
     if (exam.proctoring?.fullScreen) {
       handleFullScreenChange = () => {
         const isFull = !!document.fullscreenElement;
-        setIsFullScreen(isFull);
-        if (!isFull) {
+        const now = Date.now();
+        
+        // Only process if the state actually changed from true to false
+        // AND we haven't sent a warning in the last 1000ms (to prevent double-firing)
+        if (lastFullScreenRef.current && !isFull && (now - lastWarningTimeRef.current > 1000)) {
+            lastWarningTimeRef.current = now;
             addLog("fullscreen_exit", "Exited fullscreen");
             setTabSwitches(prev => {
                 const newCount = prev + 1;
@@ -436,8 +442,14 @@ const Exam = () => {
                 return newCount;
             });
         }
+        
+        setIsFullScreen(isFull);
+        lastFullScreenRef.current = isFull;
       };
       document.addEventListener("fullscreenchange", handleFullScreenChange);
+      
+      // Initialize the ref with current state
+      lastFullScreenRef.current = !!document.fullscreenElement;
     }
 
     // CLEANUP
@@ -731,7 +743,9 @@ const Exam = () => {
       if (!exam?.proctoring?.tabSwitch) return;
 
       const handleVisibilityChange = () => {
-        if (document.hidden) {
+        const now = Date.now();
+        if (document.hidden && (now - lastWarningTimeRef.current > 1000)) {
+          lastWarningTimeRef.current = now;
           setTabSwitches(prev => {
             const newCount = prev + 1;
             addLog("tab_switch", `Tab switched. Violation ${newCount}`);
@@ -1113,9 +1127,13 @@ const Exam = () => {
       }
   };
 
-  if (exam?.proctoring?.screenRecording && !hasScreenShare) {
-      return (
-          <div className="fixed inset-0 bg-gray-900 flex flex-col items-center justify-center z-50 text-white">
+  const isLastQuestion = questions.length > 0 && current === questions.length - 1;
+
+  return (
+    <div className={`h-screen bg-gray-50 flex flex-col touch-manipulation ${isFullScreen ? "fullscreen-mode" : ""}`}>
+      {/* Screen Share Required Overlay */}
+      {exam?.proctoring?.screenRecording && !hasScreenShare ? (
+          <div className="fixed inset-0 bg-gray-900 flex flex-col items-center justify-center z-[110] text-white">
               <h2 className="text-2xl font-bold mb-4">Screen Share Required</h2>
               <p className="mb-6">This exam requires screen recording. Please select only Entire screen to proceed.</p>
               <button 
@@ -1125,28 +1143,21 @@ const Exam = () => {
                   Enable Screen Share
               </button>
           </div>
-      );
-  }
-
-  if (exam?.proctoring?.fullScreen && !isFullScreen) {
-      return (
-          <div className="fixed inset-0 bg-gray-900 flex flex-col items-center justify-center z-50 text-white">
-              <h2 className="text-2xl font-bold mb-4">Fullscreen Required</h2>
-              <p className="mb-6">You must be in fullscreen mode to take this exam.</p>
-              <button 
-                  onClick={enterFullScreen}
-                  className="px-6 py-3 bg-blue-600 rounded font-bold hover:bg-blue-700"
-              >
-                  Enter Fullscreen
-              </button>
-          </div>
-      );
-  }
-
-  const isLastQuestion = questions.length > 0 && current === questions.length - 1;
-
-  return (
-    <div className={`h-screen bg-gray-50 flex flex-col touch-manipulation ${isFullScreen ? "fullscreen-mode" : ""}`}>
+      ) : (
+          /* Fullscreen Required Overlay - Only show if Screen Share is already done or not required */
+          exam?.proctoring?.fullScreen && !isFullScreen && (
+              <div className="fixed inset-0 bg-gray-900 flex flex-col items-center justify-center z-[110] text-white">
+                  <h2 className="text-2xl font-bold mb-4">Fullscreen Required</h2>
+                  <p className="mb-6">You must be in fullscreen mode to take this exam.</p>
+                  <button 
+                      onClick={enterFullScreen}
+                      className="px-6 py-3 bg-blue-600 rounded font-bold hover:bg-blue-700"
+                  >
+                      Enter Fullscreen
+                  </button>
+              </div>
+          )
+      )}
       {/* Header */}
       <header className={`h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-50 shadow-sm flex-shrink-0`}>
         <div className="flex items-center gap-4">
