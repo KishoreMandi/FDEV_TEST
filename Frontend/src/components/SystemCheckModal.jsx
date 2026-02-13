@@ -16,6 +16,7 @@ const SystemCheckModal = ({ open, onClose, onConfirm }) => {
   const [error, setError] = useState("");
   const [videoSignalMsg, setVideoSignalMsg] = useState("");
   const [modelsLoaded, setModelsLoaded] = useState(false);
+  const lastFaceLogTimeRef = useRef(0); // For 5-second logging
 
   useEffect(() => {
     const loadModels = async () => {
@@ -139,6 +140,12 @@ const SystemCheckModal = ({ open, onClose, onConfirm }) => {
               }
               
               const totalCount = faceDetections.length;
+
+              const now = Date.now();
+              if (now - lastFaceLogTimeRef.current >= 5000) {
+                console.log(`[SYSTEM CHECK] Face Count: ${totalCount}`);
+                lastFaceLogTimeRef.current = now;
+              }
               
               if (totalCount === 0) {
                 setChecks(prev => ({ ...prev, personDetected: false }));

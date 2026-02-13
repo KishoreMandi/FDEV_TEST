@@ -36,14 +36,18 @@ const Exam = () => {
   // PROCTORING STATE
   const [tabSwitches, setTabSwitches] = useState(0);
   const [_deviceViolations, setDeviceViolations] = useState(0); 
+  const deviceViolationRef = useRef(false); // Ref to track state without closure issues
   const [multiPersonViolations, setMultiPersonViolations] = useState(0);
+  const multiPersonRef = useRef(false); // Ref to track state without closure issues
   const [headTurnViolations, setHeadTurnViolations] = useState(0);
+  const headTurnRef = useRef(false); // Ref to track state without closure issues
   const [outOfFrameViolations, setOutOfFrameViolations] = useState(0);
   
   const [isMultiplePersons, setIsMultiplePersons] = useState(false);
   const [isHeadTurned, setIsHeadTurned] = useState(false);
   const [isOutOfFrame, setIsOutOfFrame] = useState(false);
   const [faceCount, setFaceCount] = useState(0);
+  const outOfFrameRef = useRef(false); // Ref to track state without closure issues
   const [isFullScreen, setIsFullScreen] = useState(false);
   const logsRef = useRef([]);
   const videoRef = useRef(null);
@@ -51,6 +55,7 @@ const Exam = () => {
   const finalSubmitRef = useRef(null); // Ref for finalSubmit to avoid stale closures in intervals
   const canvasRef = useRef(document.createElement("canvas")); // Off-screen canvas for analysis
   const submittingRef = useRef(false);
+  const lastFaceLogTimeRef = useRef(0); // For 5-second logging
   const answersRef = useRef({});
   const markedRef = useRef(new Set());
   const questionsRef = useRef([]);
@@ -536,29 +541,33 @@ const Exam = () => {
              setFaceCount(finalCount);
              
              if (finalCount === 0) {
-                 setIsOutOfFrame(true);
-                 setOutOfFrameViolations(prev => {
-                   const newCount = prev + 1;
-                   addLog("out_of_frame_violation", `No person detected in camera. Violation ${newCount}`);
-                   
-                   const limit = 5;
-                   if (newCount >= limit) {
-                      toast.error("CRITICAL: You are out of camera frame! Submitting exam...", { 
-                        duration: 5000,
-                        style: { background: '#7f1d1d', color: '#fff' }
-                      });
-                      if (finalSubmitRef.current) finalSubmitRef.current();
-                   } else {
-                      toast.error(`WARNING: Please stay inside the camera frame! (${newCount}/${limit})`, {
-                        duration: 4000,
-                        icon: '📷',
-                        style: { background: '#991b1b', color: '#fff', fontWeight: 'bold' }
-                      });
-                   }
-                   return newCount;
-                 });
+                 if (!outOfFrameRef.current) {
+                   setIsOutOfFrame(true);
+                   outOfFrameRef.current = true;
+                   setOutOfFrameViolations(prev => {
+                     const newCount = prev + 1;
+                     addLog("out_of_frame_violation", `No person detected in camera. Violation ${newCount}`);
+                     
+                     const limit = 5;
+                     if (newCount >= limit) {
+                        toast.error("CRITICAL: You are out of camera frame! Submitting exam...", { 
+                          duration: 5000,
+                          style: { background: '#7f1d1d', color: '#fff' }
+                        });
+                        if (finalSubmitRef.current) finalSubmitRef.current();
+                     } else {
+                        toast.error(`WARNING: Please stay inside the camera frame! (${newCount}/${limit})`, {
+                          duration: 4000,
+                          icon: '📷',
+                          style: { background: '#991b1b', color: '#fff', fontWeight: 'bold' }
+                        });
+                     }
+                     return newCount;
+                   });
+                 }
              } else {
                  setIsOutOfFrame(false);
+                 outOfFrameRef.current = false;
                  
                  // HEAD ORIENTATION CHECK (If only one person)
                  if (finalCount === 1) {
@@ -578,29 +587,33 @@ const Exam = () => {
                             
                             // If nose is too far from center of eyes, head is turned
                             if (diff > eyeDist * 0.35) {
-                                setIsHeadTurned(true);
-                                setHeadTurnViolations(prev => {
-                                    const newCount = prev + 1;
-                                    addLog("head_turn_violation", `Head turned away from screen. Violation ${newCount}`);
-                                    
-                                    const limit = 5;
-                                    if (newCount >= limit) {
-                                        toast.error("CRITICAL: Repeatedly looking away from screen! Submitting exam...", {
-                                            duration: 5000,
-                                            style: { background: '#7f1d1d', color: '#fff' }
-                                        });
-                                        if (finalSubmitRef.current) finalSubmitRef.current();
-                                    } else {
-                                        toast.error(`WARNING: Please look straight at the screen! (${newCount}/${limit})`, {
-                                            duration: 4000,
-                                            icon: '👀',
-                                            style: { background: '#991b1b', color: '#fff', fontWeight: 'bold' }
-                                        });
-                                    }
-                                    return newCount;
-                                });
+                                if (!headTurnRef.current) {
+                                    setIsHeadTurned(true);
+                                    headTurnRef.current = true;
+                                    setHeadTurnViolations(prev => {
+                                        const newCount = prev + 1;
+                                        addLog("head_turn_violation", `Head turned away from screen. Violation ${newCount}`);
+                                        
+                                        const limit = 5;
+                                        if (newCount >= limit) {
+                                            toast.error("CRITICAL: Repeatedly looking away from screen! Submitting exam...", {
+                                                duration: 5000,
+                                                style: { background: '#7f1d1d', color: '#fff' }
+                                            });
+                                            if (finalSubmitRef.current) finalSubmitRef.current();
+                                        } else {
+                                            toast.error(`WARNING: Please look straight at the screen! (${newCount}/${limit})`, {
+                                                duration: 4000,
+                                                icon: '👀',
+                                                style: { background: '#991b1b', color: '#fff', fontWeight: 'bold' }
+                                            });
+                                        }
+                                        return newCount;
+                                    });
+                                }
                             } else {
                                 setIsHeadTurned(false);
+                                headTurnRef.current = false;
                             }
                         }
                     } catch (err) {
@@ -609,46 +622,52 @@ const Exam = () => {
                  }
              }
              
-             if (finalCount > 0) {
-               console.log(`Face detection SUCCESS: found ${finalCount} faces (SSD: ${detectionsSSD.length}, Tiny: ${detectionsTiny.length})`);
+             const now = Date.now();
+             if (now - lastFaceLogTimeRef.current >= 5000) {
+               console.log(`[AI MONITOR] Face Count: ${finalCount} (${detectionsSSD.length} SSD, ${detectionsTiny.length} Tiny)`);
+               lastFaceLogTimeRef.current = now;
              }
              
              if (finalCount > 1) {
-                 setIsMultiplePersons(true);
-                 
-                 // AGGRESSIVE MULTI-PERSON VIOLATION LOGIC
-                 setMultiPersonViolations(prev => {
-                   const newCount = prev + 1;
-                   addLog("multi_person_violation", `Multiple persons detected (${finalCount} people). Violation ${newCount}`);
+                 if (!multiPersonRef.current) {
+                   setIsMultiplePersons(true);
+                   multiPersonRef.current = true;
                    
-                   const limit = 3;
-                   if (newCount >= limit) {
-                      toast.error("CRITICAL: Multiple persons detected! Submitting exam immediately...", { 
-                        duration: 5000,
-                        style: { background: '#7f1d1d', color: '#fff' }
-                      });
-                      if (finalSubmitRef.current) {
-                        finalSubmitRef.current();
-                      }
-                   } else {
-                      toast.error(`WARNING: Multiple persons detected! (${newCount}/${limit})`, {
-                        duration: 4000,
-                        icon: '🚨',
-                        style: {
-                          background: '#991b1b',
-                          color: '#fff',
-                          fontWeight: 'bold',
-                          fontSize: '16px',
-                          border: '2px solid white'
+                   // AGGRESSIVE MULTI-PERSON VIOLATION LOGIC
+                   setMultiPersonViolations(prev => {
+                     const newCount = prev + 1;
+                     addLog("multi_person_violation", `Multiple persons detected (${finalCount} people). Violation ${newCount}`);
+                     
+                     const limit = 3;
+                     if (newCount >= limit) {
+                        toast.error("CRITICAL: Multiple persons detected! Submitting exam immediately...", { 
+                          duration: 5000,
+                          style: { background: '#7f1d1d', color: '#fff' }
+                        });
+                        if (finalSubmitRef.current) {
+                          finalSubmitRef.current();
                         }
-                      });
-                   }
-                   return newCount;
-                 });
+                     } else {
+                        toast.error(`WARNING: Multiple persons detected! (${newCount}/${limit})`, {
+                          duration: 4000,
+                          icon: '🚨',
+                          style: {
+                            background: '#991b1b',
+                            color: '#fff',
+                            fontWeight: 'bold',
+                            fontSize: '16px',
+                            border: '2px solid white'
+                          }
+                        });
+                     }
+                     return newCount;
+                   });
+                 }
 
                  return;
              } else {
                  setIsMultiplePersons(false);
+                 multiPersonRef.current = false;
              }
           } catch (e) {
              console.error("CRITICAL Face detection error:", e);
@@ -657,28 +676,33 @@ const Exam = () => {
       }
 
       if (issue) {
-         console.log("PROCTORING ISSUE DETECTED:", issue);
-         setDeviceViolations(prev => {
-            const newCount = prev + 1;
-            addLog("device_violation", `${issue}. Count: ${newCount}`);
-            
-            // "after 2 warnings submit" -> 3rd strike submits
-             if (newCount > 2) { 
-                // Prevent multiple submits if already submitting
-                if (newCount === 3) {
-                  toast.error("Max violations reached. Auto-submitting...");
-                  if (finalSubmitRef.current) {
-                    finalSubmitRef.current();
-                  }
-                }
-             } else {
-               toast.error(`${issue}! Warning ${newCount}/2`, {
-                 duration: 4000, // Show longer
-                 icon: '⚠️',
-               });
-            }
-            return newCount;
-         });
+         if (!deviceViolationRef.current) {
+            console.log("PROCTORING ISSUE DETECTED:", issue);
+            deviceViolationRef.current = true;
+            setDeviceViolations(prev => {
+               const newCount = prev + 1;
+               addLog("device_violation", `${issue}. Count: ${newCount}`);
+               
+               // "after 2 warnings submit" -> 3rd strike submits
+                if (newCount > 2) { 
+                   // Prevent multiple submits if already submitting
+                   if (newCount === 3) {
+                     toast.error("Max violations reached. Auto-submitting...");
+                     if (finalSubmitRef.current) {
+                       finalSubmitRef.current();
+                     }
+                   }
+                } else {
+                  toast.error(`${issue}! Warning ${newCount}/2`, {
+                    duration: 4000, // Show longer
+                    icon: '⚠️',
+                  });
+               }
+               return newCount;
+            });
+         }
+      } else {
+         deviceViolationRef.current = false;
       }
     }, 1000); // Check every 1 second for near-instant response
 
