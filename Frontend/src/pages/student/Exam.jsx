@@ -325,6 +325,40 @@ const Exam = () => {
   }, [examId]);
 
 
+  /* ================= FORCE MEDIA ALWAYS ON (FAST CHECK) ================= */
+  useEffect(() => {
+    // Run a fast check every 100ms to instantly revert any mute attempts
+    const interval = setInterval(() => {
+        // 1. Webcam Stream
+        if (mediaStreamRef.current) {
+            mediaStreamRef.current.getAudioTracks().forEach(track => {
+                if (track.enabled === false) {
+                    track.enabled = true;
+                    console.log("Force-enabled microphone track (Webcam)");
+                }
+            });
+            mediaStreamRef.current.getVideoTracks().forEach(track => {
+                if (track.enabled === false) {
+                    track.enabled = true;
+                    console.log("Force-enabled video track (Webcam)");
+                }
+            });
+        }
+
+        // 2. Screen Share Stream
+        if (screenStreamRef.current) {
+            screenStreamRef.current.getAudioTracks().forEach(track => {
+                if (track.enabled === false) {
+                    track.enabled = true;
+                    console.log("Force-enabled audio track (Screen Share)");
+                }
+            });
+        }
+    }, 100); 
+
+    return () => clearInterval(interval);
+  }, []);
+
   /* ================= STOP MEDIA ================= */
   const stopMediaStream = () => {
     // 1. Stop from Ref
@@ -487,6 +521,15 @@ const Exam = () => {
       } else {
         const videoTrack = stream.getVideoTracks()[0];
         const audioTrack = stream.getAudioTracks()[0];
+
+        // FORCE UNMUTE / ALWAYS ON LOGIC
+        // If the user tries to mute via software controls (enabled=false), we force it back to true.
+        if (videoTrack && !videoTrack.enabled) {
+             videoTrack.enabled = true;
+        }
+        if (audioTrack && !audioTrack.enabled) {
+             audioTrack.enabled = true;
+        }
 
         if (!videoTrack || videoTrack.readyState !== 'live' || !videoTrack.enabled || videoTrack.muted) {
            issue = "Camera is off or blocked";
