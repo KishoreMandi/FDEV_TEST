@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
@@ -38,7 +38,7 @@ const EditExam = () => {
     }
   }
 
-  async function fetchExam() {
+  const fetchExam = useCallback(async () => {
     try {
       const res = await getExamById(id);
       const data = res.data;
@@ -72,7 +72,7 @@ const EditExam = () => {
       toast.error("Failed to load exam details");
       navigate("/admin/manage-exams");
     }
-  }
+  }, [id, navigate]);
 
   async function loadUsers() {
     try {
@@ -93,7 +93,7 @@ const EditExam = () => {
     }, 0);
 
     return () => clearTimeout(timeoutId);
-  }, [id]);
+  }, [id, fetchExam]);
 
   const handleDateChange = (field, value) => {
     const newState = { ...exam, [field]: value };

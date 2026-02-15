@@ -112,6 +112,7 @@ export const submitExam = async (req, res) => {
       score,
     });
   } catch (error) {
+    console.error("Auto-save error:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -203,6 +204,18 @@ export const autoSaveAnswers = async (req, res) => {
     const { examId, answers, activityLogs, markedForReview } = req.body;
     const studentId = req.user.id;
 
+    // Debug logging
+    console.log(`AutoSave Payload for User ${studentId}:`, { 
+      examId, 
+      answersCount: answers?.length, 
+      markedCount: markedForReview?.length,
+      logsCount: activityLogs?.length 
+    });
+
+    if (!examId) {
+       return res.status(400).json({ message: "Missing examId" });
+    }
+
     // 1. Check if exam is already submitted (prevent ghost upserts)
     const alreadySubmitted = await Result.findOne({
       examId,
@@ -217,12 +230,17 @@ export const autoSaveAnswers = async (req, res) => {
       });
     }
 
+    if (!Array.isArray(answers)) {
+       return res.status(400).json({ message: "answers must be an array" });
+    }
+
     // Process answers to ensure selectedOption is a Number for MCQs
-    const questionIds = answers.map(ans => ans.questionId);
+    const questionIds = answers.map(ans => ans.questionId).filter(Boolean);
     const questions = await Question.find({ _id: { $in: questionIds } }).select('type');
     const questionTypeMap = new Map(questions.map(q => [q._id.toString(), q.type]));
 
     const processedAnswers = answers.map(ans => {
+      if (!ans.questionId) return ans; 
       const questionType = questionTypeMap.get(ans.questionId.toString());
       if (questionType === "mcq" && ans.selectedOption !== null && ans.selectedOption !== undefined && ans.selectedOption !== "") {
         return { ...ans, selectedOption: Number(ans.selectedOption) };
@@ -230,9 +248,17 @@ export const autoSaveAnswers = async (req, res) => {
       return ans;
     });
 
+    const updateFields = { answers: processedAnswers };
+    if (activityLogs !== undefined) {
+      updateFields.activityLogs = activityLogs;
+    }
+    if (markedForReview !== undefined) {
+      updateFields.markedForReview = markedForReview;
+    }
+
     const attempt = await Result.findOneAndUpdate(
       { examId, studentId, status: "in-progress" },
-      { answers: processedAnswers, activityLogs, markedForReview },
+      updateFields,
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
@@ -242,7 +268,8 @@ export const autoSaveAnswers = async (req, res) => {
       savedAt: new Date(),
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Auto-save error:", error); // Critical for debugging
+    res.status(500).json({ message: error.message, stack: error.stack });
   }
 };
 

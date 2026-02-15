@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+ import { useEffect, useState, useRef, useCallback } from "react";
 import toast from "react-hot-toast";
 import { Folder, ArrowLeft, Download, Code, List, Plus, Trash2, Maximize2, Minimize2 } from "lucide-react";
 import jsPDF from "jspdf";
@@ -37,14 +37,14 @@ const AddQuestions = () => {
     getExams().then((res) => setExams(res.data));
   }, []);
 
-  async function fetchQuestions() {
+  const fetchQuestions = useCallback(async () => {
     try {
       const res = await getAdminQuestions(examId);
       setQuestionsList(res.data);
     } catch (error) {
       console.error("Failed to fetch questions", error);
     }
-  }
+  }, [examId]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -65,7 +65,7 @@ const AddQuestions = () => {
     }, 0);
 
     return () => clearTimeout(timeoutId);
-  }, [examId, exams]);
+  }, [examId, exams, fetchQuestions]);
 
   const handleOptionChange = (value, index) => {
     // Clear undo history if user manually edits options

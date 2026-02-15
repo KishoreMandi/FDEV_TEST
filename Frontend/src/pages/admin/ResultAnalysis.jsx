@@ -276,7 +276,7 @@ const ResultAnalysis = () => {
                             </div>
                           </div>
                           
-                          <p className="text-sm font-medium text-gray-700 mb-2">Student's Code:</p>
+                          <p className="text-sm font-medium text-gray-700 mb-2">Student&apos;s Code:</p>
                           <pre className="bg-gray-800 text-white p-3 rounded-md text-xs overflow-x-auto min-h-[100px]">
                             <code>{ans?.code || "// No code submitted"}</code>
                           </pre>

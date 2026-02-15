@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "../../api/axiosInstance";
@@ -34,7 +34,7 @@ const Exam = () => {
   const [modelsLoaded, setModelsLoaded] = useState(false);
 
   // PROCTORING STATE
-  const [tabSwitches, setTabSwitches] = useState(0);
+  const [_tabSwitches, setTabSwitches] = useState(0);
   const [_deviceViolations, setDeviceViolations] = useState(0); 
   const deviceViolationRef = useRef(false); // Ref to track state without closure issues
   const [multiPersonViolations, setMultiPersonViolations] = useState(0);
@@ -113,6 +113,44 @@ const Exam = () => {
     questionsRef.current = questions;
   }, [questions]);
 
+  const triggerAutoSave = useCallback(async () => {
+    if (examId && answersRef.current && questionsRef.current.length > 0) {
+      try {
+        const formattedAnswers = Object.entries(answersRef.current).map(([index, ans]) => {
+          const qId = questionsRef.current[index]?._id;
+          if (!qId) return null;
+
+          if (typeof ans === "object" && ans !== null) {
+            // Coding answer
+            return {
+              questionId: qId,
+              ...ans
+            };
+          } else {
+            // MCQ answer
+            return {
+              questionId: qId,
+              selectedOption: ans
+            };
+          }
+        }).filter(Boolean);
+
+        const payload = {
+          examId,
+          answers: formattedAnswers,
+          markedForReview: Array.from(markedRef.current).map(idx => questionsRef.current[idx]?._id).filter(Boolean),
+          activityLogs: logsRef.current
+        };
+        console.log("Auto-save Payload:", payload);
+
+        await autoSave(payload);
+        console.log("Auto-saved successfully!");
+      } catch (error) {
+        console.error("Failed to auto-save:", error);
+      }
+    }
+  }, [examId, answersRef, markedRef, logsRef, questionsRef]);
+
   const addLog = (type, message) => {
     logsRef.current.push({ type, message, timestamp: new Date() });
   };
@@ -141,7 +179,7 @@ const Exam = () => {
       window.removeEventListener("popstate", handlePopState);
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     const html = document.documentElement;
@@ -322,7 +360,7 @@ const Exam = () => {
     };
 
     loadExam();
-  }, [examId]);
+  }, [examId, navigate]);
 
 
   /* ================= FORCE MEDIA ALWAYS ON (FAST CHECK) ================= */
@@ -838,36 +876,7 @@ const Exam = () => {
   }, []);
 
   /* ================= AUTO SAVE ANSWERS ================= */
-  const triggerAutoSave = async () => {
-    try {
-      await autoSave({
-        examId,
-        answers: Object.entries(answersRef.current).flatMap(([index, data]) => {
-          const q = questionsRef.current[index];
-          if (!q) return [];
-          if (q.type === "coding") {
-            return {
-              questionId: q._id,
-              code: data.code,
-              language: data.language,
-              isCorrect: data.isCorrect,
-              testCases: data.testCases,
-            };
-          }
-          return {
-            questionId: q._id,
-            selectedOption: data,
-          };
-        }),
-        markedForReview: Array.from(markedRef.current)
-          .map((idx) => questionsRef.current[idx]?._id)
-          .filter(Boolean),
-        activityLogs: logsRef.current,
-      });
-    } catch (err) {
-      console.error("Auto-save failed", err);
-    }
-  };
+
 
   useEffect(() => {
     if (questions.length === 0) return;
@@ -876,9 +885,8 @@ const Exam = () => {
       // Always auto-save to ensure session heartbeat and timer sync
       triggerAutoSave();
     }, 5000);
-
     return () => clearInterval(interval);
-  }, [questions.length, examId]);
+  }, [questions.length, examId, triggerAutoSave]);
 
   /* ================= HANDLE ACTIONS ================= */
   const handleSelect = (optionIndex) => {
@@ -957,21 +965,12 @@ const Exam = () => {
 
   /* ================= FINAL SUBMIT ================= */
   const finalSubmit = async (type = "manual") => {
+    // Ensure type is a string and not an event object
+    const submissionType = typeof type === 'string' ? type : "manual";
     try {
       if (submittingRef.current) return;
       submittingRef.current = true;
 
-      // Ensure type is a string and not an event object
-      const submissionType = typeof type === 'string' ? type : "manual";
-
-      if (submissionType === "auto") {
-        setIsAutoSubmitting(true);
-        toast.loading("Time's up! Auto-submitting your exam...", { id: "auto-submit" });
-      }
-
-      await triggerAutoSave();
-
-      // 1. Prioritize Answer Submission (Submit answers first)
       const submissionData = {
         examId,
         submissionType,

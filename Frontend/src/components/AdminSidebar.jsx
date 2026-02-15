@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 
 const AdminSidebar = () => {
-  const { user } = useAuth();
+  useAuth();
   const baseClass =
     "flex items-center gap-3 p-3 rounded-lg transition-all duration-200";
 

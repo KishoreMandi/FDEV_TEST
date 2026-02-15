@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { X, Camera, Mic, AlertCircle, CheckCircle, User as UserIcon } from "lucide-react";
 import toast from "react-hot-toast";
 import * as faceapi from '@vladmandic/face-api';
@@ -42,15 +42,17 @@ const SystemCheckModal = ({ open, onClose, onConfirm }) => {
     loadModels();
   }, []);
 
-  function stopStream() {
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-      setStream(null);
-    }
+  const stopStream = useCallback(() => {
+    setStream((currentStream) => {
+      if (currentStream) {
+        currentStream.getTracks().forEach((track) => track.stop());
+      }
+      return null;
+    });
     setChecks({ camera: false, mic: false, personDetected: false, permission: "pending" });
     setError("");
     setVideoSignalMsg("");
-  }
+  }, []);
 
   async function startSystemCheck() {
     try {
@@ -98,13 +100,21 @@ const SystemCheckModal = ({ open, onClose, onConfirm }) => {
       clearTimeout(timeoutId);
       stopStream();
     };
-  }, [open]);
+  }, [open, stopStream]);
 
   useEffect(() => {
-    if (videoRef.current && stream) {
-      videoRef.current.srcObject = stream;
-      videoRef.current.play().catch(e => console.error("Error playing video stream:", e));
+    const videoElement = videoRef.current;
+    if (videoElement && stream) {
+      videoElement.srcObject = stream;
+      videoElement.play().catch(e => console.error("Error playing video stream:", e));
     }
+
+    return () => {
+      if (videoElement) {
+        videoElement.pause();
+        videoElement.srcObject = null;
+      }
+    };
   }, [stream]);
 
   // Video Signal & Person Detection Logic
@@ -135,7 +145,7 @@ const SystemCheckModal = ({ open, onClose, onConfirm }) => {
               let faceDetections = [];
               try {
                 faceDetections = await faceapi.detectAllFaces(video, new faceapi.SsdMobilenetv1Options({ minConfidence: 0.15 }));
-              } catch (e) {
+              } catch (_e) {
                 faceDetections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.15 }));
               }
               

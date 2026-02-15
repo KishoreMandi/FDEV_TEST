@@ -248,7 +248,7 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
       setCode(initialData.code);
       setLanguage(initialData.language);
     }
-  }, [question?._id, initialData]);
+  }, [question, initialData]);
 
   const handleLanguageChange = (e) => {
     const newLang = e.target.value;
@@ -325,24 +325,7 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
     }
   };
 
-  const insertTextAtCursor = (text) => {
-    const editor = editorRef.current;
-    const monaco = monacoRef.current;
-    if (!editor || !monaco) return;
 
-    const position = editor.getPosition();
-    if (!position) return;
-
-    const range = new monaco.Range(
-      position.lineNumber,
-      position.column,
-      position.lineNumber,
-      position.column
-    );
-
-    editor.executeEdits("insert-snippet", [{ range, text }]);
-    editor.focus();
-  };
 
   const registerLanguageHelpers = (monaco) => {
     if (monaco.__ONLINE_EXAM_LANGUAGE_HELPERS__) return;
@@ -381,11 +364,7 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
     LANGUAGES.forEach((l) => register(l.id));
   };
 
-  const handleFormat = async () => {
-    const editor = editorRef.current;
-    if (!editor) return;
-    await editor.getAction("editor.action.formatDocument")?.run();
-  };
+
 
   const handleEditorMount = (editor, monaco) => {
     editorRef.current = editor;
