@@ -221,8 +221,10 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
   const [customOutput, setCustomOutput] = useState(null);
   const editorRef = useRef(null);
   const monacoRef = useRef(null);
-  // Ref to store code for each language to prevent data loss when switching
   const codeMapRef = useRef({});
+  const saveTimeoutRef = useRef(null);
+  // Key to force editor remount on question/language change
+  const [editorKey, setEditorKey] = useState(`${question?._id}-${language}`);
 
   useEffect(() => {
     // Initialize codeMap with initial data if available
@@ -234,21 +236,30 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
   }, [question, initialData]);
 
   useEffect(() => {
-    // Update code if question changes and no saved code exists
+    // Update code if question changes
+    let newCode = "";
+    let newLang = "javascript";
+
     if (!initialData?.code) {
-      const starterCode = question?.codingData?.starterCode || (question?.codingData?.language ? STARTER_CODE[question.codingData.language] : "") || "";
-      setCode(starterCode);
-      setLanguage(question?.codingData?.language || "javascript");
+      newCode = question?.codingData?.starterCode || (question?.codingData?.language ? STARTER_CODE[question.codingData.language] : "") || "";
+      newLang = question?.codingData?.language || "javascript";
       // Clear code map for new question
       codeMapRef.current = {};
       if (question?.codingData?.starterCode) {
         codeMapRef.current[question.codingData.language] = question.codingData.starterCode;
       }
     } else {
-      setCode(initialData.code);
-      setLanguage(initialData.language);
+      newCode = initialData.code;
+      newLang = initialData.language;
     }
-  }, [question, initialData]);
+    
+    setCode(newCode);
+    setLanguage(newLang);
+    // Update editor key to force remount with new default value
+    setEditorKey(`${question?._id}-${newLang}`);
+    
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [question]);
 
   const handleLanguageChange = (e) => {
     const newLang = e.target.value;
@@ -260,17 +271,20 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
     setLanguage(newLang);
     
     // Load code for new language
+    let newCode = "";
     if (codeMapRef.current[newLang]) {
-      setCode(codeMapRef.current[newLang]);
+      newCode = codeMapRef.current[newLang];
     } else {
       // If no saved code, use starter code
-      // If this is the question's original language, prefer admin starter code
       if (newLang === question?.codingData?.language) {
-         setCode(question?.codingData?.starterCode || STARTER_CODE[newLang] || "");
+         newCode = question?.codingData?.starterCode || STARTER_CODE[newLang] || "";
       } else {
-         setCode(STARTER_CODE[newLang] || "");
+         newCode = STARTER_CODE[newLang] || "";
       }
     }
+    setCode(newCode);
+    // Force remount
+    setEditorKey(`${question?._id}-${newLang}`);
   };
 
   const handleRun = async (mode) => {
@@ -450,19 +464,28 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
         {/* Editor Area */}
         <div className="flex-1 min-h-0 relative border-b border-[#3e3e3e]">
           <Editor
+            key={editorKey} // Force remount on question/language change
             height="100%"
             language={language === 'cpp' ? 'cpp' : language === 'c' ? 'c' : language}
             theme="vs-dark"
-            value={code}
+            defaultValue={code} // Use defaultValue for uncontrolled mode
             onMount={handleEditorMount}
             onChange={(value) => {
               setCode(value);
-              onSave({ 
-                code: value, 
-                language, 
-                isCorrect: results?.allPassed || false,
-                testCases: results?.results || []
-              });
+              
+              // Debounce save
+              if (saveTimeoutRef.current) {
+                clearTimeout(saveTimeoutRef.current);
+              }
+              
+              saveTimeoutRef.current = setTimeout(() => {
+                onSave({ 
+                  code: value, 
+                  language, 
+                  isCorrect: results?.allPassed || false,
+                  testCases: results?.results || []
+                });
+              }, 1000); // 1 second debounce
             }}
             options={{
               minimap: { enabled: false },
