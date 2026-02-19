@@ -1,6 +1,12 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { 
+  ArrowLeft, Save, Calendar, Clock, AlertTriangle, 
+  Users, Shield, Eye, Lock, Layout, Video, Monitor, 
+  Mic, MousePointer, XCircle, CheckCircle, ChevronDown,
+  Timer, Hash, Percent, Layers
+} from "lucide-react";
 
 import AdminSidebar from "../../components/AdminSidebar";
 import AdminHeader from "../../components/AdminHeader";
@@ -161,7 +167,7 @@ const EditExam = () => {
       return;
     }
 
-    // Validation for Department Mode (Prevent publishing to empty departments)
+    // Validation for Department Mode
     if (assignmentMode === "department" && exam.isPublished) {
         if (selectedDepartment === "All") {
             if (users.length === 0) {
@@ -169,8 +175,6 @@ const EditExam = () => {
                 return;
             }
         } else {
-            // Check if there are any students in the selected department
-            // We use the same 'users' list which is already filtered for students/employees
             const usersInDept = users.filter(u => (u.department || "General") === selectedDepartment);
             if (usersInDept.length === 0) {
                 toast.error(`No candidates found in '${selectedDepartment}' department. Cannot publish exam.`);
@@ -185,9 +189,7 @@ const EditExam = () => {
         startTime: exam.startTime ? new Date(exam.startTime).toISOString() : null,
         endTime: exam.endTime ? new Date(exam.endTime).toISOString() : null,
         proctoring: exam.proctoring,
-        // If specific, use assignedTo. If department, clear assignedTo.
         assignedTo: assignmentMode === "specific" ? exam.assignedTo : [],
-        // Always save the selected department (even if in specific mode) to preserve metadata
         department: selectedDepartment,
       };
       await updateExam(exam._id, payload);
@@ -199,15 +201,11 @@ const EditExam = () => {
              if (selectedDepartment === "All") {
                  toast.success("Exam published to ALL Departments.");
              } else {
-                 toast.success(`Exam published ONLY to '${selectedDepartment}' Department. (Not visible to others)`);
+                 toast.success(`Exam published ONLY to '${selectedDepartment}' Department.`);
              }
          }
       } else {
-        if (assignmentMode === "specific") {
-            toast.success("Exam updated successfully (Draft - Specific Students)");
-        } else {
-            toast.success(`Exam updated successfully (Draft - ${selectedDepartment})`);
-        }
+        toast.success("Exam updated successfully (Draft)");
       }
       
       navigate("/admin/manage-exams");
@@ -219,346 +217,428 @@ const EditExam = () => {
 
   if (loading) {
     return (
-      <div className="flex">
+      <div className="flex min-h-screen bg-slate-50">
         <AdminSidebar />
-        <div className="ml-64 w-full min-h-screen bg-gray-100 flex items-center justify-center">
-          Loading...
+        <div className="ml-64 w-full flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex">
+    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-900">
       <AdminSidebar />
-      <div className="ml-64 w-full min-h-screen bg-gray-100">
+      <div className="ml-64 w-full flex flex-col">
         <AdminHeader />
 
-        <div className="p-6 max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
+        <div className="flex-1 p-8 max-w-7xl mx-auto w-full">
+          {/* Page Header */}
+          <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
               <button 
                 onClick={() => navigate("/admin/manage-exams")}
-                className="p-2 rounded-full hover:bg-white transition"
+                className="p-3 rounded-xl bg-white border border-slate-200 text-slate-500 hover:text-amber-500 hover:border-amber-500/50 hover:shadow-md transition-all duration-200 group"
               >
-                <svg className="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
+                <ArrowLeft className="w-5 h-5 transform group-hover:-translate-x-1 transition-transform" />
               </button>
-              <h2 className="text-2xl font-bold text-gray-800">Edit Exam</h2>
+              <div>
+                <h2 className="text-3xl font-bold text-slate-900 tracking-tight">Edit Exam</h2>
+                <p className="text-slate-500 text-sm mt-1">Configure exam settings and details</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <div className={`flex items-center gap-2 px-4 py-2 rounded-full border ${
+                 exam.isPublished 
+                   ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
+                   : "bg-slate-100 text-slate-500 border-slate-200"
+               }`}>
+                 <span className={`w-2 h-2 rounded-full ${exam.isPublished ? "bg-emerald-500 animate-pulse" : "bg-slate-400"}`}></span>
+                 <span className="text-sm font-bold uppercase tracking-wider">{exam.isPublished ? "Published" : "Draft"}</span>
+              </div>
+              
+              <button
+                onClick={handleUpdate}
+                className="flex items-center gap-2 px-6 py-3 bg-slate-900 text-white rounded-xl hover:bg-black font-bold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all active:scale-95 border-t border-slate-800"
+              >
+                <Save className="w-4 h-4 text-amber-500" />
+                <span>Save Changes</span>
+              </button>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
-             <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
-               
-               {/* LEFT COLUMN: Basic Info */}
-               <div className="space-y-6">
-                 <h4 className="text-lg font-semibold text-blue-800 border-b pb-2">Basic Details</h4>
-                 
-                 <div className="space-y-4">
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-1">Exam Title</label>
-                     <input
-                       className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                       value={exam.title}
-                       onChange={(e) => setExam({ ...exam, title: e.target.value })}
-                     />
-                   </div>
-
-                   <div className="grid grid-cols-2 gap-4">
-                     <div>
-                       <label className="block text-sm font-medium text-gray-700 mb-1">Duration (min)</label>
-                       <input
-                         type="number"
-                         className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                         value={exam.duration}
-                         onChange={(e) => setExam({ ...exam, duration: e.target.value })}
-                       />
-                     </div>
-                     <div>
-                       <label className="block text-sm font-medium text-gray-700 mb-1">Attempt Limit</label>
-                       <input
-                         type="number"
-                         min="1"
-                         className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                         value={exam.attemptLimit || 1}
-                         onChange={(e) => setExam({ ...exam, attemptLimit: e.target.value })}
-                       />
-                     </div>
-                   </div>
-
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-1">Negative Marking</label>
-                     <input
-                       type="number"
-                       step="0.01"
-                       className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                       value={exam.negativeMarking}
-                       onChange={(e) => setExam({ ...exam, negativeMarking: e.target.value })}
-                     />
-                     <p className="text-xs text-gray-500 mt-1">Example: 0.25 for 1/4th deduction</p>
-                   </div>
-
-                   <div className="grid grid-cols-2 gap-4">
-                     <div>
-                       <label className="block text-sm font-medium text-gray-700 mb-1">Start Time</label>
-                       <input
-                         type="datetime-local"
-                         className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                         value={exam.startTime}
-                         onChange={(e) => handleDateChange("startTime", e.target.value)}
-                       />
-                     </div>
-                     <div>
-                       <label className="block text-sm font-medium text-gray-700 mb-1">End Time</label>
-                       <input
-                         type="datetime-local"
-                         className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                         value={exam.endTime}
-                         onChange={(e) => handleDateChange("endTime", e.target.value)}
-                       />
-                     </div>
-                   </div>
-                   
-                   <div className="flex items-center gap-3 p-4 bg-blue-50 rounded-lg border border-blue-100 mt-4">
-                     <input
-                       type="checkbox"
-                       id="edit-published"
-                       className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
-                       checked={exam.isPublished || false}
-                       onChange={(e) => setExam({ ...exam, isPublished: e.target.checked })}
-                     />
-                     <label htmlFor="edit-published" className="font-medium text-gray-700">Publish Exam</label>
-                   </div>
-                 </div>
-               </div>
-
-               {/* RIGHT COLUMN: Settings & Assignment */}
-               <div className="space-y-6">
-                 
-                 {/* PROCTORING */}
-                 <div>
-                   <h4 className="text-lg font-semibold text-blue-800 border-b pb-2 mb-4">Proctoring Settings</h4>
-                   <div className="bg-gray-50 p-4 rounded-xl border space-y-3">
-                     <div className="grid grid-cols-2 gap-3">
-                       <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-white rounded transition">
-                         <input
-                           type="checkbox"
-                           className="w-4 h-4 text-blue-600 rounded"
-                           checked={exam.proctoring?.webcam}
-                           onChange={(e) => setExam({
-                             ...exam,
-                             proctoring: { ...exam.proctoring, webcam: e.target.checked }
-                           })}
-                         />
-                         <span className="text-gray-700 font-medium">Webcam</span>
-                       </label>
-                       
-                       <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-white rounded transition">
-                         <input
-                           type="checkbox"
-                           className="w-4 h-4 text-blue-600 rounded"
-                           checked={exam.proctoring?.fullScreen}
-                           onChange={(e) => setExam({
-                             ...exam,
-                             proctoring: { ...exam.proctoring, fullScreen: e.target.checked }
-                           })}
-                         />
-                         <span className="text-gray-700 font-medium">Fullscreen</span>
-                       </label>
-
-                       <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-white rounded transition">
-                         <input
-                           type="checkbox"
-                           className="w-4 h-4 text-blue-600 rounded"
-                           checked={exam.proctoring?.screenRecording}
-                           onChange={(e) => setExam({
-                             ...exam,
-                             proctoring: { ...exam.proctoring, screenRecording: e.target.checked }
-                           })}
-                         />
-                         <span className="text-gray-700 font-medium">Screen Rec</span>
-                       </label>
-
-                       <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-white rounded transition">
-                         <input
-                           type="checkbox"
-                           className="w-4 h-4 text-blue-600 rounded"
-                           checked={exam.proctoring?.tabSwitch}
-                           onChange={(e) => setExam({
-                             ...exam,
-                             proctoring: { ...exam.proctoring, tabSwitch: e.target.checked }
-                           })}
-                         />
-                         <span className="text-gray-700 font-medium">Tab Switch</span>
-                       </label>
-
-                       <label className="flex items-center gap-2 cursor-pointer p-2 hover:bg-white rounded transition">
-                         <input
-                           type="checkbox"
-                           className="w-4 h-4 text-blue-600 rounded"
-                           checked={exam.proctoring?.multiplePersonDetection}
-                           onChange={(e) => setExam({
-                             ...exam,
-                             proctoring: { ...exam.proctoring, multiplePersonDetection: e.target.checked }
-                           })}
-                         />
-                         <span className="text-gray-700 font-medium">Multi-Person</span>
-                       </label>
-                     </div>
-
-                     {exam.proctoring?.tabSwitch && (
-                       <div className="mt-2 pt-2 border-t flex items-center gap-3">
-                         <span className="text-sm text-gray-600">Max Violations Allowed:</span>
-                         <input
-                           type="number"
-                           className="w-16 p-1 border rounded text-center font-medium focus:ring-2 focus:ring-blue-500 outline-none"
-                           value={exam.proctoring?.tabSwitchLimit}
-                           onChange={(e) => setExam({
-                             ...exam,
-                             proctoring: { ...exam.proctoring, tabSwitchLimit: Number(e.target.value) }
-                           })}
-                         />
-                       </div>
-                     )}
-                   </div>
-                 </div>
-
-                 {/* ASSIGNMENT */}
-                <div>
-                  <h4 className="text-lg font-semibold text-blue-800 border-b pb-2 mb-4">Assign Candidates</h4>
-                  
-                  {/* Assignment Mode Toggle */}
-                  <div className="flex gap-4 mb-4">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input 
-                        type="radio" 
-                        name="assignmentMode"
-                        value="department"
-                        checked={assignmentMode === "department"}
-                        onChange={() => setAssignmentMode("department")}
-                        className="w-4 h-4 text-blue-600"
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            {/* LEFT COLUMN - MAIN INFO (8 cols) */}
+            <div className="lg:col-span-8 space-y-8">
+              
+              {/* Card 1: Basic Information */}
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3 bg-slate-50/50">
+                  <div className="p-2 bg-amber-100 rounded-lg text-amber-600">
+                    <Layout className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-bold text-lg text-slate-800">Basic Information</h3>
+                </div>
+                
+                <div className="p-6 space-y-6">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Exam Title</label>
+                    <div className="relative">
+                      <input
+                        className="w-full pl-4 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/10 focus:border-amber-500 transition-all outline-none text-slate-900 font-semibold placeholder:text-slate-400"
+                        value={exam.title}
+                        onChange={(e) => setExam({ ...exam, title: e.target.value })}
+                        placeholder="e.g. Advanced Physics Mid-Term"
                       />
-                      <span className="text-gray-700 font-medium">By Department</span>
-                    </label>
-
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input 
-                        type="radio" 
-                        name="assignmentMode"
-                        value="specific"
-                        checked={assignmentMode === "specific"}
-                        onChange={() => setAssignmentMode("specific")}
-                        className="w-4 h-4 text-blue-600"
-                      />
-                      <span className="text-gray-700 font-medium">Specific Students</span>
-                    </label>
+                    </div>
                   </div>
 
-                  {/* DEPARTMENT SELECTOR */}
-                  {assignmentMode === "department" && (
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Select Department</label>
-                      <select
-                        className="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                        value={selectedDepartment}
-                        onChange={(e) => setSelectedDepartment(e.target.value)}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Duration</label>
+                      <div className="relative">
+                        <Timer className="absolute left-3.5 top-3.5 w-5 h-5 text-slate-400" />
+                        <input
+                          type="number"
+                          className="w-full pl-10 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/10 focus:border-amber-500 transition-all outline-none text-slate-900 font-medium"
+                          value={exam.duration}
+                          onChange={(e) => setExam({ ...exam, duration: e.target.value })}
+                        />
+                        <span className="absolute right-4 top-3.5 text-xs font-bold text-slate-400">MIN</span>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Attempts</label>
+                      <div className="relative">
+                        <Hash className="absolute left-3.5 top-3.5 w-5 h-5 text-slate-400" />
+                        <input
+                          type="number"
+                          min="1"
+                          className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/10 focus:border-amber-500 transition-all outline-none text-slate-900 font-medium"
+                          value={exam.attemptLimit || 1}
+                          onChange={(e) => setExam({ ...exam, attemptLimit: e.target.value })}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2 ml-1">Negative Marking</label>
+                      <div className="relative">
+                        <Percent className="absolute left-3.5 top-3.5 w-5 h-5 text-slate-400" />
+                        <input
+                          type="number"
+                          step="0.01"
+                          className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/10 focus:border-amber-500 transition-all outline-none text-slate-900 font-medium"
+                          value={exam.negativeMarking}
+                          onChange={(e) => setExam({ ...exam, negativeMarking: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Schedule */}
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3 bg-slate-50/50">
+                  <div className="p-2 bg-amber-100 rounded-lg text-amber-600">
+                    <Calendar className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-bold text-lg text-slate-800">Schedule & Timing</h3>
+                </div>
+                
+                <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Start Date & Time</label>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Clock className="h-5 w-5 text-slate-400 group-focus-within:text-amber-500 transition-colors" />
+                      </div>
+                      <input
+                        type="datetime-local"
+                        className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/10 focus:border-amber-500 transition-all outline-none text-slate-700 font-medium"
+                        value={exam.startTime}
+                        onChange={(e) => handleDateChange("startTime", e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">End Date & Time</label>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Clock className="h-5 w-5 text-slate-400 group-focus-within:text-amber-500 transition-colors" />
+                      </div>
+                      <input
+                        type="datetime-local"
+                        className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/10 focus:border-amber-500 transition-all outline-none text-slate-700 font-medium"
+                        value={exam.endTime}
+                        onChange={(e) => handleDateChange("endTime", e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: Assignment */}
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3 bg-slate-50/50">
+                  <div className="p-2 bg-amber-100 rounded-lg text-amber-600">
+                    <Users className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-bold text-lg text-slate-800">Candidates & Access</h3>
+                </div>
+                
+                <div className="p-6">
+                  {/* Mode Toggle */}
+                  <div className="flex p-1 bg-slate-100 rounded-xl mb-6 w-full md:w-fit">
+                    {[
+                      { value: 'department', label: 'Department Wise' },
+                      { value: 'specific', label: 'Specific Students' }
+                    ].map((mode) => (
+                      <button
+                        key={mode.value}
+                        onClick={() => setAssignmentMode(mode.value)}
+                        className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${
+                          assignmentMode === mode.value
+                            ? 'bg-white text-slate-900 shadow-sm ring-1 ring-black/5'
+                            : 'text-slate-500 hover:text-slate-700'
+                        }`}
                       >
-                        <option value="All">All Departments</option>
-                        {departments.map((dept) => (
-                          <option key={dept._id} value={dept.name}>
-                            {dept.name}
-                          </option>
-                        ))}
-                      </select>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Exam will be visible to all students in the selected department.
+                        {mode.label}
+                      </button>
+                    ))}
+                  </div>
+
+                  {assignmentMode === "department" ? (
+                    <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                      <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Select Target Department</label>
+                      <div className="relative">
+                        <Layers className="absolute left-3.5 top-3.5 w-5 h-5 text-slate-400" />
+                        <select
+                          className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/10 focus:border-amber-500 transition-all outline-none text-slate-700 font-medium appearance-none cursor-pointer"
+                          value={selectedDepartment}
+                          onChange={(e) => setSelectedDepartment(e.target.value)}
+                        >
+                          <option value="All">All Departments</option>
+                          {departments.map((dept) => (
+                            <option key={dept._id} value={dept.name}>
+                              {dept.name}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute right-4 top-4 w-4 h-4 text-slate-400 pointer-events-none" />
+                      </div>
+                      <p className="text-xs text-slate-500 mt-3 flex items-center gap-1.5">
+                        <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+                        Exam will be accessible to all students in the selected department.
                       </p>
                     </div>
-                  )}
-
-                  {/* SPECIFIC STUDENTS LIST */}
-                  {assignmentMode === "specific" && (
-                  <div className={`bg-gray-50 border rounded-xl overflow-hidden flex flex-col h-64 transition-opacity`}>
-                    <div className="p-2 bg-gray-100 border-b text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                      Select Students
-                    </div>
-                     <div className="overflow-y-auto flex-1 p-2 space-y-2">
-                       {Object.keys(groupedUsers).length === 0 ? (
-                         <div className="h-full flex items-center justify-center text-gray-500 italic">
-                           No candidates found.
-                         </div>
-                       ) : (
-                         Object.entries(groupedUsers).map(([dept, deptUsers]) => (
-                           <div key={dept} className="border rounded-lg bg-white overflow-hidden shadow-sm">
-                             <button
-                               onClick={() => toggleDept(dept)}
-                               className="w-full flex items-center justify-between p-3 bg-gray-100 hover:bg-gray-200 transition text-left"
-                             >
-                               <span className="font-medium text-gray-700">{dept} <span className="text-xs text-gray-500">({deptUsers.length})</span></span>
-                               <svg 
-                                 className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${expandedDepts.includes(dept) ? 'rotate-180' : ''}`} 
-                                 fill="none" stroke="currentColor" viewBox="0 0 24 24"
-                               >
-                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                               </svg>
-                             </button>
-                             
-                             {expandedDepts.includes(dept) && (
-                               <div className="p-2 space-y-1 bg-white border-t animate-in slide-in-from-top-1 duration-200">
-                                 {deptUsers.map((u) => (
-                                   <label 
-                                     key={u._id} 
-                                     className={`flex items-center gap-3 p-2 rounded-md border transition cursor-pointer hover:bg-gray-50 ${
-                                       exam.assignedTo?.includes(u._id) ? 'bg-blue-50 border-blue-200' : 'border-gray-100'
-                                     }`}
-                                   >
-                                     <input
-                                       type="checkbox"
-                                       className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-                                       checked={exam.assignedTo?.includes(u._id)}
-                                       onChange={() => handleUserSelect(u._id)}
-                                     />
-                                     <div className="flex flex-col">
-                                       <span className="font-medium text-gray-800 text-sm">{u.name}</span>
-                                       <span className="text-xs text-gray-500">ID: {u.employeeId || "N/A"}</span>
-                                     </div>
-                                   </label>
-                                 ))}
-                               </div>
-                             )}
+                  ) : (
+                    <div className="border border-slate-200 rounded-xl overflow-hidden flex flex-col h-[400px]">
+                       <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center">
+                         <span className="text-xs font-bold text-slate-500 uppercase">Student Directory</span>
+                         <span className="bg-amber-100 text-amber-700 px-2.5 py-1 rounded-md text-xs font-bold border border-amber-200">
+                           {exam.assignedTo?.length || 0} Selected
+                         </span>
+                       </div>
+                       <div className="flex-1 overflow-y-auto p-2 bg-slate-50/50 custom-scrollbar">
+                         {Object.keys(groupedUsers).length === 0 ? (
+                           <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                             <Users className="w-10 h-10 mb-2 opacity-20" />
+                             <span className="text-sm font-medium">No candidates found</span>
                            </div>
-                         ))
-                       )}
-                     </div>
-                     <div className="p-2 bg-gray-100 border-t text-xs text-center text-gray-500">
-                        {exam.assignedTo?.length > 0 
-                          ? `${exam.assignedTo.length} candidates selected`
-                          : "No candidates selected (Exam will NOT be published)"}
+                         ) : (
+                           <div className="space-y-3">
+                             {Object.entries(groupedUsers).map(([dept, deptUsers]) => (
+                               <div key={dept} className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+                                 <button
+                                   onClick={() => toggleDept(dept)}
+                                   className="w-full flex items-center justify-between p-3 hover:bg-slate-50 transition-colors"
+                                 >
+                                   <div className="flex items-center gap-2">
+                                      <span className="font-bold text-slate-700 text-sm">{dept}</span>
+                                      <span className="px-2 py-0.5 bg-slate-100 text-slate-500 rounded text-xs font-medium">{deptUsers.length}</span>
+                                   </div>
+                                   <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${expandedDepts.includes(dept) ? 'rotate-180' : ''}`} />
+                                 </button>
+                                 
+                                 {expandedDepts.includes(dept) && (
+                                   <div className="border-t border-slate-100 divide-y divide-slate-50">
+                                     {deptUsers.map((u) => (
+                                       <label 
+                                         key={u._id} 
+                                         className={`flex items-center gap-3 p-3 cursor-pointer transition-colors ${
+                                           exam.assignedTo?.includes(u._id) 
+                                             ? 'bg-amber-50/50' 
+                                             : 'hover:bg-slate-50'
+                                         }`}
+                                       >
+                                         <div className={`w-5 h-5 rounded border flex items-center justify-center transition-all ${
+                                           exam.assignedTo?.includes(u._id)
+                                             ? 'bg-amber-500 border-amber-500 text-white'
+                                             : 'bg-white border-slate-300'
+                                         }`}>
+                                           {exam.assignedTo?.includes(u._id) && <CheckCircle className="w-3.5 h-3.5" />}
+                                         </div>
+                                         <input
+                                           type="checkbox"
+                                           className="hidden"
+                                           checked={exam.assignedTo?.includes(u._id) || false}
+                                           onChange={() => handleUserSelect(u._id)}
+                                         />
+                                         <div>
+                                           <p className={`text-sm font-medium ${exam.assignedTo?.includes(u._id) ? 'text-slate-900' : 'text-slate-600'}`}>{u.name}</p>
+                                           <p className="text-[10px] text-slate-400 font-mono">{u.employeeId || "ID: N/A"}</p>
+                                         </div>
+                                       </label>
+                                     ))}
+                                   </div>
+                                 )}
+                               </div>
+                             ))}
+                           </div>
+                         )}
+                       </div>
                     </div>
-                  </div>
                   )}
                 </div>
+              </div>
 
-               </div>
-             </div>
+            </div>
 
-             {/* FOOTER */}
-             <div className="p-6 border-t bg-gray-50 flex justify-end gap-3 rounded-b-2xl">
-               <button
-                 onClick={() => navigate("/admin/manage-exams")}
-                 className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 font-medium transition"
-               >
-                 Cancel
-               </button>
-               <button
-                 onClick={handleUpdate}
-                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-lg hover:shadow-xl transition transform active:scale-95"
-               >
-                 Save Changes
-               </button>
-             </div>
+            {/* RIGHT COLUMN - SETTINGS & ACTIONS (4 cols) */}
+            <div className="lg:col-span-4 space-y-8">
+              
+              {/* Card 4: Status Toggle */}
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+                 <div className="flex items-center justify-between mb-4">
+                   <h3 className="font-bold text-slate-800">Exam Status</h3>
+                   <span className={`text-xs font-bold px-2 py-1 rounded border uppercase ${
+                     exam.isPublished ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-slate-100 text-slate-500 border-slate-200"
+                   }`}>
+                     {exam.isPublished ? "Live" : "Hidden"}
+                   </span>
+                 </div>
+                 
+                 <label className={`relative flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                   exam.isPublished 
+                     ? "border-emerald-500 bg-emerald-50/30" 
+                     : "border-slate-200 bg-slate-50 hover:border-slate-300"
+                 }`}>
+                   <div className="flex items-center gap-3">
+                     <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                       exam.isPublished ? "bg-emerald-100 text-emerald-600" : "bg-slate-200 text-slate-400"
+                     }`}>
+                       <Eye className="w-5 h-5" />
+                     </div>
+                     <div>
+                       <span className={`block text-sm font-bold ${exam.isPublished ? "text-emerald-700" : "text-slate-600"}`}>
+                         {exam.isPublished ? "Published" : "Draft Mode"}
+                       </span>
+                       <span className="text-[10px] text-slate-400 font-medium">
+                         {exam.isPublished ? "Visible to students" : "Hidden from students"}
+                       </span>
+                     </div>
+                   </div>
+                   <input
+                     type="checkbox"
+                     className="sr-only"
+                     checked={exam.isPublished || false}
+                     onChange={(e) => setExam({ ...exam, isPublished: e.target.checked })}
+                   />
+                   <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                     exam.isPublished ? "border-emerald-500 bg-emerald-500 text-white" : "border-slate-300 bg-white"
+                   }`}>
+                     {exam.isPublished && <CheckCircle className="w-4 h-4" />}
+                   </div>
+                 </label>
+              </div>
+
+              {/* Card 5: Proctoring */}
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3 bg-slate-50/50">
+                  <div className="p-2 bg-amber-100 rounded-lg text-amber-600">
+                    <Shield className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-bold text-lg text-slate-800">Proctoring</h3>
+                </div>
+                
+                <div className="p-6 space-y-4">
+                  {[
+                    { id: 'webcam', label: 'Webcam', icon: Video, desc: "Monitor candidate via camera" },
+                    { id: 'fullScreen', label: 'Fullscreen', icon: Monitor, desc: "Force fullscreen mode" },
+                    { id: 'screenRecording', label: 'Screen Rec', icon: Layout, desc: "Record entire screen" },
+                    { id: 'tabSwitch', label: 'Tab Lock', icon: Lock, desc: "Prevent tab switching" },
+                    { id: 'multiplePersonDetection', label: 'AI Monitor', icon: Users, desc: "Detect multiple faces" }
+                  ].map((item) => {
+                    const Icon = item.icon;
+                    const isChecked = exam.proctoring?.[item.id] || false;
+                    return (
+                      <label key={item.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all group ${
+                        isChecked
+                          ? 'bg-amber-50 border-amber-500 shadow-sm'
+                          : 'bg-white border-slate-200 hover:border-slate-300'
+                      }`}>
+                        <div className={`p-2 rounded-lg transition-colors ${
+                          isChecked ? 'bg-amber-500 text-white' : 'bg-slate-100 text-slate-400 group-hover:text-slate-600'
+                        }`}>
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-center">
+                            <span className={`text-sm font-bold ${isChecked ? 'text-slate-900' : 'text-slate-600'}`}>
+                              {item.label}
+                            </span>
+                            {isChecked && <CheckCircle className="w-4 h-4 text-amber-500" />}
+                          </div>
+                          <span className="text-[10px] text-slate-400 leading-tight block mt-0.5">{item.desc}</span>
+                        </div>
+                        <input
+                          type="checkbox"
+                          className="hidden"
+                          checked={isChecked}
+                          onChange={(e) => setExam({
+                            ...exam,
+                            proctoring: { ...exam.proctoring, [item.id]: e.target.checked }
+                          })}
+                        />
+                      </label>
+                    );
+                  })}
+
+                  {exam.proctoring?.tabSwitch && (
+                    <div className="mt-4 pt-4 border-t border-slate-100 animate-in fade-in slide-in-from-top-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Violation Limit</span>
+                        <span className="text-xs font-mono bg-slate-100 px-2 py-0.5 rounded text-slate-600">
+                          {exam.proctoring?.tabSwitchLimit}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1"
+                        max="10"
+                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                        value={exam.proctoring?.tabSwitchLimit}
+                        onChange={(e) => setExam({
+                          ...exam,
+                          proctoring: { ...exam.proctoring, tabSwitchLimit: Number(e.target.value) }
+                        })}
+                      />
+                      <div className="flex justify-between text-[10px] text-slate-400 mt-1 font-medium">
+                        <span>Strict (1)</span>
+                        <span>Lenient (10)</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+            </div>
           </div>
         </div>
       </div>
