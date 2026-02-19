@@ -17,7 +17,10 @@ import {
   Bell,
   User,
   LogOut,
-  LayoutDashboard
+  LayoutDashboard,
+  Mail,
+  Hash,
+  Briefcase
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/auth";
@@ -35,6 +38,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("pending"); // Default to pending as it's most important
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -133,6 +137,12 @@ const Dashboard = () => {
         open={showCheckModal}
         onClose={() => setShowCheckModal(false)}
         onConfirm={handleSystemCheckPass}
+      />
+      
+      <ProfileModal 
+        isOpen={isProfileOpen} 
+        onClose={() => setIsProfileOpen(false)} 
+        user={user} 
       />
       
       {/* MOBILE OVERLAY */}
@@ -242,14 +252,17 @@ const Dashboard = () => {
               </span>
             </button>
 
-            <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-slate-50 border border-slate-200">
+            <button 
+              onClick={() => setIsProfileOpen(true)}
+              className="flex items-center gap-3 px-4 py-2 rounded-full bg-slate-50 border border-slate-200 hover:bg-slate-100 transition-colors cursor-pointer"
+            >
               <div className="relative">
                 <div className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center">
                   <User className="w-5 h-5 text-white" />
                 </div>
                 <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
               </div>
-              <div className="hidden sm:block">
+              <div className="hidden sm:block text-left">
                 <p className="text-sm font-medium text-slate-900">
                   {user?.name}
                 </p>
@@ -257,7 +270,7 @@ const Dashboard = () => {
                   Student
                 </p>
               </div>
-            </div>
+            </button>
 
             <button
               onClick={logout}
@@ -371,6 +384,93 @@ const Dashboard = () => {
 };
 
 
+
+const ProfileModal = ({ isOpen, onClose, user }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200 border border-slate-200">
+        {/* Header - Black and Gold */}
+        <div className="flex items-center justify-between px-6 py-4 bg-slate-950 border-b border-amber-500/20">
+          <div className="flex items-center gap-3">
+             <div className="w-1 h-6 bg-amber-500 rounded-full"></div>
+             <h2 className="text-xl font-bold text-white tracking-wide">Student Profile</h2>
+          </div>
+          <button 
+            onClick={onClose}
+            className="p-2 text-slate-400 hover:text-amber-500 hover:bg-slate-900 rounded-lg transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        
+        <div className="p-6">
+          {/* User Info - Centered or Left? Let's keep left but clean */}
+          <div className="flex items-center gap-5 mb-8">
+            <div className="w-20 h-20 rounded-full bg-slate-950 p-1 flex items-center justify-center border-2 border-amber-500 shadow-lg">
+               <div className="w-full h-full rounded-full bg-slate-900 flex items-center justify-center">
+                  <span className="text-3xl font-bold text-amber-500">
+                    {user?.name?.charAt(0).toUpperCase()}
+                  </span>
+               </div>
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-slate-900">{user?.name}</h3>
+              <div className="flex items-center gap-2 mt-1">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 uppercase tracking-wider border border-amber-200">
+                  {user?.role}
+                </span>
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" title="Active"></span>
+              </div>
+            </div>
+          </div>
+
+          {/* Details Grid */}
+          <div className="space-y-4">
+            {/* Email Card */}
+            <div className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-500/50 transition-colors group">
+              <div className="p-3 bg-white rounded-lg shadow-sm text-slate-400 group-hover:text-amber-500 transition-colors border border-slate-100">
+                <Mail size={20} />
+              </div>
+              <div>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Email Address</p>
+                <p className="text-sm font-semibold text-slate-900 mt-0.5 break-all">{user?.email}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* ID Card */}
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-500/50 transition-colors group">
+                <div className="p-2.5 bg-white rounded-lg shadow-sm text-slate-400 group-hover:text-amber-500 transition-colors border border-slate-100">
+                  <Hash size={18} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Student ID</p>
+                  <p className="text-sm font-semibold text-slate-900 mt-0.5 truncate">{user?.employeeId}</p>
+                </div>
+              </div>
+
+              {/* Dept Card */}
+              <div className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 border border-slate-200 hover:border-amber-500/50 transition-colors group">
+                <div className="p-2.5 bg-white rounded-lg shadow-sm text-slate-400 group-hover:text-amber-500 transition-colors border border-slate-100">
+                  <Briefcase size={18} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Department</p>
+                  <p className="text-sm font-semibold text-slate-900 mt-0.5 truncate">{user?.department}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Footer/Decorative bar */}
+        <div className="h-1.5 w-full bg-gradient-to-r from-slate-900 via-amber-500 to-slate-900"></div>
+      </div>
+    </div>
+  );
+};
 
 const StatCard = ({ title, value, icon, color, trend, trendColor }) => {
   const colors = {
