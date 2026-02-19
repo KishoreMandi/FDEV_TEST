@@ -68,20 +68,7 @@ const AdminSidebar = () => {
         })}
       </nav>
 
-      <div className="px-4 py-4 border-t border-slate-800 text-xs text-slate-400">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex w-2 h-2 rounded-full bg-emerald-500" />
-          <span className="uppercase tracking-[0.16em]">
-            System Status
-          </span>
-        </div>
-        <p className="mt-1 text-slate-300">
-          All systems online
-        </p>
-        <p className="text-[11px] text-slate-500">
-          Last sync: just now
-        </p>
-      </div>
+
     </div>
   );
 };
