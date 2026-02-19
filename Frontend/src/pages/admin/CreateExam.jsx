@@ -7,9 +7,7 @@ import axios from "../../api/axiosInstance";
 import { getDepartments } from "../../api/departmentApi";
 import { 
   FileText, 
-  Clock, 
   AlertCircle, 
-  Users, 
   Calendar, 
   Shield, 
   Camera, 
@@ -49,7 +47,6 @@ const CreateExam = () => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    setIsVisible(true);
     const fetchDepts = async () => {
       try {
         const res = await getDepartments();
@@ -58,7 +55,11 @@ const CreateExam = () => {
         console.error("Failed to fetch departments", err);
       }
     };
-    fetchDepts();
+    const timer = setTimeout(() => {
+      requestAnimationFrame(() => setIsVisible(true));
+      fetchDepts();
+    }, 0);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -150,65 +151,25 @@ const CreateExam = () => {
     { key: 'multiplePersonDetection', label: 'Multi-Person Detection', description: 'Detect multiple faces', icon: UserCheck, color: 'purple' },
   ];
 
-  const colorMap = {
-    pink: {
-      gradient: "from-pink-500 to-rose-500",
-      bg: "from-pink-50 to-rose-50",
-      border: "border-pink-200",
-      text: "text-pink-600",
-      shadow: "shadow-pink-500/20",
-      check: "accent-pink-500"
-    },
-    purple: {
-      gradient: "from-purple-500 to-indigo-500",
-      bg: "from-purple-50 to-indigo-50",
-      border: "border-purple-200",
-      text: "text-purple-600",
-      shadow: "shadow-purple-500/20",
-      check: "accent-purple-500"
-    },
-    blue: {
-      gradient: "from-blue-500 to-cyan-500",
-      bg: "from-blue-50 to-cyan-50",
-      border: "border-blue-200",
-      text: "text-blue-600",
-      shadow: "shadow-blue-500/20",
-      check: "accent-blue-500"
-    }
-  };
-
   return (
-    <div className="flex">
+    <div className="flex bg-slate-100 min-h-screen">
       <AdminSidebar />
 
-      <div className="ml-64 w-full min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 relative overflow-hidden">
-        {/* Animated background elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-pink-200/30 to-purple-200/30 rounded-full blur-3xl animate-float" />
-          <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-blue-200/30 to-pink-200/30 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
-          <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-gradient-to-bl from-purple-200/20 to-blue-200/20 rounded-full blur-2xl animate-float" style={{ animationDelay: '1s' }} />
-        </div>
-
+      <div className="ml-64 flex-1 min-h-screen bg-slate-50">
         <AdminHeader />
 
-        <div className="relative p-6 max-w-4xl mx-auto">
-          {/* Header Section */}
+        <div className="p-6 max-w-4xl mx-auto">
           <div className={`mb-8 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-8'}`}>
             <div className="flex items-center gap-4 mb-2">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500 rounded-2xl blur-lg opacity-50" />
-                <div className="relative p-3 bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500 rounded-2xl shadow-xl">
-                  <FileText className="w-8 h-8 text-white" />
-                </div>
+              <div className="p-3 rounded-2xl bg-slate-900 shadow-md">
+                <FileText className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h2 className="text-3xl font-bold">
-                  <span className="bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">
-                    Create New Exam
-                  </span>
+                <h2 className="text-3xl font-bold text-slate-900">
+                  Create New Exam
                 </h2>
                 <p className="text-gray-500 flex items-center gap-2 mt-1">
-                  <Sparkles className="w-4 h-4 text-purple-400" />
+                  <Sparkles className="w-4 h-4 text-amber-500" />
                   Configure your exam settings and proctoring options
                 </p>
               </div>
@@ -216,19 +177,15 @@ const CreateExam = () => {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Basic Information Card */}
-            <div className={`relative group transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '100ms' }}>
-              <div className="absolute -inset-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-2xl blur-lg opacity-20 group-hover:opacity-30 transition-opacity duration-500" />
-              
-              <div className="relative bg-gradient-to-br from-white via-purple-50/30 to-pink-50/30 rounded-2xl shadow-xl border border-purple-100/50 overflow-hidden">
-                {/* Card Header */}
-                <div className="p-5 border-b border-purple-100 bg-gradient-to-r from-white to-purple-50">
+            <div className={`relative transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '100ms' }}>
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="p-5 border-b border-slate-100 bg-slate-50">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-gradient-to-br from-pink-500 to-purple-500 shadow-lg shadow-purple-500/20">
+                    <div className="p-2 rounded-xl bg-slate-900">
                       <Settings className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold bg-gradient-to-r from-gray-800 via-purple-700 to-pink-700 bg-clip-text text-transparent">
+                      <h3 className="text-lg font-bold text-slate-900">
                         Basic Information
                       </h3>
                       <p className="text-xs text-gray-500">Enter exam details and schedule</p>
@@ -236,57 +193,52 @@ const CreateExam = () => {
                   </div>
                 </div>
 
-                {/* Card Content */}
                 <div className="p-6 space-y-5">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    {/* Exam Title */}
                     <div className="md:col-span-2 group">
                       <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                        <FileText className="w-4 h-4 text-purple-500" />
+                        <FileText className="w-4 h-4 text-slate-500" />
                         Exam Title
                       </label>
                       <input
                         placeholder="Enter exam title..."
-                        className="w-full px-4 py-3 rounded-xl border border-purple-200/50 bg-white/80 backdrop-blur-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-200/50 focus:outline-none transition-all duration-300"
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-200 focus:outline-none transition-all duration-200"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
                         required
                       />
                     </div>
 
-                    {/* Duration */}
                     <div className="group">
                       <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                        <Timer className="w-4 h-4 text-purple-500" />
+                        <Timer className="w-4 h-4 text-slate-500" />
                         Duration (minutes)
                       </label>
                       <input
                         type="number"
                         placeholder="e.g. 60"
-                        className="w-full px-4 py-3 rounded-xl border border-purple-200/50 bg-white/80 backdrop-blur-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-200/50 focus:outline-none transition-all duration-300"
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-200 focus:outline-none transition-all duration-200"
                         value={duration}
                         onChange={(e) => setDuration(e.target.value)}
                         required
                       />
                     </div>
 
-                    {/* Attempt Limit */}
                     <div className="group">
                       <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                        <Hash className="w-4 h-4 text-purple-500" />
+                        <Hash className="w-4 h-4 text-slate-500" />
                         Attempt Limit
                       </label>
                       <input
                         type="number"
                         min="1"
                         placeholder="1"
-                        className="w-full px-4 py-3 rounded-xl border border-purple-200/50 bg-white/80 backdrop-blur-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-200/50 focus:outline-none transition-all duration-300"
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-200 focus:outline-none transition-all duration-200"
                         value={attemptLimit}
                         onChange={(e) => setAttemptLimit(e.target.value)}
                       />
                     </div>
 
-                    {/* Negative Marking */}
                     <div className="group">
                       <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
                         <AlertCircle className="w-4 h-4 text-amber-500" />
@@ -297,20 +249,19 @@ const CreateExam = () => {
                         step="0.01"
                         min="0"
                         placeholder="e.g. 0.25"
-                        className="w-full px-4 py-3 rounded-xl border border-purple-200/50 bg-white/80 backdrop-blur-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-200/50 focus:outline-none transition-all duration-300"
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-200 focus:outline-none transition-all duration-200"
                         value={negativeMarking}
                         onChange={(e) => setNegativeMarking(e.target.value)}
                       />
                     </div>
 
-                    {/* Department */}
                     <div className="group">
                       <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                        <Building className="w-4 h-4 text-purple-500" />
+                        <Building className="w-4 h-4 text-slate-500" />
                         Department
                       </label>
                       <select
-                        className="w-full px-4 py-3 rounded-xl border border-purple-200/50 bg-white/80 backdrop-blur-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-200/50 focus:outline-none transition-all duration-300"
+                        className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-200 focus:outline-none transition-all duration-200"
                         value={selectedDepartment}
                         onChange={(e) => setSelectedDepartment(e.target.value)}
                       >
@@ -324,10 +275,9 @@ const CreateExam = () => {
                     </div>
                   </div>
 
-                  {/* Date/Time Section */}
-                  <div className="pt-4 border-t border-purple-100">
+                  <div className="pt-4 border-t border-slate-200">
                     <div className="flex items-center gap-2 mb-4">
-                      <Calendar className="w-4 h-4 text-purple-500" />
+                      <Calendar className="w-4 h-4 text-slate-500" />
                       <span className="text-sm font-medium text-gray-700">Schedule (Optional)</span>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -335,7 +285,7 @@ const CreateExam = () => {
                         <label className="block text-xs font-medium text-gray-500 mb-1.5">Start Time</label>
                         <input
                           type="datetime-local"
-                          className="w-full px-4 py-3 rounded-xl border border-purple-200/50 bg-white/80 backdrop-blur-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-200/50 focus:outline-none transition-all duration-300"
+                          className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-200 focus:outline-none transition-all duration-200"
                           value={startTime}
                           onChange={(e) => setStartTime(e.target.value)}
                         />
@@ -344,7 +294,7 @@ const CreateExam = () => {
                         <label className="block text-xs font-medium text-gray-500 mb-1.5">End Time</label>
                         <input
                           type="datetime-local"
-                          className="w-full px-4 py-3 rounded-xl border border-purple-200/50 bg-white/80 backdrop-blur-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-200/50 focus:outline-none transition-all duration-300"
+                          className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-200 focus:outline-none transition-all duration-200"
                           value={endTime}
                           onChange={(e) => setEndTime(e.target.value)}
                         />
@@ -355,45 +305,39 @@ const CreateExam = () => {
               </div>
             </div>
 
-            {/* Proctoring Settings Card */}
-            <div className={`relative group transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '200ms' }}>
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl blur-lg opacity-20 group-hover:opacity-30 transition-opacity duration-500" />
-              
-              <div className="relative bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 rounded-2xl shadow-xl border border-blue-100/50 overflow-hidden">
-                {/* Card Header */}
-                <div className="p-5 border-b border-blue-100 bg-gradient-to-r from-white to-blue-50">
+            <div className={`relative transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '200ms' }}>
+              <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="p-5 border-b border-slate-100 bg-slate-50">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 shadow-lg shadow-blue-500/20">
+                    <div className="p-2 rounded-xl bg-slate-900">
                       <Shield className="w-5 h-5 text-white" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold bg-gradient-to-r from-gray-800 via-blue-700 to-purple-700 bg-clip-text text-transparent">
+                      <h3 className="text-lg font-bold text-slate-900">
                         Proctoring & Monitoring
                       </h3>
                       <p className="text-xs text-gray-500">Configure security and monitoring options</p>
                     </div>
-                    <div className="ml-auto flex items-center gap-1 px-3 py-1 rounded-full bg-gradient-to-r from-blue-100 to-purple-100 border border-blue-200">
-                      <Eye className="w-3 h-3 text-purple-500" />
-                      <span className="text-xs font-medium text-purple-600">Advanced</span>
+                    <div className="ml-auto flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 border border-slate-200">
+                      <Eye className="w-3 h-3 text-slate-500" />
+                      <span className="text-xs font-medium text-slate-700">Advanced</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Card Content */}
                 <div className="p-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {proctoringOptions.map((option, index) => {
                       const Icon = option.icon;
-                      const colors = colorMap[option.color];
                       const isChecked = proctoring[option.key];
                       
                       return (
                         <label 
                           key={option.key}
-                          className={`relative group/item cursor-pointer p-4 rounded-xl border-2 transition-all duration-300 ${
+                          className={`relative cursor-pointer p-4 rounded-xl border-2 transition-all duration-200 ${
                             isChecked 
-                              ? `bg-gradient-to-br ${colors.bg} ${colors.border} shadow-lg ${colors.shadow}` 
-                              : 'bg-white border-gray-200 hover:border-purple-300'
+                              ? "bg-slate-50 border-slate-400 shadow-sm" 
+                              : "bg-white border-slate-200 hover:border-slate-400"
                           }`}
                           style={{ animationDelay: `${index * 50}ms` }}
                         >
@@ -406,36 +350,34 @@ const CreateExam = () => {
                           />
                           
                           <div className="flex items-start gap-3">
-                            {/* Icon */}
-                            <div className={`p-2 rounded-lg transition-all duration-300 ${
+                            <div className={`p-2 rounded-lg transition-all duration-200 ${
                               isChecked 
-                                ? `bg-gradient-to-br ${colors.gradient} shadow-lg` 
-                                : 'bg-gray-100'
+                                ? "bg-slate-900" 
+                                : "bg-gray-100"
                             }`}>
-                              <Icon className={`w-5 h-5 transition-colors ${isChecked ? 'text-white' : 'text-gray-400'}`} />
+                              <Icon className={`w-5 h-5 transition-colors ${isChecked ? "text-white" : "text-gray-400"}`} />
                             </div>
                             
                             {/* Content */}
                             <div className="flex-1">
                               <div className="flex items-center gap-2">
-                                <span className={`font-medium transition-colors ${isChecked ? colors.text : 'text-gray-700'}`}>
+                                <span className={`font-medium transition-colors ${isChecked ? "text-slate-900" : "text-gray-700"}`}>
                                   {option.label}
                                 </span>
                                 {isChecked && (
-                                  <CheckCircle2 className={`w-4 h-4 ${colors.text}`} />
+                                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                                 )}
                               </div>
                               <p className="text-xs text-gray-500 mt-0.5">{option.description}</p>
                             </div>
 
-                            {/* Toggle indicator */}
                             <div className={`w-10 h-6 rounded-full transition-all duration-300 ${
                               isChecked 
-                                ? `bg-gradient-to-r ${colors.gradient}` 
-                                : 'bg-gray-200'
+                                ? "bg-slate-900" 
+                                : "bg-gray-200"
                             }`}>
                               <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 mt-0.5 ${
-                                isChecked ? 'translate-x-4.5 ml-0.5' : 'translate-x-0.5'
+                                isChecked ? "translate-x-4.5 ml-0.5" : "translate-x-0.5"
                               }`} />
                             </div>
                           </div>
@@ -444,11 +386,10 @@ const CreateExam = () => {
                     })}
                   </div>
 
-                  {/* Tab Switch Limit */}
                   {proctoring.tabSwitch && (
-                    <div className="mt-4 p-4 rounded-xl bg-gradient-to-r from-pink-50 to-purple-50 border border-pink-200 animate-fade-in-up">
+                    <div className="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200 animate-fade-in-up">
                       <div className="flex items-center gap-4">
-                        <div className="p-2 rounded-lg bg-gradient-to-br from-pink-500 to-purple-500">
+                        <div className="p-2 rounded-lg bg-slate-900">
                           <AlertCircle className="w-4 h-4 text-white" />
                         </div>
                         <div className="flex-1">
@@ -458,7 +399,7 @@ const CreateExam = () => {
                         <input
                           type="number"
                           min="1"
-                          className="w-20 px-3 py-2 rounded-lg border border-pink-200 bg-white focus:border-pink-400 focus:ring-2 focus:ring-pink-200/50 focus:outline-none text-center font-medium"
+                          className="w-20 px-3 py-2 rounded-lg border border-slate-200 bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-200 focus:outline-none text-center font-medium"
                           value={proctoring.tabSwitchLimit}
                           onChange={(e) => setProctoring({ ...proctoring, tabSwitchLimit: Number(e.target.value) })}
                         />
@@ -469,22 +410,16 @@ const CreateExam = () => {
               </div>
             </div>
 
-            {/* Submit Button */}
-            <div className={`relative group transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '300ms' }}>
+            <div className={`relative transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '300ms' }}>
               <button
                 type="submit"
                 disabled={loading}
-                className={`relative w-full overflow-hidden px-8 py-4 rounded-2xl font-semibold text-white transition-all duration-300 transform ${
+                className={`relative w-full px-8 py-4 rounded-2xl font-semibold text-white ${
                   loading 
-                    ? 'bg-gray-400 cursor-not-allowed' 
-                    : 'bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 hover:shadow-2xl hover:shadow-purple-500/30 hover:scale-[1.02] active:scale-[0.98]'
-                }`}
+                    ? "bg-gray-400 cursor-not-allowed" 
+                    : "bg-slate-900 hover:bg-slate-800 cursor-pointer"
+                } transition-colors duration-200`}
               >
-                {/* Button shimmer */}
-                {!loading && (
-                  <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                )}
-                
                 <span className="relative flex items-center justify-center gap-3">
                   {loading ? (
                     <>
@@ -495,7 +430,7 @@ const CreateExam = () => {
                     <>
                       <FileText className="w-5 h-5" />
                       <span>Create Exam as Draft</span>
-                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="w-5 h-5" />
                     </>
                   )}
                 </span>
