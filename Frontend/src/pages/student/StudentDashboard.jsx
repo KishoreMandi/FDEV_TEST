@@ -17,9 +17,7 @@ import {
   Bell,
   User,
   LogOut,
-  Mail,
-  Hash,
-  Briefcase
+  LayoutDashboard
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "../../context/auth";
@@ -148,52 +146,65 @@ const Dashboard = () => {
       {/* SIDEBAR */}
       <aside className={`
         fixed md:relative inset-y-0 left-0 z-30
-        w-72 bg-white border-r border-slate-200 flex flex-col transition-transform duration-300 ease-in-out
+        w-64 bg-slate-950 text-slate-100 border-r border-slate-800 flex flex-col transition-transform duration-300 ease-in-out
         ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
       `}>
-        <div className="p-6 border-b border-slate-100 flex flex-col items-center relative">
+        <div className="px-6 py-5 border-b border-slate-800 relative">
           <button 
             onClick={() => setIsMobileMenuOpen(false)}
-            className="absolute top-4 right-4 p-1 text-slate-400 hover:text-slate-600 md:hidden"
+            className="absolute top-4 right-4 p-1 text-slate-400 hover:text-white md:hidden"
           >
             <X size={20} />
           </button>
-          <div className="relative mb-4 group">
-            <div className="w-20 h-20 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-2xl rotate-3 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-indigo-200 group-hover:rotate-6 transition-transform duration-300">
-              {user?.name?.charAt(0).toUpperCase() || "S"}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center">
+              <span className="text-sm font-semibold tracking-tight text-white">
+                SD
+              </span>
             </div>
-            <div className="absolute -bottom-2 -right-2 bg-white p-1 rounded-full shadow-sm">
-               <div className="w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
-            </div>
-          </div>
-          <h2 className="text-lg font-bold text-slate-800 text-center">{user?.name}</h2>
-          <span className="px-3 py-1 mt-2 bg-slate-100 text-slate-500 text-xs font-semibold rounded-full uppercase tracking-wider">
-            {user?.role}
-          </span>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          <div>
-            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4 px-2">
-              Profile Details
-            </h3>
-            <div className="space-y-1">
-              <ProfileItem icon={<Mail size={16} />} label="Email" value={user?.email} />
-              <ProfileItem icon={<Hash size={16} />} label="ID" value={user?.employeeId} />
-              <ProfileItem icon={<Briefcase size={16} />} label="Dept" value={user?.department} />
+            <div>
+              <h1 className="text-lg font-semibold leading-tight text-white">
+                Student
+              </h1>
+              <p className="text-[11px] text-slate-400 uppercase tracking-[0.16em]">
+                Dashboard
+              </p>
             </div>
           </div>
         </div>
 
-        <div className="p-6 border-t border-slate-100">
-           <button 
-             onClick={logout}
-             className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors duration-200 font-medium group"
-           >
-             <LogOut size={18} className="group-hover:-translate-x-1 transition-transform" />
-             Sign Out
-           </button>
-        </div>
+        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+          {[
+            { id: 'all', icon: LayoutDashboard, label: 'Dashboard' },
+            { id: 'pending', icon: BookOpen, label: 'My Exams' },
+            { id: 'completed', icon: CheckCircle, label: 'History' },
+          ].map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            
+            return (
+              <button
+                key={item.id}
+                onClick={() => {
+                  setActiveTab(item.id);
+                  setIsMobileMenuOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                  isActive
+                    ? "bg-slate-800 text-white"
+                    : "text-slate-400 hover:bg-slate-800/50 hover:text-white"
+                }`}
+              >
+                <Icon size={20} />
+                <span className="font-medium">
+                  {item.label}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+
+
       </aside>
 
       {/* MAIN CONTENT */}
@@ -359,18 +370,7 @@ const Dashboard = () => {
   );
 };
 
-// Sub-components
-const ProfileItem = ({ icon, label, value }) => (
-  <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 transition-colors group cursor-default">
-    <div className="w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-white group-hover:text-indigo-500 group-hover:shadow-sm transition-all">
-      {icon}
-    </div>
-    <div className="flex-1 min-w-0">
-      <p className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-0.5">{label}</p>
-      <p className="text-sm font-medium text-slate-700 truncate" title={value}>{value || "N/A"}</p>
-    </div>
-  </div>
-);
+
 
 const StatCard = ({ title, value, icon, color, trend, trendColor }) => {
   const colors = {
