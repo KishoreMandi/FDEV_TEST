@@ -33,8 +33,14 @@ const AddQuestions = () => {
   const isSmartPasting = useRef(false);
 
   useEffect(() => {
-    setIsVisible(true);
+    const frameId = requestAnimationFrame(() => {
+      setIsVisible(true);
+    });
     getExams().then((res) => setExams(res.data));
+
+    return () => {
+      cancelAnimationFrame(frameId);
+    };
   }, []);
 
   const fetchQuestions = useCallback(async () => {

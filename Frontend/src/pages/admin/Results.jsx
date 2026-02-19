@@ -20,8 +20,14 @@ const Results = () => {
   };
 
   useEffect(() => {
-    setIsVisible(true);
+    const frameId = requestAnimationFrame(() => {
+      setIsVisible(true);
+    });
     getExams().then((res) => setExams(res.data));
+
+    return () => {
+      cancelAnimationFrame(frameId);
+    };
   }, []);
 
   const BASE_URL = "http://localhost:5000";

@@ -63,8 +63,12 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    setIsVisible(true);
     let canceled = false;
+    const frameId = requestAnimationFrame(() => {
+      if (!canceled) {
+        setIsVisible(true);
+      }
+    });
 
     (async () => {
       try {
@@ -89,6 +93,7 @@ const Dashboard = () => {
 
     return () => {
       canceled = true;
+      cancelAnimationFrame(frameId);
     };
   }, [user?.role]);
 
@@ -208,18 +213,10 @@ const Dashboard = () => {
     <div className="flex">
       <AdminSidebar />
 
-      <div className="ml-64 w-full min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 relative overflow-hidden">
-        {/* Animated background elements */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-pink-200/30 to-purple-200/30 rounded-full blur-3xl animate-float" />
-          <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-blue-200/30 to-pink-200/30 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
-          <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-gradient-to-bl from-purple-200/20 to-blue-200/20 rounded-full blur-2xl animate-float" style={{ animationDelay: '1s' }} />
-        </div>
-
+      <div className="ml-64 w-full min-h-screen bg-slate-50">
         <AdminHeader />
 
-        {/* STAT CARDS */}
-        <div className="relative p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="px-6 pt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard title="Total Exams" value={stats.totalExams} icon={FileText} index={0} />
           <StatCard title="Total Students" value={stats.totalStudents} icon={Users} index={1} />
           <StatCard title="Total Attempts" value={stats.totalAttempts} icon={CheckCircle} index={2} />
@@ -236,11 +233,8 @@ const Dashboard = () => {
         {/* PENDING APPROVALS - ADMIN ONLY */}
         {user?.role === "admin" && pendingUsers.length > 0 && (
           <div className={`relative p-6 transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '300ms' }}>
-            <div className="relative group">
-              {/* Glow effect */}
-              <div className="absolute -inset-1 bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 rounded-2xl blur-lg opacity-20 group-hover:opacity-30 transition-opacity duration-500" />
-              
-              <div className="relative bg-gradient-to-br from-white via-amber-50/50 to-orange-50/50 rounded-2xl shadow-xl border border-amber-200/50 overflow-hidden">
+            <div className="relative">
+              <div className="relative bg-white rounded-xl shadow-sm border border-amber-100 overflow-hidden">
                 {/* Header */}
                 <div className="p-4 border-b border-amber-100 bg-gradient-to-r from-amber-50 to-orange-50">
                   <div className="flex items-center gap-3">
@@ -324,11 +318,8 @@ const Dashboard = () => {
         {/* USER MANAGEMENT - ADMIN ONLY */}
         {user?.role === "admin" && (
           <div className={`relative p-6 pt-0 transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '400ms' }}>
-            <div className="relative group">
-              {/* Glow effect */}
-              <div className="absolute -inset-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-2xl blur-lg opacity-15 group-hover:opacity-25 transition-opacity duration-500" />
-              
-              <div className="relative bg-gradient-to-br from-white via-purple-50/30 to-pink-50/30 rounded-2xl shadow-xl border border-purple-100/50 overflow-hidden">
+            <div className="relative">
+              <div className="relative bg-white rounded-xl shadow-sm border border-purple-100 overflow-hidden">
                 {/* Header with search */}
                 <div className="p-4 border-b border-purple-100 bg-gradient-to-r from-white to-purple-50">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -495,11 +486,8 @@ const Dashboard = () => {
 
         {/* RECENT ACTIVITY */}
         <div className={`relative p-6 pt-0 transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '500ms' }}>
-          <div className="relative group">
-            {/* Glow effect */}
-            <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-2xl blur-lg opacity-15 group-hover:opacity-25 transition-opacity duration-500" />
-            
-            <div className="relative bg-gradient-to-br from-white via-blue-50/30 to-purple-50/30 rounded-2xl shadow-xl border border-blue-100/50 overflow-hidden">
+          <div className="relative">
+            <div className="relative bg-white rounded-xl shadow-sm border border-blue-100 overflow-hidden">
               {/* Header */}
               <div className="p-4 border-b border-blue-100 bg-gradient-to-r from-white to-blue-50">
                 <div className="flex items-center gap-3">

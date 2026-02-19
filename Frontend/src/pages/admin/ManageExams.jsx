@@ -32,8 +32,12 @@ const ManageExams = () => {
   }
 
   useEffect(() => {
-    setIsVisible(true);
     let canceled = false;
+    const frameId = requestAnimationFrame(() => {
+      if (!canceled) {
+        setIsVisible(true);
+      }
+    });
 
     (async () => {
       try {
@@ -46,6 +50,7 @@ const ManageExams = () => {
 
     return () => {
       canceled = true;
+      cancelAnimationFrame(frameId);
     };
   }, []);
 

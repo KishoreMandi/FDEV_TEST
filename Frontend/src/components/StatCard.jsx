@@ -34,39 +34,30 @@ const StatCard = ({ title, value, icon: Icon, index = 0 }) => {
     return () => clearInterval(counter);
   }, [isVisible, numericValue]);
 
-  // Card color schemes based on index
   const colorSchemes = [
     {
-      gradient: "from-pink-500 via-purple-500 to-blue-500",
-      bgGradient: "from-pink-50 to-blue-50",
-      iconBg: "bg-gradient-to-br from-pink-500 to-purple-600",
-      shadow: "hover:shadow-pink-500/20",
-      border: "border-pink-200/50",
-      glow: "group-hover:shadow-pink-400/30"
+      accent: "text-indigo-600",
+      accentBg: "bg-indigo-50",
+      border: "border-indigo-100",
+      bar: "bg-indigo-500"
     },
     {
-      gradient: "from-blue-500 via-purple-500 to-pink-500",
-      bgGradient: "from-blue-50 to-pink-50",
-      iconBg: "bg-gradient-to-br from-blue-500 to-purple-600",
-      shadow: "hover:shadow-blue-500/20",
-      border: "border-blue-200/50",
-      glow: "group-hover:shadow-blue-400/30"
+      accent: "text-sky-600",
+      accentBg: "bg-sky-50",
+      border: "border-sky-100",
+      bar: "bg-sky-500"
     },
     {
-      gradient: "from-purple-500 via-pink-500 to-blue-500",
-      bgGradient: "from-purple-50 to-pink-50",
-      iconBg: "bg-gradient-to-br from-purple-500 to-pink-600",
-      shadow: "hover:shadow-purple-500/20",
-      border: "border-purple-200/50",
-      glow: "group-hover:shadow-purple-400/30"
+      accent: "text-emerald-600",
+      accentBg: "bg-emerald-50",
+      border: "border-emerald-100",
+      bar: "bg-emerald-500"
     },
     {
-      gradient: "from-indigo-500 via-blue-500 to-pink-500",
-      bgGradient: "from-indigo-50 to-blue-50",
-      iconBg: "bg-gradient-to-br from-indigo-500 to-blue-600",
-      shadow: "hover:shadow-indigo-500/20",
-      border: "border-indigo-200/50",
-      glow: "group-hover:shadow-indigo-400/30"
+      accent: "text-rose-600",
+      accentBg: "bg-rose-50",
+      border: "border-rose-100",
+      bar: "bg-rose-500"
     }
   ];
 
@@ -75,44 +66,27 @@ const StatCard = ({ title, value, icon: Icon, index = 0 }) => {
   return (
     <div
       className={`group relative overflow-hidden rounded-2xl transition-all duration-500 ease-out
-        ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}
-        bg-gradient-to-br ${scheme.bgGradient} p-6 border ${scheme.border}
-        hover:scale-[1.02] hover:-translate-y-2 shadow-lg ${scheme.shadow} hover:shadow-2xl ${scheme.glow}
-        cursor-pointer`}
+        ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
+        bg-white p-6 border ${scheme.border}
+        hover:-translate-y-1 hover:shadow-md shadow-sm
+        cursor-default`}
     >
-      {/* Animated background gradient */}
-      <div className={`absolute inset-0 bg-gradient-to-r ${scheme.gradient} opacity-0 group-hover:opacity-10 transition-opacity duration-500`} />
-      
-      {/* Animated particles */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className={`absolute -top-4 -right-4 w-24 h-24 bg-gradient-to-br ${scheme.gradient} rounded-full opacity-20 blur-xl group-hover:scale-150 group-hover:opacity-30 transition-all duration-700`} />
-        <div className={`absolute -bottom-4 -left-4 w-20 h-20 bg-gradient-to-br ${scheme.gradient} rounded-full opacity-15 blur-lg group-hover:scale-125 group-hover:opacity-25 transition-all duration-500 delay-100`} />
-      </div>
-
-      {/* Shimmer effect */}
-      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-        <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-      </div>
-
-      {/* Content */}
       <div className="relative z-10 flex items-start justify-between">
         <div className="flex-1">
-          <p className="text-gray-600 text-sm font-medium mb-2 uppercase tracking-wider">
+          <p className="text-slate-500 text-xs font-medium mb-1 uppercase tracking-wide">
             {title}
           </p>
-          <h3 className={`text-4xl font-bold bg-gradient-to-r ${scheme.gradient} bg-clip-text text-transparent`}>
+          <h3 className={`text-3xl font-semibold ${scheme.accent}`}>
             {isVisible && !isNaN(numericValue) ? `${count.toFixed(count % 1 === 0 ? 0 : 1)}${suffix}` : value}
           </h3>
         </div>
         
-        {/* Animated icon container */}
-        <div className={`${scheme.iconBg} p-3 rounded-xl shadow-lg transform group-hover:rotate-12 group-hover:scale-110 transition-all duration-300`}>
-          {Icon && <Icon className="w-6 h-6 text-white" />}
+        <div className={`${scheme.accentBg} text-slate-700 p-3 rounded-full flex items-center justify-center`}>
+          {Icon && <Icon className="w-6 h-6" />}
         </div>
       </div>
 
-      {/* Bottom animated line */}
-      <div className={`absolute bottom-0 left-0 h-1 bg-gradient-to-r ${scheme.gradient} w-0 group-hover:w-full transition-all duration-500`} />
+      <div className={`absolute bottom-0 left-0 h-1 ${scheme.bar} w-full`} />
     </div>
   );
 };
