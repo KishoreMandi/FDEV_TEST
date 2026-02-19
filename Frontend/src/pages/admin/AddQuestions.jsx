@@ -298,54 +298,41 @@ const AddQuestions = () => {
   };
 
   return (
-    <div className={`flex ${isFullscreen ? "w-full h-screen" : ""}`}>
+    <div className={`flex bg-slate-100 ${isFullscreen ? "w-full h-screen" : "min-h-screen"}`}>
       {!isFullscreen && <AdminSidebar />}
 
-      <div className={`${isFullscreen ? "w-full" : "ml-64 w-full"} min-h-screen bg-gradient-to-br from-gray-50 via-purple-50/30 to-pink-50/30 relative overflow-hidden`}>
-        {/* Animated background elements */}
-        {!isFullscreen && (
-          <div className="absolute inset-0 overflow-hidden pointer-events-none">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-pink-200/30 to-purple-200/30 rounded-full blur-3xl animate-float" />
-            <div className="absolute bottom-0 left-0 w-80 h-80 bg-gradient-to-tr from-blue-200/30 to-pink-200/30 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
-            <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-gradient-to-bl from-purple-200/20 to-blue-200/20 rounded-full blur-2xl animate-float" style={{ animationDelay: '1s' }} />
-          </div>
-        )}
-
+      <div className={`${isFullscreen ? "w-full" : "ml-64 flex-1"} min-h-screen bg-slate-50`}>
         {!isFullscreen && <AdminHeader />}
 
-        <div className="relative p-6 max-w-6xl mx-auto">
+        <div className="p-6 max-w-6xl mx-auto">
           {!examId ? (
             // Folder View
             <div className={`transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-              {/* Header */}
               <div className="flex items-center gap-4 mb-8">
                 <button
                   onClick={() => window.history.back()}
-                  className="group p-3 rounded-xl bg-white border border-purple-200 hover:border-pink-400 hover:shadow-lg hover:shadow-pink-200/30 transition-all duration-300"
+                  className="group p-3 rounded-xl bg-white border border-slate-200 hover:border-amber-400 hover:shadow-md hover:shadow-amber-200/40 transition-all duration-200"
                 >
-                  <ArrowLeft className="w-6 h-6 text-gray-600 group-hover:text-pink-500 transition-colors" />
+                  <ArrowLeft className="w-6 h-6 text-gray-600 group-hover:text-amber-500 transition-colors" />
                 </button>
                 <div>
-                  <h2 className="text-3xl font-bold">
-                    <span className="bg-gradient-to-r from-pink-600 via-purple-600 to-blue-600 bg-clip-text text-transparent">
-                      Select Exam Folder
-                    </span>
+                  <h2 className="text-3xl font-bold text-slate-900">
+                    Select Exam Folder
                   </h2>
                   <p className="text-gray-500 flex items-center gap-2 mt-1">
-                    <Sparkles className="w-4 h-4 text-purple-400" />
+                    <Sparkles className="w-4 h-4 text-amber-500" />
                     Choose an exam to manage its questions
                   </p>
                 </div>
               </div>
 
               {exams.length === 0 ? (
-                <div className="relative group">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-gray-300 to-gray-400 rounded-2xl blur-lg opacity-20" />
-                  <div className="relative bg-white rounded-2xl p-12 border border-gray-200 text-center">
-                    <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                      <Folder className="w-10 h-10 text-gray-400" />
+                <div className="relative">
+                  <div className="relative bg-white rounded-2xl p-12 border border-slate-200 text-center shadow-sm">
+                    <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-slate-900 flex items-center justify-center">
+                      <Folder className="w-10 h-10 text-amber-300" />
                     </div>
-                    <p className="text-gray-500 font-medium">No exams found</p>
+                    <p className="text-gray-700 font-medium">No exams found</p>
                     <p className="text-gray-400 text-sm mt-1">Please create an exam first</p>
                   </div>
                 </div>
@@ -358,23 +345,18 @@ const AddQuestions = () => {
                       className="relative group cursor-pointer"
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
-                      <div className="absolute -inset-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-2xl blur-lg opacity-0 group-hover:opacity-30 transition-opacity duration-500" />
-                      
-                      <div className="relative bg-gradient-to-br from-white to-purple-50/50 p-6 rounded-2xl border border-purple-100/50 shadow-lg hover:shadow-xl transition-all duration-300 group-hover:scale-[1.02] overflow-hidden">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-pink-100/50 to-purple-100/50 rounded-full blur-xl group-hover:scale-150 transition-transform duration-500" />
-                        
+                      <div className="relative bg-white p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200">
                         <div className="relative flex flex-col items-center">
-                          <div className="relative mb-4">
-                            <div className="absolute inset-0 bg-gradient-to-br from-pink-500 to-purple-500 rounded-xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity" />
-                            <div className="relative w-16 h-16 bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
-                              <Folder className="w-8 h-8 text-white" />
+                          <div className="mb-4">
+                            <div className="w-16 h-16 rounded-xl bg-slate-900 flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow duration-200">
+                              <Folder className="w-8 h-8 text-amber-300" />
                             </div>
                           </div>
-                          <h3 className="text-lg font-bold text-gray-800 text-center mb-1">{exam.title}</h3>
-                          <p className="text-sm text-purple-500 font-medium">Click to manage questions</p>
+                          <h3 className="text-lg font-bold text-slate-900 text-center mb-1">{exam.title}</h3>
+                          <p className="text-sm text-amber-700 font-medium">Click to manage questions</p>
                           
-                          <div className="mt-3 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
-                            <div className="px-4 py-1.5 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 text-white text-xs font-medium">
+                          <div className="mt-3 opacity-0 group-hover:opacity-100 transform translate-y-1 group-hover:translate-y-0 transition-all duration-200">
+                            <div className="px-4 py-1.5 rounded-full bg-slate-900 text-amber-200 text-xs font-medium">
                               Open Folder
                             </div>
                           </div>
@@ -386,28 +368,24 @@ const AddQuestions = () => {
               )}
             </div>
           ) : (
-            // Question Management View
             <div className={`transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-              {/* Header */}
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                 <button 
                   onClick={() => setExamId("")}
-                  className="group flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-purple-200 hover:border-pink-400 hover:shadow-lg hover:shadow-pink-200/30 transition-all duration-300"
+                  className="group flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-slate-200 hover:border-amber-400 hover:shadow-md hover:shadow-amber-200/40 transition-all duration-200"
                 >
-                  <ArrowLeft className="w-5 h-5 text-gray-600 group-hover:text-pink-500 transition-colors" />
-                  <span className="text-gray-600 group-hover:text-pink-500 font-medium">Back to Exams</span>
+                  <ArrowLeft className="w-5 h-5 text-gray-600 group-hover:text-amber-500 transition-colors" />
+                  <span className="text-gray-700 group-hover:text-amber-600 font-medium">Back to Exams</span>
                 </button>
                 
                 <div className="flex items-center gap-4">
-                  <h2 className="text-2xl font-bold">
-                    <span className="bg-gradient-to-r from-gray-700 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                      {exams.find(e => e._id === examId)?.title}
-                    </span>
+                  <h2 className="text-2xl font-bold text-slate-900">
+                    {exams.find(e => e._id === examId)?.title}
                     <span className="text-gray-400 font-normal ml-2">- Questions</span>
                   </h2>
                   <button
                     onClick={handleDownloadQuestions}
-                    className="group relative overflow-hidden flex items-center gap-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-2 rounded-xl font-medium hover:shadow-lg hover:shadow-green-500/30 transition-all duration-300"
+                    className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-xl font-medium shadow-sm transition-colors duration-200"
                   >
                     <Download className="w-4 h-4" />
                     Download
@@ -416,19 +394,15 @@ const AddQuestions = () => {
               </div>
 
               <div className={`grid ${isFullscreen ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-3"} gap-8`}>
-                {/* Form Section */}
                 <div className={`${isFullscreen ? "col-span-1" : "lg:col-span-1"}`}>
                   <div className="relative group sticky top-6">
-                    <div className="absolute -inset-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-2xl blur-lg opacity-20 group-hover:opacity-30 transition-opacity duration-500" />
-                    
-                    <div className={`relative bg-gradient-to-br from-white via-purple-50/30 to-pink-50/30 rounded-2xl shadow-xl border border-purple-100/50 overflow-hidden ${isPublished ? "opacity-75" : ""}`}>
-                      {/* Card Header */}
-                      <div className="p-5 border-b border-purple-100 bg-gradient-to-r from-white to-purple-50 flex justify-between items-center">
+                    <div className={`relative bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden ${isPublished ? "opacity-75" : ""}`}>
+                      <div className="p-5 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                         <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-xl ${editingId ? 'bg-gradient-to-br from-amber-500 to-orange-500' : 'bg-gradient-to-br from-pink-500 to-purple-500'} shadow-lg`}>
-                            {editingId ? <Edit3 className="w-5 h-5 text-white" /> : <FileText className="w-5 h-5 text-white" />}
+                          <div className={`p-2 rounded-xl ${editingId ? "bg-amber-500" : "bg-slate-900"} text-white`}>
+                            {editingId ? <Edit3 className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
                           </div>
-                          <h3 className="text-lg font-bold bg-gradient-to-r from-gray-800 via-purple-700 to-pink-700 bg-clip-text text-transparent">
+                          <h3 className="text-lg font-bold text-slate-900">
                             {editingId ? "Edit Question" : "Add New Question"}
                           </h3>
                         </div>
@@ -443,7 +417,7 @@ const AddQuestions = () => {
                       </div>
 
                       {isPublished && (
-                        <div className="mx-5 mt-4 p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200">
+                        <div className="mx-5 mt-4 p-4 rounded-xl bg-amber-50 border border-amber-200">
                           <div className="flex items-center gap-2 text-amber-700">
                             <AlertCircle className="w-5 h-5" />
                             <span className="font-bold">Exam Published</span>
@@ -453,15 +427,14 @@ const AddQuestions = () => {
                       )}
 
                       <form onSubmit={handleSubmit} className={`p-5 space-y-5 ${isPublished ? "pointer-events-none" : ""}`}>
-                        {/* Type Toggle */}
-                        <div className="flex gap-2 p-1 bg-gradient-to-r from-gray-100 to-purple-100 rounded-xl">
+                        <div className="flex gap-2 p-1 bg-slate-100 rounded-xl">
                           <button
                             type="button"
                             onClick={() => setType("mcq")}
-                            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all duration-300 ${
+                            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all duration-200 ${
                               type === "mcq" 
-                                ? "bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg" 
-                                : "text-gray-500 hover:text-gray-700"
+                                ? "bg-slate-900 text-white shadow-sm" 
+                                : "text-gray-600 hover:text-gray-900"
                             }`}
                           >
                             <List className="w-4 h-4" />
@@ -470,10 +443,10 @@ const AddQuestions = () => {
                           <button
                             type="button"
                             onClick={() => setType("coding")}
-                            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all duration-300 ${
+                            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all duration-200 ${
                               type === "coding" 
-                                ? "bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg" 
-                                : "text-gray-500 hover:text-gray-700"
+                                ? "bg-slate-900 text-white shadow-sm" 
+                                : "text-gray-600 hover:text-gray-900"
                             }`}
                           >
                             <Code className="w-4 h-4" />
@@ -481,15 +454,14 @@ const AddQuestions = () => {
                           </button>
                         </div>
 
-                        {/* Question Text */}
                         <div className="group">
                           <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                            <FileText className="w-4 h-4 text-purple-500" />
+                            <FileText className="w-4 h-4 text-amber-500" />
                             Question Text
                           </label>
                           <textarea
                             placeholder={type === "mcq" ? "Enter your question... (Paste question + 4 options to auto-fill)" : "Enter coding problem description..."}
-                            className="w-full px-4 py-3 rounded-xl border border-purple-200/50 bg-white/80 backdrop-blur-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-200/50 focus:outline-none transition-all duration-300 resize-none"
+                            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-200 focus:outline-none transition-all duration-200 resize-none"
                             rows="3"
                             value={question}
                             onChange={handleQuestionChange}
@@ -500,19 +472,18 @@ const AddQuestions = () => {
                         </div>
 
                         {type === "mcq" ? (
-                          /* MCQ Options */
                           <div className="space-y-3">
                             <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                              <CheckCircle className="w-4 h-4 text-purple-500" />
+                              <CheckCircle className="w-4 h-4 text-amber-500" />
                               Options (Select Correct)
                             </label>
                             {options.map((opt, index) => (
                               <div 
                                 key={index} 
-                                className={`group/option flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-300 ${
+                                className={`group/option flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-200 ${
                                   correctOption === index 
-                                    ? 'border-green-300 bg-gradient-to-r from-green-50 to-emerald-50 shadow-lg shadow-green-200/30' 
-                                    : 'border-purple-200/50 bg-white hover:border-purple-300'
+                                    ? "border-emerald-300 bg-emerald-50 shadow-sm" 
+                                    : "border-slate-200 bg-white hover:border-slate-400"
                                 }`}
                               >
                                 <input
@@ -524,8 +495,8 @@ const AddQuestions = () => {
                                 />
                                 <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold ${
                                   correctOption === index 
-                                    ? 'bg-gradient-to-br from-green-500 to-emerald-500 text-white' 
-                                    : 'bg-gradient-to-br from-purple-100 to-pink-100 text-purple-600'
+                                    ? "bg-emerald-500 text-white" 
+                                    : "bg-slate-100 text-slate-600"
                                 }`}>
                                   {String.fromCharCode(65 + index)}
                                 </div>
@@ -543,18 +514,16 @@ const AddQuestions = () => {
                             ))}
                           </div>
                         ) : (
-                          /* Coding Fields */
                           <div className="space-y-5">
-                            {/* Language */}
                             <div className="group">
                               <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                                <Terminal className="w-4 h-4 text-purple-500" />
+                                <Terminal className="w-4 h-4 text-amber-500" />
                                 Programming Language
                               </label>
                               <select
                                 value={language}
                                 onChange={(e) => setLanguage(e.target.value)}
-                                className="w-full px-4 py-3 rounded-xl border border-purple-200/50 bg-white/80 focus:border-purple-400 focus:ring-2 focus:ring-purple-200/50 focus:outline-none transition-all duration-300"
+                                className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-200 focus:outline-none transition-all duration-200"
                               >
                                 <option value="javascript">JavaScript</option>
                                 <option value="typescript">TypeScript</option>
@@ -571,13 +540,12 @@ const AddQuestions = () => {
                               </select>
                             </div>
 
-                            {/* Starter Code */}
                             <div className="group">
                               <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-2">
-                                <Code className="w-4 h-4 text-purple-500" />
+                                <Code className="w-4 h-4 text-amber-500" />
                                 Starter Code
                               </label>
-                              <div className={`border border-purple-200/50 rounded-xl overflow-hidden shadow-lg ${isFullscreen ? "h-[calc(100vh-500px)]" : "h-48"}`}>
+                              <div className={`border border-slate-200 rounded-xl overflow-hidden shadow-sm ${isFullscreen ? "h-[calc(100vh-500px)]" : "h-48"}`}>
                                 <Editor
                                   height="100%"
                                   language={language}
@@ -595,17 +563,16 @@ const AddQuestions = () => {
                               </div>
                             </div>
 
-                            {/* Test Cases */}
                             <div className="space-y-3">
                               <div className="flex justify-between items-center">
                                 <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                                  <Settings className="w-4 h-4 text-purple-500" />
+                                  <Settings className="w-4 h-4 text-amber-500" />
                                   Test Cases
                                 </label>
                                 <button
                                   type="button"
                                   onClick={handleAddTestCase}
-                                  className="flex items-center gap-1 text-sm font-medium text-purple-600 hover:text-purple-800 px-3 py-1.5 rounded-lg hover:bg-purple-100 transition-all duration-200"
+                                  className="flex items-center gap-1 text-sm font-medium text-amber-700 hover:text-amber-900 px-3 py-1.5 rounded-lg hover:bg-amber-50 transition-all duration-200"
                                 >
                                   <Plus className="w-4 h-4" />
                                   Add
@@ -613,7 +580,7 @@ const AddQuestions = () => {
                               </div>
                               
                               {testCases.map((tc, index) => (
-                                <div key={index} className="relative group/tc p-4 rounded-xl bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 space-y-3">
+                                <div key={index} className="relative group/tc p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
                                   <button
                                     type="button"
                                     onClick={() => handleRemoveTestCase(index)}
@@ -624,14 +591,14 @@ const AddQuestions = () => {
                                   </button>
                                   
                                   <div className="flex items-center gap-2 text-xs font-medium text-blue-600 mb-2">
-                                    <span className="px-2 py-0.5 rounded-full bg-blue-100">Test Case {index + 1}</span>
+                                    <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">Test Case {index + 1}</span>
                                   </div>
                                   
                                   <div>
                                     <label className="block text-xs font-medium text-gray-500 mb-1">Input (stdin)</label>
                                     <textarea
                                       placeholder="Input..."
-                                      className="w-full px-3 py-2 rounded-lg border border-blue-200/50 bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-200/50 focus:outline-none text-sm transition-all duration-200"
+                                      className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-200 focus:outline-none text-sm transition-all duration-200"
                                       rows="2"
                                       value={tc.input}
                                       onChange={(e) => handleTestCaseChange(index, "input", e.target.value)}
@@ -641,7 +608,7 @@ const AddQuestions = () => {
                                     <label className="block text-xs font-medium text-gray-500 mb-1">Expected Output</label>
                                     <textarea
                                       placeholder="Expected output..."
-                                      className="w-full px-3 py-2 rounded-lg border border-blue-200/50 bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-200/50 focus:outline-none text-sm transition-all duration-200"
+                                      className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-200 focus:outline-none text-sm transition-all duration-200"
                                       rows="2"
                                       value={tc.expectedOutput}
                                       onChange={(e) => handleTestCaseChange(index, "expectedOutput", e.target.value)}
@@ -653,7 +620,7 @@ const AddQuestions = () => {
                                       type="checkbox"
                                       checked={tc.isHidden}
                                       onChange={(e) => handleTestCaseChange(index, "isHidden", e.target.checked)}
-                                      className="w-4 h-4 text-purple-600 focus:ring-purple-500 rounded"
+                                      className="w-4 h-4 text-amber-600 focus:ring-amber-500 rounded"
                                     />
                                     <span className="text-sm text-gray-600">Hidden Test Case</span>
                                   </label>
@@ -663,14 +630,12 @@ const AddQuestions = () => {
                           </div>
                         )}
 
-                        {/* Submit Buttons */}
-                        <div className="flex gap-3 pt-4 border-t border-purple-100">
+                        <div className="flex gap-3 pt-4 border-t border-slate-100">
                           <button
                             type="submit"
-                            className="flex-1 relative overflow-hidden px-6 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-300 group/btn"
+                            className="flex-1 px-6 py-3 rounded-xl font-semibold text-white bg-slate-900 hover:bg-slate-800 transition-colors duration-200"
                           >
-                            <div className="absolute inset-0 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-                            <span className="relative flex items-center justify-center gap-2">
+                            <span className="flex items-center justify-center gap-2">
                               {editingId ? (
                                 <>
                                   <CheckCircle className="w-5 h-5" />
@@ -703,39 +668,36 @@ const AddQuestions = () => {
                 {/* Questions List Section */}
                 <div className={`${isFullscreen ? "col-span-1" : "lg:col-span-2"} space-y-4`}>
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 shadow-lg">
-                      <Eye className="w-5 h-5 text-white" />
+                    <div className="p-2 rounded-xl bg-slate-900">
+                      <Eye className="w-5 h-5 text-amber-300" />
                     </div>
-                    <h3 className="text-lg font-bold bg-gradient-to-r from-gray-800 via-purple-700 to-pink-700 bg-clip-text text-transparent">
+                    <h3 className="text-lg font-bold text-slate-900">
                       Existing Questions ({questionsList.length})
                     </h3>
                   </div>
                   
                   {questionsList.length === 0 ? (
-                    <div className="relative group">
-                      <div className="absolute -inset-1 bg-gradient-to-r from-gray-300 to-gray-400 rounded-2xl blur-lg opacity-20" />
-                      <div className="relative bg-white rounded-2xl p-12 border border-gray-200 text-center">
-                        <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                          <FileText className="w-10 h-10 text-gray-400" />
+                    <div className="relative">
+                      <div className="relative bg-white rounded-2xl p-12 border border-slate-200 text-center shadow-sm">
+                        <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-slate-900 flex items-center justify-center">
+                          <FileText className="w-10 h-10 text-amber-300" />
                         </div>
-                        <p className="text-gray-500 font-medium">No questions added yet</p>
+                        <p className="text-gray-700 font-medium">No questions added yet</p>
                         <p className="text-gray-400 text-sm mt-1">Use the form on the left to add one</p>
                       </div>
                     </div>
                   ) : (
                     questionsList.map((q, i) => (
                       <div key={q._id} className="relative group">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-2xl blur-lg opacity-0 group-hover:opacity-20 transition-opacity duration-500" />
-                        
-                        <div className="relative bg-gradient-to-br from-white to-purple-50/30 p-5 rounded-2xl border border-purple-100/50 shadow-lg hover:shadow-xl transition-all duration-300">
+                        <div className="relative bg-white p-5 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-all duration-200">
                           <div className="flex justify-between items-start mb-4">
                             <h4 className="font-semibold text-lg flex items-start gap-2 flex-1 pr-4">
-                              <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500 to-purple-500 text-white text-sm font-bold shrink-0">
+                              <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-slate-900 text-amber-300 text-sm font-bold shrink-0">
                                 Q{i + 1}
                               </span>
-                              <span className="text-gray-700">{q.question}</span>
+                              <span className="text-gray-800">{q.question}</span>
                               {q.type === "coding" && (
-                                <span className="shrink-0 text-xs bg-gradient-to-r from-blue-100 to-purple-100 text-purple-700 px-2 py-1 rounded-full font-bold border border-purple-200">
+                                <span className="shrink-0 text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded-full font-bold border border-amber-200">
                                   Coding
                                 </span>
                               )}
@@ -765,13 +727,13 @@ const AddQuestions = () => {
                                   key={idx}
                                   className={`flex items-center px-4 py-2.5 rounded-xl text-sm transition-all duration-200 ${
                                     q.correctOption === idx
-                                      ? "bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 border border-green-200 font-medium shadow-sm"
+                                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium shadow-sm"
                                       : "bg-gray-50 text-gray-600 border border-gray-100"
                                   }`}
                                 >
                                   <span className={`w-6 h-6 flex items-center justify-center rounded-lg mr-3 text-xs font-bold ${
                                     q.correctOption === idx 
-                                      ? "bg-gradient-to-br from-green-500 to-emerald-500 text-white" 
+                                      ? "bg-emerald-500 text-white" 
                                       : "bg-gray-200 text-gray-500"
                                   }`}>
                                     {String.fromCharCode(65 + idx)}
@@ -787,14 +749,14 @@ const AddQuestions = () => {
                             <div className="pl-2 space-y-3">
                               <div className="flex items-center gap-2 text-sm">
                                 <span className="font-medium text-gray-600">Language:</span>
-                                <span className="bg-gradient-to-r from-blue-100 to-purple-100 px-2 py-1 rounded-lg uppercase text-xs font-bold text-purple-700">{q.codingData.language}</span>
+                                <span className="bg-amber-50 px-2 py-1 rounded-lg uppercase text-xs font-bold text-amber-700">{q.codingData.language}</span>
                               </div>
                               {q.codingData?.testCases && (
-                                <div className="border-t border-purple-100 pt-3">
+                                <div className="border-top border-slate-100 pt-3">
                                   <p className="text-sm font-medium text-gray-600 mb-2">Test Cases:</p>
                                   <div className="space-y-2">
                                     {q.codingData.testCases.map((tc, tcIndex) => (
-                                      <div key={tcIndex} className="bg-gradient-to-r from-gray-50 to-blue-50 p-3 rounded-xl border border-gray-200">
+                                      <div key={tcIndex} className="bg-slate-50 p-3 rounded-xl border border-slate-200">
                                         <div className="grid grid-cols-2 gap-2 text-xs">
                                           <div>
                                             <span className="font-medium text-gray-500">Input:</span>
@@ -806,7 +768,7 @@ const AddQuestions = () => {
                                           </div>
                                         </div>
                                         {tc.isHidden && (
-                                          <span className="inline-block mt-1 text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Hidden</span>
+                                          <span className="inline-block mt-1 text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">Hidden</span>
                                         )}
                                       </div>
                                     ))}
