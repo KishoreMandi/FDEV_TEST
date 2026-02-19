@@ -225,29 +225,29 @@ const Dashboard = () => {
 
         {/* BULK IMPORT - ADMIN ONLY */}
         {user?.role === "admin" && (
-          <div className={`relative px-6 transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '200ms' }}>
+          <div className="p-6">
             <CsvUploader onUploadSuccess={handleUploadSuccess} />
           </div>
         )}
 
         {/* PENDING APPROVALS - ADMIN ONLY */}
         {user?.role === "admin" && pendingUsers.length > 0 && (
-          <div className={`relative p-6 transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '300ms' }}>
+          <div className="p-6">
             <div className="relative">
               <div className="relative bg-white rounded-xl shadow-sm border border-amber-100 overflow-hidden">
                 {/* Header */}
-                <div className="p-4 border-b border-amber-100 bg-gradient-to-r from-amber-50 to-orange-50">
+                <div className="p-4 border-b border-slate-200 bg-slate-50">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg shadow-amber-500/20">
-                      <AlertTriangle className="w-5 h-5 text-white" />
+                    <div className="p-2 rounded-xl bg-slate-900 shadow-lg">
+                      <AlertTriangle className="w-5 h-5 text-amber-300" />
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
+                      <h3 className="text-lg font-bold text-gray-800">
                         Pending Approvals
                       </h3>
                       <p className="text-xs text-amber-600">{pendingUsers.length} user(s) waiting for approval</p>
                     </div>
-                    <span className="ml-auto px-3 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-sm font-medium animate-pulse">
+                    <span className="ml-auto px-3 py-1 rounded-full bg-amber-500 text-white text-sm font-medium animate-pulse">
                       {pendingUsers.length}
                     </span>
                   </div>
@@ -257,32 +257,32 @@ const Dashboard = () => {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-gradient-to-r from-amber-50/80 to-orange-50/80">
-                        <th className="p-4 font-semibold text-amber-700 text-sm">Name</th>
-                        <th className="p-4 font-semibold text-amber-700 text-sm">Email</th>
-                        <th className="p-4 font-semibold text-amber-700 text-sm">Role</th>
-                        <th className="p-4 font-semibold text-amber-700 text-sm">Department</th>
-                        <th className="p-4 font-semibold text-amber-700 text-sm">Action</th>
+                      <tr className="bg-slate-100">
+                        <th className="p-4 font-semibold text-slate-700 text-sm">Name</th>
+                        <th className="p-4 font-semibold text-slate-700 text-sm">Email</th>
+                        <th className="p-4 font-semibold text-slate-700 text-sm">Role</th>
+                        <th className="p-4 font-semibold text-slate-700 text-sm">Department</th>
+                        <th className="p-4 font-semibold text-slate-700 text-sm">Action</th>
                       </tr>
                     </thead>
                     <tbody>
                       {pendingUsers.map((u, index) => (
                         <tr 
-                          key={u._id} 
-                          className="border-b border-amber-100/50 hover:bg-gradient-to-r hover:from-amber-50/50 hover:to-orange-50/50 transition-all duration-200"
-                          style={{ animationDelay: `${index * 50}ms` }}
-                        >
-                          <td className="p-4">
-                            <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
-                                <User className="w-4 h-4 text-white" />
-                              </div>
+                            key={u._id} 
+                            className="border-b border-slate-200 hover:bg-slate-50 transition-all duration-200"
+                            style={{ animationDelay: `${index * 50}ms` }}
+                          >
+                            <td className="p-4">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center">
+                                  <User className="w-4 h-4 text-amber-300" />
+                                </div>
                               <span className="font-medium text-gray-700">{u.name}</span>
                             </div>
                           </td>
                           <td className="p-4 text-gray-600">{u.email}</td>
                           <td className="p-4">
-                            <span className="px-2 py-1 rounded-lg bg-purple-100 text-purple-700 text-xs font-medium capitalize">
+                            <span className="px-2 py-1 rounded-lg bg-slate-200 text-slate-700 text-xs font-medium capitalize">
                               {u.role}
                             </span>
                           </td>
@@ -317,18 +317,18 @@ const Dashboard = () => {
 
         {/* USER MANAGEMENT - ADMIN ONLY */}
         {user?.role === "admin" && (
-          <div className={`relative p-6 pt-0 transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '400ms' }}>
+          <div className="p-6 pt-0">
             <div className="relative">
               <div className="relative bg-white rounded-xl shadow-sm border border-purple-100 overflow-hidden">
                 {/* Header with search */}
-                <div className="p-4 border-b border-purple-100 bg-gradient-to-r from-white to-purple-50">
+                <div className="p-4 border-b border-slate-200 bg-slate-50">
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-xl bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500 shadow-lg shadow-purple-500/20">
-                        <Users className="w-5 h-5 text-white" />
+                      <div className="p-2 rounded-xl bg-slate-900 shadow-lg">
+                        <Users className="w-5 h-5 text-amber-300" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-bold bg-gradient-to-r from-gray-800 via-purple-700 to-pink-700 bg-clip-text text-transparent">
+                        <h3 className="text-lg font-bold text-gray-800">
                           User Management
                         </h3>
                         <p className="text-xs text-gray-500">Manage and organize all users</p>
@@ -341,7 +341,7 @@ const Dashboard = () => {
                       <input 
                         type="text" 
                         placeholder="Search users..." 
-                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-purple-200/50 bg-white/80 backdrop-blur-sm focus:border-purple-400 focus:ring-2 focus:ring-purple-200/50 focus:outline-none text-sm transition-all duration-300"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white/80 backdrop-blur-sm focus:border-amber-400 focus:ring-2 focus:ring-amber-200/50 focus:outline-none text-sm transition-all duration-300"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                       />
@@ -353,14 +353,14 @@ const Dashboard = () => {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
-                      <tr className="bg-gradient-to-r from-purple-50/80 to-pink-50/80">
-                        <th className="p-4 font-semibold text-purple-700 text-sm">Name</th>
-                        <th className="p-4 font-semibold text-purple-700 text-sm">ID</th>
-                        <th className="p-4 font-semibold text-purple-700 text-sm">Email</th>
-                        <th className="p-4 font-semibold text-purple-700 text-sm">Role</th>
-                        <th className="p-4 font-semibold text-purple-700 text-sm">Dept</th>
-                        <th className="p-4 font-semibold text-purple-700 text-sm">Status</th>
-                        <th className="p-4 font-semibold text-purple-700 text-sm">Actions</th>
+                      <tr className="bg-slate-100">
+                        <th className="p-4 font-semibold text-slate-700 text-sm">Name</th>
+                        <th className="p-4 font-semibold text-slate-700 text-sm">ID</th>
+                        <th className="p-4 font-semibold text-slate-700 text-sm">Email</th>
+                        <th className="p-4 font-semibold text-slate-700 text-sm">Role</th>
+                        <th className="p-4 font-semibold text-slate-700 text-sm">Dept</th>
+                        <th className="p-4 font-semibold text-slate-700 text-sm">Status</th>
+                        <th className="p-4 font-semibold text-slate-700 text-sm">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -368,12 +368,12 @@ const Dashboard = () => {
                         filteredUsers.map((u, index) => (
                           <tr 
                             key={u._id} 
-                            className="border-b border-purple-100/50 hover:bg-gradient-to-r hover:from-pink-50/30 hover:to-purple-50/30 transition-all duration-200 group"
+                            className="border-b border-slate-200 hover:bg-slate-50 transition-all duration-200 group"
                             style={{ animationDelay: `${index * 30}ms` }}
                           >
                             <td className="p-4">
                               <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-pink-500 to-purple-500 flex items-center justify-center">
+                                <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center">
                                   <span className="text-white text-sm font-medium">{u.name?.charAt(0)?.toUpperCase()}</span>
                                 </div>
                                 <span className="font-medium text-gray-700">{u.name}</span>
@@ -382,7 +382,7 @@ const Dashboard = () => {
                             <td className="p-4 text-gray-500 text-sm">{u.employeeId || "-"}</td>
                             <td className="p-4 text-gray-600">{u.email}</td>
                             <td className="p-4">
-                              <span className="px-2 py-1 rounded-lg bg-purple-100 text-purple-700 text-xs font-medium capitalize">
+                              <span className="px-2 py-1 rounded-lg bg-slate-200 text-slate-700 text-xs font-medium capitalize">
                                 {u.role}
                               </span>
                             </td>
@@ -390,10 +390,10 @@ const Dashboard = () => {
                             <td className="p-4">
                               <span className={`px-3 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 ${
                                 u.status === 'active' 
-                                  ? 'bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border border-green-200' 
+                                  ? 'bg-green-100 text-green-700 border border-green-200' 
                                   : u.status === 'suspended' 
-                                  ? 'bg-gradient-to-r from-amber-100 to-orange-100 text-amber-700 border border-amber-200' 
-                                  : 'bg-gradient-to-r from-red-100 to-pink-100 text-red-700 border border-red-200'
+                                  ? 'bg-amber-100 text-amber-700 border border-amber-200' 
+                                  : 'bg-red-100 text-red-700 border border-red-200'
                               }`}>
                                 <span className={`w-1.5 h-1.5 rounded-full ${
                                   u.status === 'active' ? 'bg-green-500' : u.status === 'suspended' ? 'bg-amber-500' : 'bg-red-500'
@@ -406,7 +406,7 @@ const Dashboard = () => {
                                 {u.status === 'active' && (
                                   <button
                                     onClick={() => handleStatusChange(u._id, 'suspended')}
-                                    className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-amber-400 to-orange-400 text-white text-xs font-medium hover:shadow-lg hover:shadow-amber-400/30 hover:scale-105 transition-all duration-200 flex items-center gap-1"
+                                    className="px-2.5 py-1.5 rounded-lg bg-amber-500 text-white text-xs font-medium hover:bg-amber-600 hover:shadow-lg hover:shadow-amber-500/30 hover:scale-105 transition-all duration-200 flex items-center gap-1"
                                     title="Suspend"
                                   >
                                     <Clock className="w-3 h-3" />
@@ -416,7 +416,7 @@ const Dashboard = () => {
                                 {u.status === 'suspended' && (
                                   <button
                                     onClick={() => handleStatusChange(u._id, 'active')}
-                                    className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-medium hover:shadow-lg hover:shadow-green-500/30 hover:scale-105 transition-all duration-200 flex items-center gap-1"
+                                    className="px-2.5 py-1.5 rounded-lg bg-green-500 text-white text-xs font-medium hover:shadow-lg hover:shadow-green-500/30 hover:scale-105 transition-all duration-200 flex items-center gap-1"
                                     title="Activate"
                                   >
                                     <UserCheck className="w-3 h-3" />
@@ -426,7 +426,7 @@ const Dashboard = () => {
                                 {u.status !== 'banned' && (
                                   <button
                                     onClick={() => handleStatusChange(u._id, 'banned')}
-                                    className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-medium hover:shadow-lg hover:shadow-red-500/30 hover:scale-105 transition-all duration-200 flex items-center gap-1"
+                                    className="px-2.5 py-1.5 rounded-lg bg-red-500 text-white text-xs font-medium hover:bg-red-600 hover:shadow-lg hover:shadow-red-500/30 hover:scale-105 transition-all duration-200 flex items-center gap-1"
                                     title="Ban"
                                   >
                                     <Ban className="w-3 h-3" />
@@ -436,7 +436,7 @@ const Dashboard = () => {
                                 {u.status === 'banned' && (
                                   <button
                                     onClick={() => handleStatusChange(u._id, 'active')}
-                                    className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-gray-500 to-gray-600 text-white text-xs font-medium hover:shadow-lg hover:shadow-gray-500/30 hover:scale-105 transition-all duration-200 flex items-center gap-1"
+                                    className="px-2.5 py-1.5 rounded-lg bg-slate-700 text-white text-xs font-medium hover:bg-slate-600 hover:shadow-lg hover:shadow-slate-700/30 hover:scale-105 transition-all duration-200 flex items-center gap-1"
                                     title="Unban"
                                   >
                                     <UserCheck className="w-3 h-3" />
@@ -444,21 +444,21 @@ const Dashboard = () => {
                                   </button>
                                 )}
                                 <button
-                                  onClick={() => handleEditClick(u)}
-                                  className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs font-medium hover:shadow-lg hover:shadow-blue-500/30 hover:scale-105 transition-all duration-200 flex items-center gap-1"
-                                  title="Edit"
-                                >
-                                  <Edit3 className="w-3 h-3" />
-                                  <span className="hidden sm:inline">Edit</span>
-                                </button>
+                                    onClick={() => handleEditClick(u)}
+                                    className="px-2.5 py-1.5 rounded-lg bg-slate-700 text-white text-xs font-medium hover:bg-slate-600 hover:shadow-lg hover:shadow-slate-700/30 hover:scale-105 transition-all duration-200 flex items-center gap-1"
+                                    title="Edit"
+                                  >
+                                    <Edit3 className="w-3 h-3" />
+                                    <span className="hidden sm:inline">Edit</span>
+                                  </button>
                                 <button
-                                  onClick={() => handleDeleteUser(u._id)}
-                                  className="px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-red-700 to-red-800 text-white text-xs font-medium hover:shadow-lg hover:shadow-red-700/30 hover:scale-105 transition-all duration-200 flex items-center gap-1"
-                                  title="Delete"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                  <span className="hidden sm:inline">Delete</span>
-                                </button>
+                                    onClick={() => handleDeleteUser(u._id)}
+                                    className="px-2.5 py-1.5 rounded-lg bg-red-600 text-white text-xs font-medium hover:bg-red-700 hover:shadow-lg hover:shadow-red-600/30 hover:scale-105 transition-all duration-200 flex items-center gap-1"
+                                    title="Delete"
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                    <span className="hidden sm:inline">Delete</span>
+                                  </button>
                               </div>
                             </td>
                           </tr>
@@ -487,15 +487,15 @@ const Dashboard = () => {
         {/* RECENT ACTIVITY */}
         <div className={`relative p-6 pt-0 transition-all duration-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`} style={{ transitionDelay: '500ms' }}>
           <div className="relative">
-            <div className="relative bg-white rounded-xl shadow-sm border border-blue-100 overflow-hidden">
+            <div className="relative bg-white rounded-xl shadow-sm border border-amber-100 overflow-hidden">
               {/* Header */}
-              <div className="p-4 border-b border-blue-100 bg-gradient-to-r from-white to-blue-50">
+              <div className="p-4 border-b border-slate-200 bg-slate-50">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 shadow-lg shadow-blue-500/20">
-                    <Clock className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold bg-gradient-to-r from-gray-800 via-blue-700 to-purple-700 bg-clip-text text-transparent">
+                  <div className="p-2 rounded-xl bg-slate-900 shadow-lg">
+                      <Clock className="w-5 h-5 text-amber-300" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-bold text-gray-800">
                       Recent Exams
                     </h3>
                     <p className="text-xs text-gray-500">Latest exam activity</p>
@@ -509,14 +509,14 @@ const Dashboard = () => {
                   stats.recentExams.map((exam, index) => (
                     <div 
                       key={exam._id}
-                      className="group/item flex items-center gap-4 p-3 rounded-xl bg-gradient-to-r from-white to-gray-50 hover:from-blue-50 hover:to-purple-50 border border-gray-100 hover:border-purple-200 transition-all duration-300 cursor-pointer"
+                      className="group/item flex items-center gap-4 p-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 hover:border-amber-300 transition-all duration-300 cursor-pointer"
                       style={{ animationDelay: `${index * 100}ms` }}
                     >
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover/item:scale-110 transition-transform duration-300">
-                        <FileText className="w-5 h-5 text-white" />
+                      <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center shadow-lg group-hover/item:scale-110 transition-transform duration-300">
+                        <FileText className="w-5 h-5 text-amber-300" />
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium text-gray-700 group-hover/item:text-purple-700 transition-colors">{exam.title}</p>
+                        <p className="font-medium text-gray-700 group-hover/item:text-amber-600 transition-colors">{exam.title}</p>
                         <p className="text-xs text-gray-400">
                           {new Date(exam.createdAt).toLocaleDateString('en-US', { 
                             year: 'numeric', 
@@ -528,7 +528,7 @@ const Dashboard = () => {
                         </p>
                       </div>
                       <div className="opacity-0 group-hover/item:opacity-100 transition-opacity duration-300">
-                        <ChevronDown className="w-4 h-4 text-purple-500 -rotate-90" />
+                        <ChevronDown className="w-4 h-4 text-amber-500 -rotate-90" />
                       </div>
                     </div>
                   ))
@@ -557,22 +557,22 @@ const Dashboard = () => {
           <div className="relative w-full max-w-md animate-fade-in-up">
             <div className="relative group">
               {/* Glow */}
-              <div className="absolute -inset-1 bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 rounded-2xl blur-lg opacity-30" />
+              <div className="absolute -inset-1 bg-slate-900 rounded-2xl blur-lg opacity-10" />
               
-              <div className="relative bg-gradient-to-br from-white via-purple-50 to-pink-50 rounded-2xl shadow-2xl border border-purple-100 overflow-hidden">
+              <div className="relative bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
                 {/* Header */}
-                <div className="p-4 border-b border-purple-100 bg-gradient-to-r from-white to-purple-50 flex items-center justify-between">
+                <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-gradient-to-br from-pink-500 via-purple-500 to-blue-500">
-                      <Edit3 className="w-5 h-5 text-white" />
+                    <div className="p-2 rounded-xl bg-slate-900">
+                      <Edit3 className="w-5 h-5 text-amber-300" />
                     </div>
-                    <h3 className="text-lg font-bold bg-gradient-to-r from-gray-800 via-purple-700 to-pink-700 bg-clip-text text-transparent">
+                    <h3 className="text-lg font-bold text-slate-900">
                       Edit User
                     </h3>
                   </div>
                   <button 
                     onClick={() => setEditingUser(null)}
-                    className="p-2 rounded-xl hover:bg-gray-100 transition-colors"
+                    className="p-2 rounded-xl hover:bg-slate-100 transition-colors"
                   >
                     <X className="w-5 h-5 text-gray-500" />
                   </button>
@@ -584,7 +584,7 @@ const Dashboard = () => {
                     {/* Name */}
                     <div className="group">
                       <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1.5">
-                        <User className="w-4 h-4 text-purple-500" />
+                        <User className="w-4 h-4 text-amber-500" />
                         Name
                       </label>
                       <input
@@ -592,7 +592,7 @@ const Dashboard = () => {
                         name="name"
                         value={editForm.name}
                         onChange={handleEditChange}
-                        className="w-full px-4 py-2.5 rounded-xl border border-purple-200/50 bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-200/50 focus:outline-none transition-all duration-300"
+                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-200/50 focus:outline-none transition-all duration-300"
                         required
                       />
                     </div>
@@ -600,7 +600,7 @@ const Dashboard = () => {
                     {/* Email */}
                     <div className="group">
                       <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1.5">
-                        <Mail className="w-4 h-4 text-purple-500" />
+                        <Mail className="w-4 h-4 text-amber-500" />
                         Email
                       </label>
                       <input
@@ -608,7 +608,7 @@ const Dashboard = () => {
                         name="email"
                         value={editForm.email}
                         onChange={handleEditChange}
-                        className="w-full px-4 py-2.5 rounded-xl border border-purple-200/50 bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-200/50 focus:outline-none transition-all duration-300"
+                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-200/50 focus:outline-none transition-all duration-300"
                         required
                       />
                     </div>
@@ -616,7 +616,7 @@ const Dashboard = () => {
                     {/* Employee ID */}
                     <div className="group">
                       <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1.5">
-                        <Hash className="w-4 h-4 text-purple-500" />
+                        <Hash className="w-4 h-4 text-amber-500" />
                         ID
                       </label>
                       <input
@@ -624,21 +624,21 @@ const Dashboard = () => {
                         name="employeeId"
                         value={editForm.employeeId}
                         onChange={handleEditChange}
-                        className="w-full px-4 py-2.5 rounded-xl border border-purple-200/50 bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-200/50 focus:outline-none transition-all duration-300"
+                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-200/50 focus:outline-none transition-all duration-300"
                       />
                     </div>
 
                     {/* Role */}
                     <div className="group">
                       <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1.5">
-                        <Users className="w-4 h-4 text-purple-500" />
+                        <Users className="w-4 h-4 text-amber-500" />
                         Role
                       </label>
                       <select
                         name="role"
                         value={editForm.role}
                         onChange={handleEditChange}
-                        className="w-full px-4 py-2.5 rounded-xl border border-purple-200/50 bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-200/50 focus:outline-none transition-all duration-300"
+                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-200/50 focus:outline-none transition-all duration-300"
                       >
                         <option value="student">Student</option>
                       </select>
@@ -647,7 +647,7 @@ const Dashboard = () => {
                     {/* Department */}
                     <div className="group">
                       <label className="flex items-center gap-2 text-sm font-medium text-gray-700 mb-1.5">
-                        <Building className="w-4 h-4 text-purple-500" />
+                        <Building className="w-4 h-4 text-amber-500" />
                         Department
                       </label>
                       <input
@@ -655,23 +655,23 @@ const Dashboard = () => {
                         name="department"
                         value={editForm.department}
                         onChange={handleEditChange}
-                        className="w-full px-4 py-2.5 rounded-xl border border-purple-200/50 bg-white focus:border-purple-400 focus:ring-2 focus:ring-purple-200/50 focus:outline-none transition-all duration-300"
+                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-200/50 focus:outline-none transition-all duration-300"
                       />
                     </div>
                   </div>
 
                   {/* Buttons */}
-                  <div className="flex justify-end gap-3 pt-4 border-t border-purple-100">
+                  <div className="flex justify-end gap-3 pt-4 border-t border-slate-200">
                     <button
                       type="button"
                       onClick={() => setEditingUser(null)}
-                      className="px-5 py-2.5 rounded-xl bg-gray-100 text-gray-700 font-medium hover:bg-gray-200 transition-all duration-200"
+                      className="px-5 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-medium hover:bg-slate-200 transition-all duration-200"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 text-white font-medium hover:shadow-lg hover:shadow-purple-500/30 hover:scale-105 transition-all duration-200"
+                      className="px-5 py-2.5 rounded-xl bg-amber-500 text-white font-medium hover:shadow-lg hover:shadow-amber-500/30 hover:scale-105 transition-all duration-200"
                     >
                       Save Changes
                     </button>

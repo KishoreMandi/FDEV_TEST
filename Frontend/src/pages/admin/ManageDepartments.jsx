@@ -110,9 +110,8 @@ const ManageDepartments = () => {
 
                 <button
                   onClick={openAddModal}
-                  className="group relative overflow-hidden px-5 py-3 rounded-xl font-semibold text-white bg-amber-500 hover:shadow-lg hover:shadow-amber-500/30 transition-all duration-300"
+                  className="group relative overflow-hidden px-5 py-3 rounded-xl font-semibold text-white bg-amber-500 hover:bg-amber-600 hover:shadow-lg hover:shadow-amber-500/30 transition-all duration-300"
                 >
-                  <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                   <span className="relative flex items-center gap-2">
                     <Plus className="w-5 h-5" />
                     Add Department

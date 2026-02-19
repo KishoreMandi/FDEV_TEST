@@ -79,7 +79,7 @@ const CsvUploader = ({ onUploadSuccess }) => {
 
   return (
     <div className="relative">
-      <div className="relative bg-white rounded-xl p-6 border border-slate-200 shadow-sm overflow-hidden">
+      <div className="relative bg-white rounded-xl p-6 border border-amber-100 shadow-lg overflow-hidden">
         <div className="relative flex items-center gap-3 mb-6">
           <div className="p-2.5 rounded-lg bg-slate-900 text-slate-50">
             <Upload className="w-5 h-5" />
@@ -98,8 +98,8 @@ const CsvUploader = ({ onUploadSuccess }) => {
         <div
           className={`relative border-2 border-dashed rounded-xl p-8 text-center transition-colors duration-200 ${
             isDragging
-              ? "border-slate-500 bg-slate-50"
-              : "border-slate-300 hover:border-slate-400 hover:bg-slate-50"
+              ? "border-amber-500 bg-amber-50"
+              : "border-amber-300 hover:border-amber-400 hover:bg-amber-50"
           }`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -154,7 +154,7 @@ const CsvUploader = ({ onUploadSuccess }) => {
             className={`relative overflow-hidden px-6 py-2.5 rounded-xl font-medium text-sm transition-all duration-300 transform ${
               !selectedFile || loading
                 ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                : "bg-slate-900 text-white hover:bg-slate-800 active:bg-slate-900"
+                : "bg-amber-500 text-white hover:bg-amber-600 active:bg-amber-700 shadow-lg hover:shadow-amber-500/30"
             }`}
           >
             <span className="relative flex items-center gap-2">
