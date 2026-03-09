@@ -1,2 +1,9 @@
-.env
 node_modules
+.env
+dist
+coverage
+.DS_Store
+Backend/.env
+Backend/uploads/
+Frontend/dist/
+*.log
