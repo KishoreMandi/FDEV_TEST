@@ -17,10 +17,11 @@ const AddQuestions = () => {
   const [editingId, setEditingId] = useState(null);
 
   const [type, setType] = useState("mcq");
-  const [question, setQuestion] = useState("");
+  const [mcqQuestion, setMcqQuestion] = useState("");
+  const [codingQuestion, setCodingQuestion] = useState("");
   const [options, setOptions] = useState(["", "", "", ""]);
   const [correctOption, setCorrectOption] = useState(null);
-  
+
   const [language, setLanguage] = useState("javascript");
   const [starterCode, setStarterCode] = useState("");
   const [testCases, setTestCases] = useState([{ input: "", expectedOutput: "", isHidden: false }]);
@@ -30,6 +31,7 @@ const AddQuestions = () => {
   const [isVisible, setIsVisible] = useState(false);
 
   const undoRef = useRef(null);
+  const questionRef = useRef(null);
   const isSmartPasting = useRef(false);
 
   useEffect(() => {
@@ -87,12 +89,13 @@ const AddQuestions = () => {
     }
     setEditingId(q._id);
     setType(q.type || "mcq");
-    setQuestion(q.question);
     if (q.type === "coding") {
+      setCodingQuestion(q.question);
       setLanguage(q.codingData.language);
       setStarterCode(q.codingData.starterCode);
       setTestCases(q.codingData.testCases);
     } else {
+      setMcqQuestion(q.question);
       setOptions(q.options);
       setCorrectOption(q.correctOption);
     }
@@ -101,7 +104,8 @@ const AddQuestions = () => {
 
   const handleCancelEdit = () => {
     setEditingId(null);
-    setQuestion("");
+    setMcqQuestion("");
+    setCodingQuestion("");
     setOptions(["", "", "", ""]);
     setCorrectOption(null);
     setType("mcq");
@@ -183,27 +187,31 @@ const AddQuestions = () => {
     if (lines.length >= 5) {
       const last4 = lines.slice(-4);
       const optionRegex = /^([A-Da-d1-4])[.)-]\s+(.*)$/;
-      
+
       const cleanedOptions = last4.map(opt => {
         const match = opt.match(optionRegex);
         return match ? match[2] : opt;
       });
 
       e.preventDefault();
-      
+
       undoRef.current = {
-        question: question,
+        question: mcqQuestion,
         options: [...options]
       };
-      
+
       isSmartPasting.current = true;
 
       const questionBody = lines.slice(0, lines.length - 4).join("\n");
-      
+
       setOptions(cleanedOptions);
       e.target.select();
+      // Since we're using separate states, we should update mcqQuestion
+      // However, execCommand might interfere. Let's direct setMcqQuestion if possible.
+      // But execCommand is used here for standard paste behavior.
+      // Let's assume the textarea value update will trigger handleQuestionChange.
       document.execCommand('insertText', false, questionBody);
-      
+
       toast.success("Question and options auto-populated!");
     }
   };
@@ -212,7 +220,7 @@ const AddQuestions = () => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
       if (undoRef.current) {
         e.preventDefault();
-        setQuestion(undoRef.current.question);
+        setMcqQuestion(undoRef.current.question);
         setOptions(undoRef.current.options);
         undoRef.current = null;
         toast.success("Undid smart paste");
@@ -221,13 +229,30 @@ const AddQuestions = () => {
   };
 
   const handleQuestionChange = (e) => {
-    setQuestion(e.target.value);
+    const val = e.target.value;
+    if (type === "mcq") {
+      setMcqQuestion(val);
+    } else {
+      setCodingQuestion(val);
+    }
+
     if (isSmartPasting.current) {
       isSmartPasting.current = false;
     } else {
       undoRef.current = null;
     }
   };
+
+  useEffect(() => {
+    const adjustHeight = () => {
+      const textarea = questionRef.current;
+      if (textarea) {
+        textarea.style.height = "auto";
+        textarea.style.height = `${textarea.scrollHeight}px`;
+      }
+    };
+    adjustHeight();
+  }, [mcqQuestion, codingQuestion, type]);
 
   const handleAddTestCase = () => {
     setTestCases([...testCases, { input: "", expectedOutput: "", isHidden: false }]);
@@ -263,17 +288,17 @@ const AddQuestions = () => {
 
     const payload = {
       examId,
-      question,
+      question: type === "mcq" ? mcqQuestion : codingQuestion,
       type,
       ...(type === "mcq"
         ? { options, correctOption }
         : {
-            codingData: {
-              language,
-              starterCode,
-              testCases,
-            },
-          }),
+          codingData: {
+            language,
+            starterCode,
+            testCases,
+          },
+        }),
     };
 
     try {
@@ -286,7 +311,8 @@ const AddQuestions = () => {
         toast.success("Question added successfully");
       }
 
-      setQuestion("");
+      setMcqQuestion("");
+      setCodingQuestion("");
       setOptions(["", "", "", ""]);
       setCorrectOption(null);
       setStarterCode("");
@@ -339,8 +365,8 @@ const AddQuestions = () => {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {exams.map((exam, index) => (
-                    <div 
-                      key={exam._id} 
+                    <div
+                      key={exam._id}
                       onClick={() => setExamId(exam._id)}
                       className="relative group cursor-pointer"
                       style={{ animationDelay: `${index * 100}ms` }}
@@ -354,7 +380,7 @@ const AddQuestions = () => {
                           </div>
                           <h3 className="text-lg font-bold text-slate-900 text-center mb-1">{exam.title}</h3>
                           <p className="text-sm text-amber-700 font-medium">Click to manage questions</p>
-                          
+
                           <div className="mt-3 opacity-0 group-hover:opacity-100 transform translate-y-1 group-hover:translate-y-0 transition-all duration-200">
                             <div className="px-4 py-1.5 rounded-full bg-slate-900 text-amber-200 text-xs font-medium">
                               Open Folder
@@ -370,14 +396,14 @@ const AddQuestions = () => {
           ) : (
             <div className={`transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-                <button 
+                <button
                   onClick={() => setExamId("")}
                   className="group flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-slate-200 hover:border-amber-400 hover:shadow-md hover:shadow-amber-200/40 transition-all duration-200"
                 >
                   <ArrowLeft className="w-5 h-5 text-gray-600 group-hover:text-amber-500 transition-colors" />
                   <span className="text-gray-700 group-hover:text-amber-600 font-medium">Back to Exams</span>
                 </button>
-                
+
                 <div className="flex items-center gap-4">
                   <h2 className="text-2xl font-bold text-slate-900">
                     {exams.find(e => e._id === examId)?.title}
@@ -431,11 +457,10 @@ const AddQuestions = () => {
                           <button
                             type="button"
                             onClick={() => setType("mcq")}
-                            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all duration-200 ${
-                              type === "mcq" 
-                                ? "bg-slate-900 text-white shadow-sm" 
-                                : "text-gray-600 hover:text-gray-900"
-                            }`}
+                            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all duration-200 ${type === "mcq"
+                              ? "bg-slate-900 text-white shadow-sm"
+                              : "text-gray-600 hover:text-gray-900"
+                              }`}
                           >
                             <List className="w-4 h-4" />
                             MCQ
@@ -443,11 +468,10 @@ const AddQuestions = () => {
                           <button
                             type="button"
                             onClick={() => setType("coding")}
-                            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all duration-200 ${
-                              type === "coding" 
-                                ? "bg-slate-900 text-white shadow-sm" 
-                                : "text-gray-600 hover:text-gray-900"
-                            }`}
+                            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg font-medium transition-all duration-200 ${type === "coding"
+                              ? "bg-slate-900 text-white shadow-sm"
+                              : "text-gray-600 hover:text-gray-900"
+                              }`}
                           >
                             <Code className="w-4 h-4" />
                             Coding
@@ -460,10 +484,11 @@ const AddQuestions = () => {
                             Question Text
                           </label>
                           <textarea
+                            ref={questionRef}
                             placeholder={type === "mcq" ? "Enter your question... (Paste question + 4 options to auto-fill)" : "Enter coding problem description..."}
-                            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-200 focus:outline-none transition-all duration-200 resize-none"
+                            className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-white focus:border-slate-400 focus:ring-2 focus:ring-slate-200 focus:outline-none transition-all duration-200 resize-none overflow-hidden"
                             rows="3"
-                            value={question}
+                            value={type === "mcq" ? mcqQuestion : codingQuestion}
                             onChange={handleQuestionChange}
                             onPaste={type === "mcq" ? handlePaste : undefined}
                             onKeyDown={handleKeyDown}
@@ -478,13 +503,12 @@ const AddQuestions = () => {
                               Options (Select Correct)
                             </label>
                             {options.map((opt, index) => (
-                              <div 
-                                key={index} 
-                                className={`group/option flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-200 ${
-                                  correctOption === index 
-                                    ? "border-emerald-300 bg-emerald-50 shadow-sm" 
-                                    : "border-slate-200 bg-white hover:border-slate-400"
-                                }`}
+                              <div
+                                key={index}
+                                className={`group/option flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-200 ${correctOption === index
+                                  ? "border-emerald-300 bg-emerald-50 shadow-sm"
+                                  : "border-slate-200 bg-white hover:border-slate-400"
+                                  }`}
                               >
                                 <input
                                   type="radio"
@@ -493,11 +517,10 @@ const AddQuestions = () => {
                                   onChange={() => setCorrectOption(index)}
                                   className="w-4 h-4 text-green-600 focus:ring-green-500 cursor-pointer"
                                 />
-                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold ${
-                                  correctOption === index 
-                                    ? "bg-emerald-500 text-white" 
-                                    : "bg-slate-100 text-slate-600"
-                                }`}>
+                                <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold ${correctOption === index
+                                  ? "bg-emerald-500 text-white"
+                                  : "bg-slate-100 text-slate-600"
+                                  }`}>
                                   {String.fromCharCode(65 + index)}
                                 </div>
                                 <input
@@ -578,7 +601,7 @@ const AddQuestions = () => {
                                   Add
                                 </button>
                               </div>
-                              
+
                               {testCases.map((tc, index) => (
                                 <div key={index} className="relative group/tc p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
                                   <button
@@ -589,11 +612,11 @@ const AddQuestions = () => {
                                   >
                                     <Trash2 className="w-4 h-4" />
                                   </button>
-                                  
+
                                   <div className="flex items-center gap-2 text-xs font-medium text-blue-600 mb-2">
                                     <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700">Test Case {index + 1}</span>
                                   </div>
-                                  
+
                                   <div>
                                     <label className="block text-xs font-medium text-gray-500 mb-1">Input (stdin)</label>
                                     <textarea
@@ -675,7 +698,7 @@ const AddQuestions = () => {
                       Existing Questions ({questionsList.length})
                     </h3>
                   </div>
-                  
+
                   {questionsList.length === 0 ? (
                     <div className="relative">
                       <div className="relative bg-white rounded-2xl p-12 border border-slate-200 text-center shadow-sm">
@@ -719,23 +742,21 @@ const AddQuestions = () => {
                               </button>
                             </div>
                           </div>
-                          
+
                           {q.type === "mcq" ? (
                             <ul className="pl-2 space-y-2">
                               {q.options.map((opt, idx) => (
                                 <li
                                   key={idx}
-                                  className={`flex items-center px-4 py-2.5 rounded-xl text-sm transition-all duration-200 ${
-                                    q.correctOption === idx
-                                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium shadow-sm"
-                                      : "bg-gray-50 text-gray-600 border border-gray-100"
-                                  }`}
+                                  className={`flex items-center px-4 py-2.5 rounded-xl text-sm transition-all duration-200 ${q.correctOption === idx
+                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200 font-medium shadow-sm"
+                                    : "bg-gray-50 text-gray-600 border border-gray-100"
+                                    }`}
                                 >
-                                  <span className={`w-6 h-6 flex items-center justify-center rounded-lg mr-3 text-xs font-bold ${
-                                    q.correctOption === idx 
-                                      ? "bg-emerald-500 text-white" 
-                                      : "bg-gray-200 text-gray-500"
-                                  }`}>
+                                  <span className={`w-6 h-6 flex items-center justify-center rounded-lg mr-3 text-xs font-bold ${q.correctOption === idx
+                                    ? "bg-emerald-500 text-white"
+                                    : "bg-gray-200 text-gray-500"
+                                    }`}>
                                     {String.fromCharCode(65 + idx)}
                                   </span>
                                   {opt}
