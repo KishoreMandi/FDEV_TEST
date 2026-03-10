@@ -24,15 +24,14 @@ const STARTER_CODE = {
 const fs = require('fs');
 const input = fs.readFileSync(0, 'utf-8').trim();
 
-// Write your logic here
-console.log('Hello World');`,
+// Write your logic here`,
 
   typescript: `import * as fs from "fs";
 
 const input = fs.readFileSync(0, "utf8").trim();
 
 function solve(): void {
-  console.log("Hello World");
+  // Write your logic here
 }
 
 solve();`,
@@ -44,7 +43,7 @@ solve();`,
 
 def solve():
     # Write your logic here
-    print("Hello World")
+    pass
 
 if __name__ == '__main__':
     solve()`,
@@ -56,7 +55,6 @@ public class Main {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         // Write your logic here
-        System.out.println("Hello World");
         
         sc.close();
     }
@@ -71,7 +69,6 @@ using namespace std;
 
 int main() {
     // Write your logic here
-    cout << "Hello World" << endl;
     
     return 0;
 }`,
@@ -82,7 +79,6 @@ int main() {
 
 int main() {
     // Write your logic here
-    printf("Hello World");
     
     return 0;
 }`,
@@ -94,7 +90,7 @@ public class Program
 {
     public static void Main(string[] args)
     {
-        Console.WriteLine("Hello World");
+        // Write your logic here
     }
 }`,
 
@@ -102,14 +98,13 @@ public class Program
 
 import (
 	"bufio"
-	"fmt"
 	"os"
 )
 
 func main() {
 	in := bufio.NewReader(os.Stdin)
 	_ = in
-	fmt.Println("Hello World")
+	// Write your logic here
 }`,
 
   rust: `use std::io::{self, Read};
@@ -117,16 +112,16 @@ func main() {
 fn main() {
     let mut input = String::new();
     io::stdin().read_to_string(&mut input).unwrap();
-    println!("Hello World");
+    // Write your logic here
 }`,
 
   php: `<?php
 $input = trim(stream_get_contents(STDIN));
-echo "Hello World\n";
+// Write your logic here
 ?>`,
 
   ruby: `input = STDIN.read.strip
-puts "Hello World"`,
+# Write your logic here`,
 
   kotlin: `import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -134,7 +129,7 @@ import java.io.InputStreamReader
 fun main() {
     val br = BufferedReader(InputStreamReader(System.\`in\`))
     val input = br.readLine()
-    println("Hello World")
+    // Write your logic here
 }`,
 };
 
@@ -252,24 +247,24 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
       newCode = initialData.code;
       newLang = initialData.language;
     }
-    
+
     setCode(newCode);
     setLanguage(newLang);
     // Update editor key to force remount with new default value
     setEditorKey(`${question?._id}-${newLang}`);
-    
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [question]);
 
   const handleLanguageChange = (e) => {
     const newLang = e.target.value;
     const oldLang = language;
-    
+
     // Save current code to map
     codeMapRef.current[oldLang] = code;
-    
+
     setLanguage(newLang);
-    
+
     // Load code for new language
     let newCode = "";
     if (codeMapRef.current[newLang]) {
@@ -277,9 +272,9 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
     } else {
       // If no saved code, use starter code
       if (newLang === question?.codingData?.language) {
-         newCode = question?.codingData?.starterCode || STARTER_CODE[newLang] || "";
+        newCode = question?.codingData?.starterCode || STARTER_CODE[newLang] || "";
       } else {
-         newCode = STARTER_CODE[newLang] || "";
+        newCode = STARTER_CODE[newLang] || "";
       }
     }
     setCode(newCode);
@@ -324,7 +319,7 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
         } else {
           toast.error("Some test cases failed.");
         }
-        
+
         onSave({
           code,
           language,
@@ -384,7 +379,7 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
     editorRef.current = editor;
     monacoRef.current = monaco;
     registerLanguageHelpers(monaco);
-    
+
     // Disable Copy/Paste
     editor.onKeyDown((e) => {
       // Check for Ctrl+C, Ctrl+V, Cmd+C, Cmd+V
@@ -410,7 +405,7 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
       <div className="bg-[#252526] text-gray-300 p-2 px-4 flex justify-between items-center border-b border-[#3e3e3e] z-10 h-14">
         <div className="flex items-center gap-4">
           <div className="relative">
-            <select 
+            <select
               value={language}
               onChange={handleLanguageChange}
               className="appearance-none bg-[#3c3c3c] text-white px-4 py-1.5 pr-8 rounded border border-gray-600 focus:outline-none focus:border-blue-500 text-[16px] font-medium hover:bg-[#4c4c4c] transition-colors cursor-pointer"
@@ -426,8 +421,8 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-4 mr-2">
             <label className="flex items-center gap-2 cursor-pointer group">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 checked={bottomTab === "custom"}
                 onChange={(e) => setBottomTab(e.target.checked ? "custom" : "tests")}
                 className="w-4 h-4 rounded border-gray-600 bg-[#3c3c3c] text-blue-600 focus:ring-blue-500 focus:ring-offset-0"
@@ -472,16 +467,16 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
             onMount={handleEditorMount}
             onChange={(value) => {
               setCode(value);
-              
+
               // Debounce save
               if (saveTimeoutRef.current) {
                 clearTimeout(saveTimeoutRef.current);
               }
-              
+
               saveTimeoutRef.current = setTimeout(() => {
-                onSave({ 
-                  code: value, 
-                  language, 
+                onSave({
+                  code: value,
+                  language,
                   isCorrect: results?.allPassed || false,
                   testCases: results?.results || []
                 });
@@ -524,40 +519,38 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
                 <button
                   type="button"
                   onClick={() => setBottomTab("tests")}
-                  className={`px-3 py-1 rounded border text-xs font-bold transition ${
-                    bottomTab === "tests"
+                  className={`px-3 py-1 rounded border text-xs font-bold transition ${bottomTab === "tests"
                       ? "bg-blue-600 border-blue-500 text-white"
                       : "bg-[#2d2d2d] border-[#3e3e3e] text-gray-300 hover:bg-[#3a3a3a]"
-                  }`}
+                    }`}
                 >
                   Tests
                 </button>
                 <button
                   type="button"
                   onClick={() => setBottomTab("custom")}
-                  className={`px-3 py-1 rounded border text-xs font-bold transition ${
-                    bottomTab === "custom"
+                  className={`px-3 py-1 rounded border text-xs font-bold transition ${bottomTab === "custom"
                       ? "bg-blue-600 border-blue-500 text-white"
                       : "bg-[#2d2d2d] border-[#3e3e3e] text-gray-300 hover:bg-[#3a3a3a]"
-                  }`}
+                    }`}
                 >
                   Custom
                 </button>
               </div>
             </div>
           </div>
-          
+
           <div className="flex-1 overflow-y-auto p-4 pb-12 custom-scrollbar bg-[#1e1e1e]">
             {bottomTab === "custom" ? (
               <div className="flex h-full gap-4">
                 <div className="flex-1 flex flex-col gap-2">
                   <label className="text-xs font-bold text-gray-500 uppercase">Input</label>
                   <textarea
-                      value={customInput}
-                      onChange={(e) => setCustomInput(e.target.value)}
-                      className="flex-1 bg-[#2d2d2d] text-gray-300 p-3 rounded-lg border border-[#3e3e3e] focus:outline-none focus:border-blue-500 font-mono text-sm resize-none custom-scrollbar"
-                      placeholder="Enter custom input here..."
-                    />
+                    value={customInput}
+                    onChange={(e) => setCustomInput(e.target.value)}
+                    className="flex-1 bg-[#2d2d2d] text-gray-300 p-3 rounded-lg border border-[#3e3e3e] focus:outline-none focus:border-blue-500 font-mono text-sm resize-none custom-scrollbar"
+                    placeholder="Enter custom input here..."
+                  />
                 </div>
                 <div className="flex-1 flex flex-col gap-2">
                   <label className="text-xs font-bold text-gray-500 uppercase">Output</label>
@@ -575,101 +568,97 @@ const CodingEnvironment = ({ question, initialData, onSave, layout = "default" }
               </div>
             ) : (
               <>
-            {!results && !isRunning && (
-              <div className="flex flex-col items-center justify-center h-full text-gray-500 opacity-60">
-                <div className="bg-[#2d2d2d] p-3 rounded-full mb-3">
-                    <Play size={24} className="text-gray-400 ml-1" />
-                </div>
-                <p className="text-xs font-medium uppercase tracking-widest">Run code to view output</p>
-              </div>
-            )}
-
-            {isRunning && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="animate-pulse bg-[#2d2d2d] p-4 rounded-lg border border-[#3e3e3e] h-24">
-                    <div className="h-3 bg-[#3e3e3e] rounded w-1/3 mb-4"></div>
-                    <div className="h-8 bg-[#3e3e3e] rounded"></div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {results && (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
-                {results.results.map((res, idx) => (
-                  <div
-                    key={idx}
-                    className={`bg-[#2d2d2d] rounded-lg border shadow-sm overflow-hidden transition-all flex flex-col ${
-                      res.passed ? "border-green-900/50" : "border-red-900/50"
-                    }`}
-                  >
-                    <div className={`px-4 py-2 flex justify-between items-center border-b ${
-                      res.passed ? "bg-green-900/20 border-green-900/30" : "bg-red-900/20 border-red-900/30"
-                    }`}>
-                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                        Case {idx + 1}
-                      </span>
-                      {res.passed ? (
-                        <div className="flex items-center gap-1 text-green-400 font-black text-[10px]">
-                          <CheckCircle size={12} /> PASSED
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1 text-red-400 font-black text-[10px]">
-                          <XCircle size={12} /> FAILED
-                        </div>
-                      )}
+                {!results && !isRunning && (
+                  <div className="flex flex-col items-center justify-center h-full text-gray-500 opacity-60">
+                    <div className="bg-[#2d2d2d] p-3 rounded-full mb-3">
+                      <Play size={24} className="text-gray-400 ml-1" />
                     </div>
-                    
-                    <div className="p-3 flex-1 space-y-2 overflow-y-auto custom-scrollbar-sm max-h-40">
-                      {res.input !== "Hidden" ? (
-                        <>
-                          <div className="space-y-1">
-                            <label className="text-[9px] font-black text-gray-500 uppercase tracking-tighter">Input</label>
-                            <pre className="bg-[#1e1e1e] p-1.5 rounded text-[11px] font-mono text-gray-300 border border-[#3e3e3e]">{res.input || "(empty)"}</pre>
-                          </div>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div className="space-y-1">
-                              <label className="text-[9px] font-black text-gray-500 uppercase tracking-tighter">Expected</label>
-                              <pre className="bg-[#1e1e1e] p-1.5 rounded text-[11px] font-mono text-gray-300 border border-[#3e3e3e]">{res.expectedOutput}</pre>
+                    <p className="text-xs font-medium uppercase tracking-widest">Run code to view output</p>
+                  </div>
+                )}
+
+                {isRunning && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="animate-pulse bg-[#2d2d2d] p-4 rounded-lg border border-[#3e3e3e] h-24">
+                        <div className="h-3 bg-[#3e3e3e] rounded w-1/3 mb-4"></div>
+                        <div className="h-8 bg-[#3e3e3e] rounded"></div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {results && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    {results.results.map((res, idx) => (
+                      <div
+                        key={idx}
+                        className={`bg-[#2d2d2d] rounded-lg border shadow-sm overflow-hidden transition-all flex flex-col ${res.passed ? "border-green-900/50" : "border-red-900/50"
+                          }`}
+                      >
+                        <div className={`px-4 py-2 flex justify-between items-center border-b ${res.passed ? "bg-green-900/20 border-green-900/30" : "bg-red-900/20 border-red-900/30"
+                          }`}>
+                          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                            Case {idx + 1}
+                          </span>
+                          {res.passed ? (
+                            <div className="flex items-center gap-1 text-green-400 font-black text-[10px]">
+                              <CheckCircle size={12} /> PASSED
                             </div>
+                          ) : (
+                            <div className="flex items-center gap-1 text-red-400 font-black text-[10px]">
+                              <XCircle size={12} /> FAILED
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="p-3 flex-1 space-y-2 overflow-y-auto custom-scrollbar-sm max-h-40">
+                          {res.input !== "Hidden" ? (
+                            <>
+                              <div className="space-y-1">
+                                <label className="text-[9px] font-black text-gray-500 uppercase tracking-tighter">Input</label>
+                                <pre className="bg-[#1e1e1e] p-1.5 rounded text-[11px] font-mono text-gray-300 border border-[#3e3e3e]">{res.input || "(empty)"}</pre>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="space-y-1">
+                                  <label className="text-[9px] font-black text-gray-500 uppercase tracking-tighter">Expected</label>
+                                  <pre className="bg-[#1e1e1e] p-1.5 rounded text-[11px] font-mono text-gray-300 border border-[#3e3e3e]">{res.expectedOutput}</pre>
+                                </div>
+                                <div className="space-y-1">
+                                  <label className="text-[9px] font-black text-gray-500 uppercase tracking-tighter">Actual</label>
+                                  <pre className={`p-1.5 rounded text-[11px] font-mono border ${res.passed ? "bg-green-900/10 text-green-300 border-green-900/30" : "bg-red-900/10 text-red-300 border-red-900/30"
+                                    }`}>
+                                    {res.actualOutput || (res.error ? "Error" : "(empty)")}
+                                  </pre>
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="py-2 text-center">
+                              <p className="text-[11px] font-bold text-gray-500 italic">
+                                Security Hidden
+                              </p>
+                              <div className={`mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${res.passed ? "bg-green-900/20 text-green-400" : "bg-red-900/20 text-red-400"
+                                }`}>
+                                {res.passed ? "Passed" : "Failed"}
+                              </div>
+                            </div>
+                          )}
+
+                          {res.error && (
                             <div className="space-y-1">
-                              <label className="text-[9px] font-black text-gray-500 uppercase tracking-tighter">Actual</label>
-                              <pre className={`p-1.5 rounded text-[11px] font-mono border ${
-                                res.passed ? "bg-green-900/10 text-green-300 border-green-900/30" : "bg-red-900/10 text-red-300 border-red-900/30"
-                              }`}>
-                                {res.actualOutput || (res.error ? "Error" : "(empty)")}
+                              <label className="text-[9px] font-black text-red-400 uppercase tracking-tighter">Error</label>
+                              <pre className="bg-red-900/10 text-red-300 p-1.5 rounded text-[10px] font-mono border border-red-900/30 whitespace-pre-wrap">
+                                {res.error}
                               </pre>
                             </div>
-                          </div>
-                        </>
-                      ) : (
-                        <div className="py-2 text-center">
-                          <p className="text-[11px] font-bold text-gray-500 italic">
-                            Security Hidden
-                          </p>
-                          <div className={`mt-1 inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase ${
-                            res.passed ? "bg-green-900/20 text-green-400" : "bg-red-900/20 text-red-400"
-                          }`}>
-                            {res.passed ? "Passed" : "Failed"}
-                          </div>
+                          )}
                         </div>
-                      )}
-
-                      {res.error && (
-                        <div className="space-y-1">
-                          <label className="text-[9px] font-black text-red-400 uppercase tracking-tighter">Error</label>
-                          <pre className="bg-red-900/10 text-red-300 p-1.5 rounded text-[10px] font-mono border border-red-900/30 whitespace-pre-wrap">
-                            {res.error}
-                          </pre>
-                        </div>
-                      )}
-                    </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
-            </>
+                )}
+              </>
             )}
           </div>
         </div>
