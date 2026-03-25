@@ -1,10 +1,7 @@
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
 import { Plus, Trash2, Building, RefreshCw, X, Pencil, Sparkles, Search, Edit3, CheckCircle } from "lucide-react";
-import AdminSidebar from "../../components/AdminSidebar";
-import AdminHeader from "../../components/AdminHeader";
-import { getDepartments, addDepartment, deleteDepartment, updateDepartment } from "../../api/departmentApi";
-
+import { getDepartments, addDepartment, updateDepartment, deleteDepartment } from "../../api/departmentApi";
 const ManageDepartments = () => {
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -80,14 +77,8 @@ const ManageDepartments = () => {
   );
 
   return (
-    <div className="flex h-screen bg-slate-100 overflow-hidden">
-      <AdminSidebar />
-
-      <div className="flex-1 flex flex-col ml-64">
-        <AdminHeader />
-
-        <main className="flex-1 overflow-y-auto p-8">
-          <div className="max-w-5xl mx-auto">
+    <div className="w-full min-h-screen bg-slate-50">
+      <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto">
             {/* Header Section */}
             <div className={`mb-8 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-8'}`}>
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -232,9 +223,6 @@ const ManageDepartments = () => {
                 )}
               </div>
             </div>
-          </div>
-        </main>
-      </div>
 
       {/* Add/Edit Modal */}
       {showModal && (
@@ -309,6 +297,7 @@ const ManageDepartments = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

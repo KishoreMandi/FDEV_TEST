@@ -7,9 +7,6 @@ import {
   Mic, MousePointer, XCircle, CheckCircle, ChevronDown,
   Timer, Hash, Percent, Layers
 } from "lucide-react";
-
-import AdminSidebar from "../../components/AdminSidebar";
-import AdminHeader from "../../components/AdminHeader";
 import { getExamById, updateExam } from "../../api/examApi";
 import { getUsers } from "../../api/adminApi";
 import { getDepartments } from "../../api/departmentApi";
@@ -217,22 +214,15 @@ const EditExam = () => {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen bg-slate-50">
-        <AdminSidebar />
-        <div className="ml-64 w-full flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
-        </div>
+      <div className="w-full min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-amber-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans text-slate-900">
-      <AdminSidebar />
-      <div className="ml-64 w-full flex flex-col">
-        <AdminHeader />
-
-        <div className="flex-1 p-8 max-w-7xl mx-auto w-full">
+    <div className="w-full min-h-screen bg-slate-50 font-sans text-slate-900">
+      <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full">
           {/* Page Header */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
@@ -642,8 +632,7 @@ const EditExam = () => {
           </div>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
 export default EditExam;

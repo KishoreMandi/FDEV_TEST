@@ -1,29 +1,27 @@
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
-
-import AdminSidebar from "../../components/AdminSidebar";
-import AdminHeader from "../../components/AdminHeader";
-import axios from "../../api/axiosInstance";
-import { getDepartments } from "../../api/departmentApi";
 import { 
   FileText, 
+  Sparkles, 
+  Settings, 
+  Timer, 
+  Hash, 
   AlertCircle, 
+  Building, 
   Calendar, 
   Shield, 
-  Camera, 
-  Maximize, 
-  Monitor, 
-  ToggleLeft,
-  UserCheck,
+  Eye, 
+  CheckCircle2, 
   ArrowRight,
-  Sparkles,
-  Building,
-  Hash,
-  Timer,
-  Eye,
-  Settings,
-  CheckCircle2
+  Camera,
+  Maximize,
+  Monitor,
+  ToggleLeft,
+  UserCheck
 } from "lucide-react";
+
+import axiosInstance from "../../api/axiosInstance";
+import { getDepartments } from "../../api/departmentApi";
 
 const CreateExam = () => {
   const [title, setTitle] = useState("");
@@ -95,7 +93,7 @@ const CreateExam = () => {
     try {
       setLoading(true);
 
-      await axios.post("/exams", {
+      await axiosInstance.post("/exams", {
         title,
         duration,
         negativeMarking,
@@ -152,11 +150,7 @@ const CreateExam = () => {
   ];
 
   return (
-    <div className="flex bg-slate-100 min-h-screen">
-      <AdminSidebar />
-
-      <div className="ml-64 flex-1 min-h-screen bg-slate-50">
-        <AdminHeader />
+    <div className="w-full min-h-screen bg-slate-50">
 
         <div className="p-6 max-w-4xl mx-auto">
           <div className={`mb-8 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-8'}`}>
@@ -444,8 +438,7 @@ const CreateExam = () => {
           </form>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
 export default CreateExam;

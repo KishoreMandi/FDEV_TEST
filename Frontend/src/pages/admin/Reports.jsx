@@ -8,12 +8,7 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import toast from "react-hot-toast";
-
-import AdminSidebar from "../../components/AdminSidebar";
-import AdminHeader from "../../components/AdminHeader";
 import { getReports } from "../../api/reportApi";
-
-const COLORS = ["#ec4899", "#8b5cf6", "#3b82f6", "#10b981", "#f59e0b", "#ef4444"];
 
 const Reports = () => {
   const [data, setData] = useState(null);
@@ -105,28 +100,37 @@ const Reports = () => {
 
   if (loading) {
     return (
-      <div className="flex">
-        <AdminSidebar />
-        <div className="ml-64 w-full h-screen bg-slate-100 flex items-center justify-center">
-          <div className="text-center">
-            <div className="relative inline-block">
-              <div className="w-16 h-16 border-4 border-slate-200 rounded-full animate-spin border-t-amber-500" />
-              <Sparkles className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 text-amber-500 animate-pulse" />
-            </div>
-            <p className="mt-4 text-gray-600 font-medium animate-pulse">Loading reports...</p>
+      <div className="w-full min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <div className="relative inline-block">
+            <div className="w-16 h-16 border-4 border-slate-200 rounded-full animate-spin border-t-amber-500" />
+            <Sparkles className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 text-amber-500 animate-pulse" />
           </div>
+          <p className="mt-4 text-gray-600 font-medium animate-pulse">Loading reports...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) {
+    return (
+      <div className="w-full min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="text-center">
+            <p className="text-gray-500 font-medium">No reporting data available.</p>
+            <button 
+              onClick={fetchReports}
+              className="mt-4 px-4 py-2 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-colors"
+            >
+              Retry
+            </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div>
-      <AdminSidebar />
-      <div className="ml-64 min-h-screen bg-slate-100 relative overflow-hidden">
-        <AdminHeader />
-        
-        <div className="relative p-8">
+    <div className="w-full min-h-screen bg-slate-50 relative overflow-hidden">
+      <div className="p-4 sm:p-6 lg:p-8">
           {/* Header */}
           <div className={`flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-8'}`}>
             <div className="flex items-center gap-4">
@@ -426,8 +430,7 @@ const Reports = () => {
           )}
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
 export default Reports;

@@ -2,12 +2,9 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { CheckCircle, XCircle, ArrowLeft, Code, RotateCcw } from "lucide-react";
 import toast from "react-hot-toast";
-
-import AdminSidebar from "../../components/AdminSidebar";
-import AdminHeader from "../../components/AdminHeader";
-import CodingEnvironment from "../../components/CodingEnvironment";
 import axios from "../../api/axiosInstance";
 import { getExamById, getAdminQuestions } from "../../api/examApi";
+import CodingEnvironment from "../../components/CodingEnvironment";
 
 const ResultAnalysis = () => {
   const { resultId } = useParams();
@@ -99,38 +96,25 @@ const ResultAnalysis = () => {
 
   if (loading) {
     return (
-      <div className="flex h-screen bg-gray-50">
-        <AdminSidebar />
-        <div className="flex-1 ml-64 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+      <div className="w-full min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-900"></div>
       </div>
     );
   }
 
   if (!selectedResult) {
     return (
-      <div className="flex h-screen bg-gray-50">
-        <AdminSidebar />
-        <div className="flex-1 ml-64 p-6">
-          <AdminHeader />
-          <div className="text-center py-10 text-red-500">
-            Result not found.
-          </div>
+      <div className="w-full min-h-screen bg-gray-50 p-4 sm:p-6">
+        <div className="text-center py-10 text-red-500">
+          Result not found.
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
-      <AdminSidebar />
-
-      <div className="flex-1 flex flex-col ml-64 min-w-0 overflow-hidden">
-        <AdminHeader />
-
-        <main className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-4xl mx-auto space-y-6">
+    <div className="w-full min-h-screen bg-gray-50">
+      <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-6">
             
             {/* Header / Back Button */}
             <div className="flex items-center gap-4">
@@ -387,8 +371,6 @@ const ResultAnalysis = () => {
             )}
 
           </div>
-        </main>
-      </div>
 
       {/* Retry/Debug Modal */}
       {retryModalOpen && retryData && (

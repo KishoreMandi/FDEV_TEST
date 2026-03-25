@@ -5,8 +5,6 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import Editor from "@monaco-editor/react";
 
-import AdminSidebar from "../../components/AdminSidebar";
-import AdminHeader from "../../components/AdminHeader";
 import { getExams, getAdminQuestions, deleteQuestion } from "../../api/examApi";
 import axios from "../../api/axiosInstance";
 
@@ -324,13 +322,8 @@ const AddQuestions = () => {
   };
 
   return (
-    <div className={`flex bg-slate-100 ${isFullscreen ? "w-full h-screen" : "min-h-screen"}`}>
-      {!isFullscreen && <AdminSidebar />}
-
-      <div className={`${isFullscreen ? "w-full" : "ml-64 flex-1"} min-h-screen bg-slate-50`}>
-        {!isFullscreen && <AdminHeader />}
-
-        <div className="p-6 max-w-6xl mx-auto">
+    <div className={`w-full ${isFullscreen ? "h-screen" : "min-h-screen"} bg-slate-50 relative overflow-hidden`}>
+      <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
           {!examId ? (
             // Folder View
             <div className={`transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
@@ -808,8 +801,7 @@ const AddQuestions = () => {
           )}
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
 export default AddQuestions;

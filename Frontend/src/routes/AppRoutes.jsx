@@ -18,6 +18,8 @@ import ManageExams from "../pages/admin/ManageExams";
 import ManageDepartments from "../pages/admin/ManageDepartments";
 import EditExam from "../pages/admin/EditExam";
 import ProtectedRoute from "./ProtectedRoute";
+import { UIProvider } from "../context/UIContext";
+import AdminLayout from "../components/AdminLayout";
 
 const AppRoutes = () => {
   return (
@@ -65,82 +67,24 @@ const AppRoutes = () => {
 
       {/* ADMIN */}
       <Route
-        path="/admin/dashboard"
+        path="/admin/*"
         element={
           <ProtectedRoute role="admin">
-            <AdminDashboard />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/admin/reports"
-        element={
-          <ProtectedRoute role="admin">
-            <Reports />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/admin/departments"
-        element={
-          <ProtectedRoute role="admin">
-            <ManageDepartments />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/admin/create-exam"
-        element={
-          <ProtectedRoute role="admin">
-            <CreateExam />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/admin/add-questions"
-        element={
-          <ProtectedRoute role="admin">
-            <AddQuestions />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/admin/results"
-        element={
-          <ProtectedRoute role="admin">
-            <Results />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/admin/result-analysis/:resultId"
-        element={
-          <ProtectedRoute role="admin">
-            <ResultAnalysis />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/admin/manage-exams"
-        element={
-          <ProtectedRoute role="admin">
-            <ManageExams />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route
-        path="/admin/edit-exam/:id"
-        element={
-          <ProtectedRoute role="admin">
-            <EditExam />
+            <UIProvider>
+              <AdminLayout>
+                <Routes>
+                  <Route path="dashboard" element={<AdminDashboard />} />
+                  <Route path="reports" element={<Reports />} />
+                  <Route path="departments" element={<ManageDepartments />} />
+                  <Route path="create-exam" element={<CreateExam />} />
+                  <Route path="add-questions" element={<AddQuestions />} />
+                  <Route path="results" element={<Results />} />
+                  <Route path="result-analysis/:resultId" element={<ResultAnalysis />} />
+                  <Route path="manage-exams" element={<ManageExams />} />
+                  <Route path="edit-exam/:id" element={<EditExam />} />
+                </Routes>
+              </AdminLayout>
+            </UIProvider>
           </ProtectedRoute>
         }
       />

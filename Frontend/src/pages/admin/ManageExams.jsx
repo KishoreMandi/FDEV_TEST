@@ -2,8 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
-import AdminSidebar from "../../components/AdminSidebar";
-import AdminHeader from "../../components/AdminHeader";
 import { getExams, deleteExam } from "../../api/examApi";
 import { 
   FileText, 
@@ -75,10 +73,7 @@ const ManageExams = () => {
   });
 
   return (
-    <div className="flex bg-slate-100">
-      <AdminSidebar />
-      <div className="ml-64 flex-1 min-h-screen bg-slate-50">
-        <AdminHeader />
+    <div className="w-full min-h-screen bg-slate-50">
 
         <div className="p-6">
           <div className={`mb-8 transition-all duration-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-8'}`}>
@@ -323,7 +318,6 @@ const ManageExams = () => {
             </div>
           </div>
         </div>
-      </div>
     </div>
   );
 };

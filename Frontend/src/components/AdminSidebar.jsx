@@ -1,5 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/auth";
+import { useUI } from "../context/UIContext";
 import {
   LayoutDashboard,
   FilePlus,
@@ -8,10 +9,12 @@ import {
   ClipboardList,
   PieChart,
   Building,
+  X,
 } from "lucide-react";
 
 const AdminSidebar = () => {
   useAuth();
+  const { isSidebarOpen, isMobile, closeSidebar } = useUI();
 
   const menuItems = [
     { to: "/admin/dashboard", icon: LayoutDashboard, label: "Dashboard" },
@@ -23,9 +26,13 @@ const AdminSidebar = () => {
     { to: "/admin/departments", icon: Building, label: "Departments" },
   ];
 
+  const sidebarTranslate = isMobile 
+    ? (isSidebarOpen ? "translate-x-0" : "-translate-x-full")
+    : "translate-x-0";
+
   return (
-    <div className="h-screen w-64 fixed bg-slate-950 text-slate-100 border-r border-slate-800 flex flex-col">
-      <div className="px-6 py-5 border-b border-slate-800">
+    <div className={`h-screen w-64 fixed bg-slate-950 text-slate-100 border-r border-slate-800 flex flex-col z-50 transition-transform duration-300 ${sidebarTranslate}`}>
+      <div className="px-6 py-5 border-b border-slate-800 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-slate-800 flex items-center justify-center">
             <span className="text-sm font-semibold tracking-tight">
@@ -41,6 +48,12 @@ const AdminSidebar = () => {
             </p>
           </div>
         </div>
+        <button
+          onClick={closeSidebar}
+          className="xl:hidden p-2 rounded-lg hover:bg-slate-800 text-slate-400"
+        >
+          <X className="w-5 h-5" />
+        </button>
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
@@ -51,6 +64,9 @@ const AdminSidebar = () => {
             <NavLink
               key={item.to}
               to={item.to}
+              onClick={() => {
+                if (window.innerWidth < 1024) closeSidebar();
+              }}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
                   isActive
@@ -67,8 +83,6 @@ const AdminSidebar = () => {
           );
         })}
       </nav>
-
-
     </div>
   );
 };

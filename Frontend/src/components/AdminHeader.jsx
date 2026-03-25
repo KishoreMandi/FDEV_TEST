@@ -1,25 +1,33 @@
 import { useAuth } from "../context/auth";
-import { Bell, User, LogOut } from "lucide-react";
+import { useUI } from "../context/UIContext";
+import { Bell, User, LogOut, Menu } from "lucide-react";
 
 const AdminHeader = () => {
   const { user, logout } = useAuth();
+  const { isMobile, toggleSidebar } = useUI();
 
   return (
-    <div className="bg-white border-b border-slate-200">
-      <div className="flex justify-between items-center px-6 py-4">
-        <div className="flex items-center gap-4">
-          <div className="w-11 h-11 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden">
+    <div className="bg-white border-b border-slate-200 sticky top-0 z-30">
+      <div className="flex justify-between items-center px-4 sm:px-6 py-4">
+        <div className="flex items-center gap-3 sm:gap-4">
+          {isMobile && (
+            <button
+              onClick={toggleSidebar}
+              className="p-2 rounded-lg hover:bg-slate-100 text-slate-600"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+          )}          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden shrink-0">
             <img
               src="/F.log1.png"
               alt="Logo"
-              className="w-8 h-8 object-contain"
+              className="w-7 h-7 sm:w-8 sm:h-8 object-contain"
             />
           </div>
           <div>
-            <h2 className="text-xl font-semibold text-slate-900 tracking-tight">
+            <h2 className="text-lg sm:text-xl font-semibold text-slate-900 tracking-tight line-clamp-1">
               Admin Dashboard
             </h2>
-          
           </div>
         </div>
 

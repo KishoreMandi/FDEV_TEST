@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
-import AdminSidebar from "../../components/AdminSidebar";
-import AdminHeader from "../../components/AdminHeader";
 import StatCard from "../../components/StatCard";
 import CsvUploader from "../../components/CsvUploader";
 import { getAdminStats, getUsers, approveUser, rejectUser, updateUserStatus, deleteUser, updateUserDetails } from "../../api/adminApi";
@@ -194,27 +192,20 @@ const Dashboard = () => {
 
   if (!stats) {
     return (
-      <div className="flex">
-        <AdminSidebar />
-        <div className="ml-64 w-full min-h-screen bg-gradient-to-br from-gray-50 via-purple-50 to-pink-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="relative inline-block">
-              <div className="w-16 h-16 border-4 border-purple-200 rounded-full animate-spin border-t-purple-500" />
-              <Sparkles className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 text-purple-500 animate-pulse" />
-            </div>
-            <p className="mt-4 text-gray-600 font-medium animate-pulse">Loading dashboard...</p>
+      <div className="w-full min-h-screen bg-gradient-to-br from-gray-50 via-purple-50 to-pink-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="relative inline-block">
+            <div className="w-16 h-16 border-4 border-purple-200 rounded-full animate-spin border-t-purple-500" />
+            <Sparkles className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 text-purple-500 animate-pulse" />
           </div>
+          <p className="mt-4 text-gray-600 font-medium animate-pulse">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex">
-      <AdminSidebar />
-
-      <div className="ml-64 w-full min-h-screen bg-slate-50">
-        <AdminHeader />
+    <div className="w-full min-h-screen bg-slate-50">
 
         <div className="px-6 pt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard title="Total Exams" value={stats.totalExams} icon={FileText} index={0} />
@@ -545,7 +536,6 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-      </div>
 
       {/* EDIT USER MODAL */}
       {editingUser && (
