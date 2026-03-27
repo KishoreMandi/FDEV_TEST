@@ -187,7 +187,7 @@ const SystemCheckModal = ({ open, onClose, onConfirm }) => {
 
   return (
     <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-      <div className="bg-white w-[90%] max-w-lg rounded-xl p-6 relative shadow-2xl">
+      <div className="bg-white w-[95%] max-w-md rounded-xl p-4 sm:p-5 relative shadow-2xl">
         <canvas ref={canvasRef} className="hidden" />
         <button
           onClick={onClose}
@@ -196,9 +196,9 @@ const SystemCheckModal = ({ open, onClose, onConfirm }) => {
           <X size={24} />
         </button>
 
-        <h2 className="text-2xl font-bold mb-6 text-gray-800">System Verification</h2>
+        <h2 className="text-xl font-bold mb-4 text-gray-800">System Verification</h2>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Video Preview */}
           <div className="relative bg-black rounded-lg overflow-hidden aspect-video flex items-center justify-center">
             {stream ? (
@@ -224,32 +224,32 @@ const SystemCheckModal = ({ open, onClose, onConfirm }) => {
           </div>
 
           {/* Status List */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-             <div className={`p-4 rounded-lg border flex items-center gap-3 ${checks.camera ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-                <Camera className={checks.camera ? "text-green-600" : "text-red-500"} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+             <div className={`p-3 rounded-lg border flex items-center gap-3 ${checks.camera ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                <Camera size={20} className={checks.camera ? "text-green-600" : "text-red-500"} />
                 <div>
-                   <p className="font-semibold text-sm">Camera</p>
-                   <p className="text-xs text-gray-500">{checks.camera ? "Detected & Working" : "Not Detected"}</p>
+                   <p className="font-semibold text-xs sm:text-sm">Camera</p>
+                   <p className="text-[10px] sm:text-xs text-gray-500">{checks.camera ? "Detected & Working" : "Not Detected"}</p>
                 </div>
-                {checks.camera ? <CheckCircle size={18} className="text-green-600 ml-auto" /> : <AlertCircle size={18} className="text-red-500 ml-auto" />}
+                {checks.camera ? <CheckCircle size={16} className="text-green-600 ml-auto" /> : <AlertCircle size={16} className="text-red-500 ml-auto" />}
              </div>
 
-             <div className={`p-4 rounded-lg border flex items-center gap-3 ${checks.mic ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-                <Mic className={checks.mic ? "text-green-600" : "text-red-500"} />
+             <div className={`p-3 rounded-lg border flex items-center gap-3 ${checks.mic ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                <Mic size={20} className={checks.mic ? "text-green-600" : "text-red-500"} />
                 <div>
-                   <p className="font-semibold text-sm">Microphone</p>
-                   <p className="text-xs text-gray-500">{checks.mic ? "Detected & Working" : "Not Detected"}</p>
+                   <p className="font-semibold text-xs sm:text-sm">Microphone</p>
+                   <p className="text-[10px] sm:text-xs text-gray-500">{checks.mic ? "Detected & Working" : "Not Detected"}</p>
                 </div>
-                {checks.mic ? <CheckCircle size={18} className="text-green-600 ml-auto" /> : <AlertCircle size={18} className="text-red-500 ml-auto" />}
+                {checks.mic ? <CheckCircle size={16} className="text-green-600 ml-auto" /> : <AlertCircle size={16} className="text-red-500 ml-auto" />}
              </div>
 
-             <div className={`p-4 rounded-lg border flex items-center gap-3 col-span-1 sm:col-span-2 ${checks.personDetected ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
-                <UserIcon className={checks.personDetected ? "text-green-600" : "text-amber-500"} />
+             <div className={`p-3 rounded-lg border flex items-center gap-3 col-span-1 sm:col-span-2 ${checks.personDetected ? 'bg-green-50 border-green-200' : 'bg-amber-50 border-amber-200'}`}>
+                <UserIcon size={20} className={checks.personDetected ? "text-green-600" : "text-amber-500"} />
                 <div>
-                   <p className="font-semibold text-sm">Person Detection</p>
-                   <p className="text-xs text-gray-500">{checks.personDetected ? "Person Detected" : (videoSignalMsg || "Adjusting...")}</p>
+                   <p className="font-semibold text-xs sm:text-sm">Person Detection</p>
+                   <p className="text-[10px] sm:text-xs text-gray-500">{checks.personDetected ? "Person Detected" : (videoSignalMsg || "Adjusting...")}</p>
                 </div>
-                {checks.personDetected ? <CheckCircle size={18} className="text-green-600 ml-auto" /> : <AlertCircle size={18} className="text-amber-500 ml-auto" />}
+                {checks.personDetected ? <CheckCircle size={16} className="text-green-600 ml-auto" /> : <AlertCircle size={16} className="text-amber-500 ml-auto" />}
              </div>
           </div>
 
@@ -275,12 +275,12 @@ const SystemCheckModal = ({ open, onClose, onConfirm }) => {
              </button>
           )}
 
-          <div className="text-sm text-gray-500 bg-blue-50 p-3 rounded">
-             <p><b>Note:</b> You must keep your camera and microphone ON during the entire exam. Turning them off will result in automatic submission.</p>
+          <div className="text-xs sm:text-sm text-gray-500 bg-blue-50 p-2 sm:p-3 rounded">
+             <p><b>Note:</b> Keep camera and mic ON. Turning them off will result in automatic submission.</p>
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 mt-6">
+        <div className="flex justify-end gap-3 mt-4">
           <button
             onClick={onClose}
             className="px-5 py-2.5 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition"
