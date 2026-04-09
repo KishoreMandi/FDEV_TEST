@@ -322,7 +322,7 @@ const AddQuestions = () => {
   };
 
   return (
-    <div className={`w-full ${isFullscreen ? "h-screen" : "min-h-screen"} bg-slate-50 relative overflow-hidden`}>
+    <div className="w-full min-h-screen bg-slate-50 relative">
       <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto">
           {!examId ? (
             // Folder View
@@ -766,24 +766,42 @@ const AddQuestions = () => {
                                 <span className="bg-amber-50 px-2 py-1 rounded-lg uppercase text-xs font-bold text-amber-700">{q.codingData.language}</span>
                               </div>
                               {q.codingData?.testCases && (
-                                <div className="border-top border-slate-100 pt-3">
-                                  <p className="text-sm font-medium text-gray-600 mb-2">Test Cases:</p>
-                                  <div className="space-y-2">
+                                <div className="mt-4 pt-4 border-t border-slate-100">
+                                  <div className="flex items-center gap-2 mb-4">
+                                    <Settings className="w-4 h-4 text-slate-400" />
+                                    <p className="text-sm font-bold text-slate-700 uppercase tracking-tight">Test Cases</p>
+                                  </div>
+                                  <div className="space-y-3">
                                     {q.codingData.testCases.map((tc, tcIndex) => (
-                                      <div key={tcIndex} className="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                                        <div className="grid grid-cols-2 gap-2 text-xs">
+                                      <div key={tcIndex} className="p-4 rounded-xl bg-slate-50 border border-slate-200 shadow-sm">
+                                        <div className="flex items-center gap-2 mb-3">
+                                          <span className="px-2.5 py-1 rounded-lg bg-amber-50 text-amber-700 text-[10px] font-bold uppercase tracking-wider border border-amber-100">
+                                            Test Case {tcIndex + 1}
+                                          </span>
+                                          {tc.isHidden && (
+                                            <span className="px-2.5 py-1 rounded-lg bg-slate-200 text-slate-600 text-[10px] font-bold uppercase tracking-wider">
+                                              Hidden
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                           <div>
-                                            <span className="font-medium text-gray-500">Input:</span>
-                                            <span className="text-gray-700 ml-1">{tc.input || "N/A"}</span>
+                                            <p className="text-[11px] font-bold text-slate-500 mb-1.5 flex items-center gap-1.5">
+                                              <Terminal className="w-3 h-3" /> INPUT
+                                            </p>
+                                            <div className="bg-white p-3 rounded-lg border border-slate-100 text-xs font-mono text-slate-700 break-all whitespace-pre-wrap ring-1 ring-slate-100 shadow-inner min-h-[40px]">
+                                              {tc.input || <span className="text-slate-300 italic">No input</span>}
+                                            </div>
                                           </div>
                                           <div>
-                                            <span className="font-medium text-gray-500">Output:</span>
-                                            <span className="text-gray-700 ml-1">{tc.expectedOutput || "N/A"}</span>
+                                            <p className="text-[11px] font-bold text-slate-500 mb-1.5 flex items-center gap-1.5">
+                                              <CheckCircle className="w-3 h-3" /> OUTPUT
+                                            </p>
+                                            <div className="bg-white p-3 rounded-lg border border-slate-100 text-xs font-mono text-slate-700 break-all whitespace-pre-wrap ring-1 ring-slate-100 shadow-inner min-h-[40px]">
+                                              {tc.expectedOutput || "N/A"}
+                                            </div>
                                           </div>
                                         </div>
-                                        {tc.isHidden && (
-                                          <span className="inline-block mt-1 text-xs text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full">Hidden</span>
-                                        )}
                                       </div>
                                     ))}
                                   </div>
