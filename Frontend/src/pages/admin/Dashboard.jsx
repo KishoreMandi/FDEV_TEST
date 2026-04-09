@@ -631,6 +631,8 @@ const Dashboard = () => {
                         className="w-full px-4 py-2.5 rounded-xl border border-slate-300 bg-white focus:border-amber-500 focus:ring-2 focus:ring-amber-200/50 focus:outline-none transition-all duration-300"
                       >
                         <option value="student">Student</option>
+                        <option value="employee">Employee</option>
+                        <option value="admin">Admin</option>
                       </select>
                     </div>
 

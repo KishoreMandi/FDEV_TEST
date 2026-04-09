@@ -33,9 +33,17 @@ export const registerUser = async (req, res) => {
     // hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Sanitize and Map Role (Consistent with Bulk Import)
+    let finalRole = role || "student";
+    const lowerRole = finalRole.toLowerCase().trim();
+    if (lowerRole === "manager") {
+      finalRole = "admin";
+    } else if (["admin", "employee", "student"].includes(lowerRole)) {
+      finalRole = lowerRole;
+    }
+
     // Determine approval status
-    // Admin is auto-approved, others need approval
-    const isApproved = role === "admin";
+    const isApproved = finalRole === "admin";
 
     // create user
     const user = await User.create({
@@ -43,9 +51,9 @@ export const registerUser = async (req, res) => {
       email,
       employeeId,
       password: hashedPassword,
-      role,
+      role: finalRole,
       isApproved,
-      ...(role === "student" && { department }), // Conditionally add department
+      ...((finalRole === "student" || finalRole === "employee") && { department }),
     });
 
     res.status(201).json({

@@ -35,7 +35,7 @@ const Register = () => {
     e.preventDefault();
     try {
       const userData = { name, email, employeeId, password, role };
-      if (role === "student") {
+      if (role === "student" || role === "employee") {
         userData.department = department;
       }
       await registerUser(userData);
@@ -100,13 +100,14 @@ const Register = () => {
                 onChange={(e) => setRole(e.target.value)}
               >
                 <option value="student">Student</option>
+                <option value="employee">Employee</option>
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
                 <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
               </div>
             </div>
 
-            {role === "student" && (
+            {(role === "student" || role === "employee") && (
               <div className="relative">
                 <select
                   className="w-full p-3 rounded-full border focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none pr-10"

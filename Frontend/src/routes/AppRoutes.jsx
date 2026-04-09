@@ -32,7 +32,7 @@ const AppRoutes = () => {
       <Route
         path="/student/dashboard"
         element={
-          <ProtectedRoute role="student">
+          <ProtectedRoute role={["student", "employee"]}>
             <StudentDashboard />
           </ProtectedRoute>
         }
@@ -41,7 +41,7 @@ const AppRoutes = () => {
       <Route
         path="/student/exam/:examId"
         element={
-          <ProtectedRoute role="student">
+          <ProtectedRoute role={["student", "employee"]}>
             <Exam />
           </ProtectedRoute>
         }
@@ -50,7 +50,7 @@ const AppRoutes = () => {
       <Route
         path="/student/result/:examId"
         element={
-          <ProtectedRoute role="student">
+          <ProtectedRoute role={["student", "employee"]}>
             <Result />
           </ProtectedRoute>
         }
@@ -59,7 +59,7 @@ const AppRoutes = () => {
       <Route
         path="/student/leaderboard/:examId"
         element={
-          <ProtectedRoute role="student">
+          <ProtectedRoute role={["student", "employee"]}>
             <StudentLeaderboard />
           </ProtectedRoute>
         }
