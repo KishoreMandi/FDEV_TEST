@@ -59,9 +59,11 @@ export const getAllExams = async (req, res) => {
     const { role } = req.user;
     let query = {};
     
-    // If student, only show published exams
-    if (role === 'student') {
+    // Only admin can see unpublished exams
+    if (role !== 'admin') {
       query.isPublished = true;
+      
+      // Filter by assignment or department
       query.$or = [
         { assignedTo: new mongoose.Types.ObjectId(req.user.id) }, // Explicitly assigned to user
         {
