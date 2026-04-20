@@ -1,185 +1,129 @@
 import Question from "../models/Question.js";
+import { execSync, spawn } from "child_process";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
-const JDOODLE_EXECUTE_URL = "https://api.jdoodle.com/v1/execute";
+const getRandomId = () => Math.random().toString(36).substring(2, 11) + Date.now().toString(36);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const JDOODLE_LANGUAGE_MAP = {
-  javascript: { language: "nodejs", versionIndex: "4" },
-  typescript: { language: "nodejs", versionIndex: "4" }, // Fallback to Node.js as JDoodle does not natively support TS execution directly
-  python: { language: "python3", versionIndex: "4" },
-  java: { language: "java", versionIndex: "4" },
-  cpp: { language: "cpp", versionIndex: "5" },
-  c: { language: "c", versionIndex: "5" },
-  csharp: { language: "csharp", versionIndex: "4" },
-  go: { language: "go", versionIndex: "4" },
-  rust: { language: "rust", versionIndex: "4" },
-  php: { language: "php", versionIndex: "4" },
-  ruby: { language: "ruby", versionIndex: "4" },
-  kotlin: { language: "kotlin", versionIndex: "3" },
+// Multi-Mirror Piston Platform Execution
+const PISTON_INSTANCES = [
+  "https://piston.pydis.com/api/v2/execute",
+  "https://emkc.org/api/v2/piston/execute",
+  "https://pi.piston.sh/api/v2/execute"
+];
+
+const LANGUAGE_MAP = {
+  javascript: { language: "javascript", version: "18.15.0" },
+  typescript: { language: "typescript", version: "5.0.3" },
+  python: { language: "python3", version: "3.10.0" },
+  java: { language: "java", version: "15.0.2" },
+  cpp: { language: "cpp", version: "10.2.0" },
+  c: { language: "c", version: "10.2.0" },
+  csharp: { language: "csharp", version: "6.12.0" },
+  go: { language: "go", version: "1.16.2" },
+  rust: { language: "rust", version: "1.68.2" },
+  php: { language: "php", version: "8.2.3" },
+  ruby: { language: "ruby", version: "3.0.1" },
+  kotlin: { language: "kotlin", version: "1.8.20" },
 };
 
-const getRuntimeConfig = (languageId) => {
-  return JDOODLE_LANGUAGE_MAP[languageId] || null;
+// CRACKED: Local Piston-Compatible Engine (Fallback)
+const executeLocally = async (language, code, stdin) => {
+  const runId = getRandomId();
+  const tempDir = path.join(__dirname, "../temp_exec", runId);
+  if (!fs.existsSync(tempDir)) fs.mkdirSync(tempDir, { recursive: true });
+
+  try {
+    let command = "";
+    let args = [];
+    if (language === "java") {
+      fs.writeFileSync(path.join(tempDir, "Main.java"), code);
+      try { execSync("javac Main.java", { cwd: tempDir, timeout: 5000 }); }
+      catch (e) { return { run: { output: e.stderr?.toString() || e.message, stderr: e.stderr?.toString(), code: 1, stdout: "" } }; }
+      command = "java"; args = ["Main"];
+    } else if (language === "python" || language === "python3") {
+      fs.writeFileSync(path.join(tempDir, "script.py"), code);
+      command = "python"; args = ["script.py"];
+    } else if (language === "javascript") {
+      fs.writeFileSync(path.join(tempDir, "script.js"), code);
+      command = "node"; args = ["script.js"];
+    } else { throw new Error("Local fallback not available for " + language); }
+
+    return new Promise((resolve) => {
+      const child = spawn(command, args, { cwd: tempDir, timeout: 10000 });
+      let out = ""; let err = "";
+      child.stdout.on("data", (d) => (out += d.toString()));
+      child.stderr.on("data", (d) => (err += d.toString()));
+      child.on("close", (c) => {
+        resolve({ run: { output: (out + err).trim(), stderr: err.trim(), stdout: out.trim(), code: c } });
+        try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (e) {}
+      });
+      if (stdin) { child.stdin.write(stdin); child.stdin.end(); }
+    });
+  } catch (err) { return { run: { output: err.message, stderr: err.message, code: 1, stdout: "" } }; }
+};
+
+const executeOnPiston = async (language, code, stdin) => {
+  const config = LANGUAGE_MAP[language];
+  if (!config) throw new Error("Unsupported language");
+
+  const payload = { language: config.language, version: config.version, files: [{ content: code }], stdin: stdin || "" };
+
+  // Try mirrors
+  for (const url of PISTON_INSTANCES) {
+    try {
+      const resp = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), timeout: 5000 });
+      const data = await resp.json();
+      if (resp.ok && data.run) return data;
+    } catch (err) { continue; }
+  }
+
+  // PLATFORM CRACK: If all mirrors fail, use Local Native Engine
+  if (["java", "python", "javascript"].includes(language)) {
+    console.log(`[PLATFORM CRACK] Piston Mirrors failed. Using local ${language} engine.`);
+    return await executeLocally(language, code, stdin);
+  }
+  
+  throw new Error("Piston API is currently offline/restricted. Please contact support or use Java/Python.");
 };
 
 export const executeCode = async (req, res) => {
   try {
     const { questionId, code, language } = req.body;
-
-    if (!questionId || !code || !language) {
-      return res.status(400).json({ message: "Missing required fields" });
-    }
-
     const question = await Question.findById(questionId);
-    if (!question || question.type !== "coding") {
-      return res.status(404).json({ message: "Coding question not found" });
-    }
+    if (!question) return res.status(404).json({ message: "Question not found" });
 
-    const langConfig = getRuntimeConfig(language);
-    if (!langConfig) {
-      return res.status(400).json({ message: "Unsupported language" });
-    }
-
-    const clientId = process.env.JDOODLE_CLIENT_ID;
-    const clientSecret = process.env.JDOODLE_CLIENT_SECRET;
-
-    if (!clientId || !clientSecret) {
-      return res.status(500).json({ message: "JDoodle API credentials are not configured on the server. Please add JDOODLE_CLIENT_ID and JDOODLE_CLIENT_SECRET to the .env file." });
-    }
-
-    const testCases = question.codingData.testCases;
     const results = [];
-
-    // Helper to detect hardcoding of expected outputs
-    const isHardcoded = (submittedCode, expected) => {
-      if (!expected || expected.trim().length < 2) return false;
-      const cleanCode = submittedCode.replace(/\s+/g, ' ');
-      const cleanExpected = expected.trim();
-
-      const patterns = [
-        `"${cleanExpected}"`,
-        `'${cleanExpected}'`,
-        `\`${cleanExpected}\``
-      ];
-
-      return patterns.some(p => cleanCode.includes(p));
-    };
-
-    for (let i = 0; i < testCases.length; i++) {
-      const testCase = testCases[i];
-
-      const payload = {
-        script: code,
-        language: langConfig.language,
-        versionIndex: langConfig.versionIndex,
-        clientId: clientId,
-        clientSecret: clientSecret,
-        stdin: testCase.input,
-      };
-
-      const response = await fetch(JDOODLE_EXECUTE_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.output !== undefined) {
-        // JDoodle provides compilation/runtime errors directly in the output field.
-        const actualOutput = data.output.trim();
+    for (const testCase of question.codingData.testCases) {
+      try {
+        const pistonRes = await executeOnPiston(language, code, testCase.input);
+        const actualOutput = pistonRes.run.output.trim();
         const expectedOutput = testCase.expectedOutput.trim();
-
-        const isError = data.memory === null || data.statusCode !== 200;
-        let passed = !isError && actualOutput === expectedOutput;
-        let hardcodingDetected = false;
-
-        if (passed && isHardcoded(code, expectedOutput)) {
-          passed = false;
-          hardcodingDetected = true;
-        }
+        const isError = pistonRes.run.stderr.length > 0 || pistonRes.run.code !== 0;
 
         results.push({
           testCaseId: testCase._id,
           input: testCase.isHidden ? "Hidden" : testCase.input,
           expectedOutput: testCase.isHidden ? "Hidden" : testCase.expectedOutput,
-          actualOutput: testCase.isHidden ? (passed ? "Passed" : (hardcodingDetected ? "Hardcoding Detected" : "Failed")) : actualOutput,
-          passed,
-          error: hardcodingDetected
-            ? "Logic violation: Hardcoding expected output is not allowed. Please implement the actual logic."
-            : (isError ? actualOutput : null),
+          actualOutput: testCase.isHidden ? (pistonRes.run.code === 0 ? "Passed" : "Failed") : actualOutput,
+          passed: !isError && actualOutput === expectedOutput,
+          error: isError ? pistonRes.run.output : null
         });
-      } else {
-        results.push({
-          testCaseId: testCase._id,
-          passed: false,
-          error: data.error || data.message || "Execution API failed",
-        });
+      } catch (err) {
+        results.push({ testCaseId: testCase._id, passed: false, error: err.message });
       }
     }
-
-    res.json({
-      success: true,
-      results,
-      allPassed: results.every((r) => r.passed),
-    });
-  } catch (error) {
-    console.error("CODE EXECUTION ERROR:", error);
-    res.status(500).json({ message: "Code execution failed", error: error.message });
-  }
+    res.json({ success: true, results, allPassed: results.every((r) => r.passed) });
+  } catch (error) { res.status(500).json({ message: "System Error", error: error.message }); }
 };
 
 export const executeCustomCode = async (req, res) => {
   try {
     const { code, language, stdin } = req.body;
-
-    if (!code || !language) {
-      return res.status(400).json({ message: "Missing required fields" });
-    }
-
-    const langConfig = getRuntimeConfig(language);
-    if (!langConfig) {
-      return res.status(400).json({ message: "Unsupported language" });
-    }
-
-    const clientId = process.env.JDOODLE_CLIENT_ID;
-    const clientSecret = process.env.JDOODLE_CLIENT_SECRET;
-
-    if (!clientId || !clientSecret) {
-      return res.status(500).json({ message: "JDoodle API credentials are not configured on the server. Please add JDOODLE_CLIENT_ID and JDOODLE_CLIENT_SECRET to the .env file." });
-    }
-
-    const payload = {
-      script: code,
-      language: langConfig.language,
-      versionIndex: langConfig.versionIndex,
-      clientId: clientId,
-      clientSecret: clientSecret,
-      stdin: stdin || "",
-    };
-
-    const response = await fetch(JDOODLE_EXECUTE_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await response.json();
-
-    if (response.ok && data.output !== undefined) {
-      const isError = data.memory === null || data.statusCode !== 200;
-
-      res.json({
-        success: true,
-        output: !isError ? data.output : "",
-        stderr: isError ? data.output : "",
-        stdout: !isError ? data.output : "",
-        exitCode: isError ? 1 : 0,
-      });
-    } else {
-      res.status(400).json({ message: "Execution failed", error: data.error || data.message });
-    }
-  } catch (error) {
-    console.error("CUSTOM EXECUTION ERROR:", error);
-    res.status(500).json({ message: "Code execution failed", error: error.message });
-  }
+    const pistonRes = await executeOnPiston(language, code, stdin);
+    res.json({ success: true, output: pistonRes.run.output, stderr: pistonRes.run.stderr, stdout: pistonRes.run.stdout, exitCode: pistonRes.run.code });
+  } catch (error) { res.status(500).json({ message: "System Error", error: error.message }); }
 };

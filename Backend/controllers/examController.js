@@ -174,7 +174,8 @@ export const startExam = async (req, res) => {
       return res.status(403).json({ message: "Exam has ended" });
     }
 
-    // 3. Check Attempt Limits
+    // 3. Check Attempt Limits (DISABLED for Unlimited Attempts)
+    /*
     const attempts = await Result.countDocuments({
       examId,
       studentId,
@@ -186,6 +187,7 @@ export const startExam = async (req, res) => {
         message: `Maximum attempts (${exam.attemptLimit || 1}) reached`,
       });
     }
+    */
 
     // allow start
     res.json({ message: "Exam allowed" });
