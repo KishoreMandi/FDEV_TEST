@@ -16,10 +16,10 @@ const PISTON_INSTANCES = [
 ];
 
 const LANGUAGE_MAP = {
-  javascript: { language: "javascript", version: "18.15.0" },
+  javascript: { language: "javascript", version: "18.15.0", wandbox: "nodejs-20.17.0" },
   typescript: { language: "typescript", version: "5.0.3" },
-  python: { language: "python3", version: "3.10.0" },
-  java: { language: "java", version: "15.0.2" },
+  python: { language: "python3", version: "3.10.0", wandbox: "cpython-3.12.7" },
+  java: { language: "java", version: "15.0.2", wandbox: "openjdk-jdk-21+35" },
   cpp: { language: "cpp", version: "10.2.0" },
   c: { language: "c", version: "10.2.0" },
   csharp: { language: "csharp", version: "6.12.0" },
@@ -29,6 +29,43 @@ const LANGUAGE_MAP = {
   ruby: { language: "ruby", version: "3.0.1" },
   kotlin: { language: "kotlin", version: "1.8.20" },
 };
+
+const executeOnWandbox = async (language, code, stdin) => {
+  const config = LANGUAGE_MAP[language];
+  if (!config || !config.wandbox) return null;
+
+  // Java Hack: Remove 'public' from class definition to avoid filename mismatch
+  let finalCode = code;
+  if (language === "java") {
+    finalCode = code.replace(/public\s+class/g, "class");
+  }
+
+  try {
+    const resp = await fetch("https://wandbox.org/api/compile.json", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        compiler: config.wandbox,
+        code: finalCode,
+        stdin: stdin || ""
+      }),
+      timeout: 10000
+    });
+    const data = await resp.json();
+    return {
+      run: {
+        output: (data.program_message || data.compiler_message || "").trim(),
+        stdout: (data.program_output || "").trim(),
+        stderr: (data.program_error || data.compiler_error || "").trim(),
+        code: data.status === "0" ? 0 : 1
+      }
+    };
+  } catch (err) {
+    console.error("[WANDBOX ERROR]", err.message);
+    return null;
+  }
+};
+
 
 // CRACKED: Local Piston-Compatible Engine (Fallback)
 const executeLocally = async (language, code, stdin) => {
@@ -41,12 +78,20 @@ const executeLocally = async (language, code, stdin) => {
     let args = [];
     if (language === "java") {
       fs.writeFileSync(path.join(tempDir, "Main.java"), code);
-      try { execSync("javac Main.java", { cwd: tempDir, timeout: 5000 }); }
-      catch (e) { return { run: { output: e.stderr?.toString() || e.message, stderr: e.stderr?.toString(), code: 1, stdout: "" } }; }
+      try { 
+        execSync("javac Main.java", { cwd: tempDir, timeout: 5000 }); 
+      } catch (e) { 
+        const errStr = e.stderr?.toString() || e.message;
+        if (errStr.includes("not found") || errStr.includes("is not recognized")) {
+          return { run: { output: "System Error: The compiler 'javac' is not installed on this server. If you are hosting on Vercel, Vercel does not support Java execution. Please host your backend on Render or Railway.", stderr: "Compiler not found", code: 1, stdout: "" } };
+        }
+        return { run: { output: errStr, stderr: errStr, code: 1, stdout: "" } }; 
+      }
       command = "java"; args = ["Main"];
     } else if (language === "python" || language === "python3") {
+      command = process.platform === "win32" ? "python" : "python3";
       fs.writeFileSync(path.join(tempDir, "script.py"), code);
-      command = "python"; args = ["script.py"];
+      args = ["script.py"];
     } else if (language === "javascript") {
       fs.writeFileSync(path.join(tempDir, "script.js"), code);
       command = "node"; args = ["script.js"];
@@ -55,13 +100,20 @@ const executeLocally = async (language, code, stdin) => {
     return new Promise((resolve) => {
       const child = spawn(command, args, { cwd: tempDir, timeout: 10000 });
       let out = ""; let err = "";
-      child.stdout.on("data", (d) => (out += d.toString()));
-      child.stderr.on("data", (d) => (err += d.toString()));
+      
+      child.on('error', (err) => {
+        if (err.code === 'ENOENT') {
+          resolve({ run: { output: `System Error: The interpreter '${command}' is not installed on this server.`, stderr: `Interpreter not found`, code: 1, stdout: "" } });
+        }
+      });
+
+      if (child.stdout) child.stdout.on("data", (d) => (out += d.toString()));
+      if (child.stderr) child.stderr.on("data", (d) => (err += d.toString()));
       child.on("close", (c) => {
         resolve({ run: { output: (out + err).trim(), stderr: err.trim(), stdout: out.trim(), code: c } });
         try { fs.rmSync(tempDir, { recursive: true, force: true }); } catch (e) {}
       });
-      if (stdin) { child.stdin.write(stdin); child.stdin.end(); }
+      if (stdin && child.stdin) { child.stdin.write(stdin); child.stdin.end(); }
     });
   } catch (err) { return { run: { output: err.message, stderr: err.message, code: 1, stdout: "" } }; }
 };
@@ -81,13 +133,20 @@ const executeOnPiston = async (language, code, stdin) => {
     } catch (err) { continue; }
   }
 
-  // PLATFORM CRACK: If all mirrors fail, use Local Native Engine
+  // PLATFORM CRACK: If all Piston mirrors fail, use Wandbox (Unlimited Free)
+  const wandboxRes = await executeOnWandbox(language, code, stdin);
+  if (wandboxRes) {
+    console.log(`[PLATFORM CRACK] Piston failed. Using Wandbox ${language} engine.`);
+    return wandboxRes;
+  }
+
+  // LAST RESORT: Try Local Native Engine (if installed)
   if (["java", "python", "javascript"].includes(language)) {
-    console.log(`[PLATFORM CRACK] Piston Mirrors failed. Using local ${language} engine.`);
+    console.log(`[PLATFORM CRACK] Wandbox failed. Using local ${language} engine.`);
     return await executeLocally(language, code, stdin);
   }
   
-  throw new Error("Piston API is currently offline/restricted. Please contact support or use Java/Python.");
+  throw new Error("Code execution services are currently restricted. Please contact support.");
 };
 
 export const executeCode = async (req, res) => {
